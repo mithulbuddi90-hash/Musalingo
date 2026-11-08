@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --card: #ffffff;
+            --blue: #2b70c9;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .page {
+            max-width: 940px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin: 0;
+            color: var(--accent-dark);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin: 6px 0 0;
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .pill {
+            display: inline-block;
+            background: #fdf2f8;
+            color: var(--accent-dark);
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #f8fafc;
+            color: #334155;
+            margin-bottom: 14px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .item {
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 16px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item h3 {
+            margin: 0;
+        }
+
+        .item p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--warning);
+            font-weight: 700;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 8px;
+            border-radius: 999px;
+            background: #fff7ed;
+            color: #c2410c;
+            font-size: 0.8rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 6px 0 var(--accent-shadow, var(--accent-dark));
+            border: none;
+            cursor: pointer;
+            width: fit-content;
+        }
+
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn.secondary {
+            background: var(--blue);
+            box-shadow: 0 6px 0 #1d4ed8;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+
+            .page {
+                max-width: 100%;
+            }
+
+            .card {
+                padding: 18px 16px;
+                border-radius: 18px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .pill-row {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="card">
+            <div class="topbar">
+                <div>
+                    <h1 class="title">Musalingo Shop</h1>
+                    <p class="subtitle" id="shopSubtitle">Spend your diamonds on fun rewards and useful boosts.</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <a class="btn secondary" href="settings.html">Settings</a>
+                    <a class="btn secondary" href="dashboard.html">Back to dashboard</a>
+                </div>
+            </div>
+            <div class="pill-row">
+                <div class="pill" id="diamondInfo">Loading diamonds…</div>
+                <div class="pill" id="inventoryInfo">Loading inventory…</div>
+            </div>
+            <div class="message" id="shopMessage">Choose an item to unlock it for your account.</div>
+            <div class="grid" id="shopGrid" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script src="sounds.js"></script>
+    <script>
+        const shopItems = [
+            {
+                id: 'heart-1',
+                name: '1 Heart',
+                description: 'Restore one heart so you can keep studying without waiting.',
+                cost: 10,
+                badge: 'Quick refill',
+                reward: '1 heart',
+                consumable: true
+            },
+            {
+                id: 'heart-full',
+                name: 'Full Heart Refill',
+                description: 'Top up your hearts back to 5 immediately.',
+                cost: 50,
+                badge: 'Best value',
+                reward: 'Up to 5 hearts',
+                consumable: true
+            },
+            {
+                id: 'daily-booster',
+                name: 'Daily Booster',
+                description: 'Unlock a bonus lesson pack and earn a fresh study boost.',
+                cost: 50,
+                badge: 'Popular',
+                reward: 'One bonus lesson pack'
+            },
+            {
+                id: 'theme-pack',
+                name: 'Theme Pack',
+                description: 'Refresh your app look with a bright neon theme.',
+                cost: 80,
+                badge: 'New look',
+                reward: 'New app theme'
+            },
+            {
+                id: 'streak-shield',
+                name: 'Streak Freeze',
+                description: 'Protect your streak from a missed day. (Max 3 in inventory)',
+                cost: 60,
+                badge: 'Protective',
+                reward: 'Streak protection'
+            },
+            {
+                id: 'voice-coach',
+                name: 'Voice Coach',
+                description: 'Unlock pronunciation practice with extra speaking guidance.',
+                cost: 90,
+                badge: 'Speaking',
+                reward: 'Pronunciation help'
+            },
+            {
+                id: 'gold-badge',
+                name: 'Gold Badge',
+                description: 'Show off a collectible badge on your profile for completed goals.',
+                cost: 120,
+                badge: 'Premium',
+                reward: 'Profile badge'
+            },
+            {
+                id: 'lucky-chest',
+                name: 'Lucky Chest',
+                description: 'Open a mystery reward chest packed with extra gems and fun.',
+                cost: 70,
+                badge: 'Mystery',
+                reward: 'Bonus gems'
+            }
+        ];
+
+        function defaultProfile(email = '') {
+            return {
+                email,
+                name: email.split('@')[0] || 'learner',
+                streak: 0,
+                diamonds: 100,
+                hearts: 5,
+                lastActiveDate: null,
+                lastLessonDate: null,
+                streakStatus: 'inactive',
+                selectedCourse: null,
+                courses: [],
+                inventory: [],
+                streakFreezes: 0,
+                streakFreezeDates: []
+            };
+        }
+
+        function loadProfile() {
+            const stored = localStorage.getItem('MusalingoProfile');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                        return defaultProfile();
+                    }
+                    const diamonds = Number(parsed.diamonds);
+                    const streak = Number(parsed.streak);
+                    const freezes = Number(parsed.streakFreezes);
+                    const hearts = Number(parsed.hearts);
+                    return {
+                        ...defaultProfile(parsed.email || ''),
+                        ...parsed,
+                        inventory: Array.isArray(parsed.inventory) ? parsed.inventory : [],
+                        diamonds: Number.isFinite(diamonds) ? Math.max(0, Math.floor(diamonds)) : 100,
+                        streak: Number.isFinite(streak) ? Math.max(0, Math.floor(streak)) : 0,
+                        streakFreezes: Number.isFinite(freezes) ? Math.min(3, Math.max(0, Math.floor(freezes))) : 0,
+                        streakFreezeDates: Array.isArray(parsed.streakFreezeDates)
+                            ? parsed.streakFreezeDates.filter((date) => typeof date === 'string')
+                            : [],
+                        hearts: Number.isFinite(hearts) ? Math.max(0, Math.min(5, Math.floor(hearts))) : 5
+                    };
+                } catch (error) {
+                    console.warn('Could not read profile, resetting.', error);
+                }
+            }
+            return defaultProfile();
+        }
+
+        let profile = loadProfile();
+        if (!profile.inventory) profile.inventory = [];
+
+        function saveProfile() {
+            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+        }
+
+        function showMessage(text) {
+            const message = document.getElementById('shopMessage');
+            message.textContent = text;
+        }
+
+        function applyConsumable(item) {
+            const maxHearts = 5;
+            const currentHearts = Number(profile.hearts ?? maxHearts);
+            const safeHearts = Number.isFinite(currentHearts)
+                ? Math.max(0, Math.min(maxHearts, Math.floor(currentHearts)))
+                : maxHearts;
+
+            if (item.id === 'heart-1') {
+                if (safeHearts >= maxHearts) {
+                    showMessage('Your hearts are already full — no purchase needed.');
+                    return false;
+                }
+                profile.hearts = Math.min(maxHearts, safeHearts + 1);
+                delete profile.heartRefillAt;
+                showMessage('Purchased 1 heart. Your hearts are refilled by 1.');
+                return true;
+            }
+
+            if (item.id === 'heart-full') {
+                if (safeHearts >= maxHearts) {
+                    showMessage('Your hearts are already full — no purchase needed.');
+                    return false;
+                }
+                profile.hearts = maxHearts;
+                delete profile.heartRefillAt;
+                showMessage('Purchased a full heart refill. Your hearts are back to 5.');
+                return true;
+            }
+
+            return false;
+        }
+
+        function renderShop() {
+            const grid = document.getElementById('shopGrid');
+            document.getElementById('diamondInfo').textContent = `Diamonds: ${profile.diamonds}`;
+
+            const freezeCount = Number(profile.streakFreezes) || 0;
+            document.getElementById('inventoryInfo').textContent =
+                `Owned: ${profile.inventory.length} items • ❄️ ${freezeCount} Freeze${freezeCount === 1 ? '' : 's'}`;
+
+            grid.innerHTML = '';
+
+            shopItems.forEach((item) => {
+                const owned = item.consumable ? false : profile.inventory.includes(item.id);
+                const freezeLimitReached = item.id === 'streak-shield' && freezeCount >= 3;
+
+                // For heart-full, dynamically show the actual price based on missing hearts
+                let displayCost = item.cost;
+                if (item.id === 'heart-full') {
+                    const missing = Math.max(0, 5 - profile.hearts);
+                    displayCost = missing * 10 || 50;
+                }
+                const canAfford = profile.diamonds >= displayCost;
+
+                const card = document.createElement('article');
+                card.className = 'item';
+                card.innerHTML = `
+                    <div class="meta">
+                        <span>${item.badge}</span>
+                        <span>💎 ${displayCost}</span>
+                    </div>
+                    <h3>${item.name}</h3>
+                    <p>${item.description}</p>
+                    <p><strong>Reward:</strong> ${item.reward}</p>
+                    <button class="btn" data-id="${item.id}" ${owned || freezeLimitReached || !canAfford ? 'disabled' : ''}>
+                        ${owned ? 'Owned' : freezeLimitReached ? 'Max reached' : canAfford ? 'Buy now' : 'Need more diamonds'}
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('shopGrid').addEventListener('click', (event) => {
+            if (JSON.parse(localStorage.getItem('MusalingoSettings') || '{}').noGamification) return;
+            const button = event.target.closest('button[data-id]');
+            if (!button) return;
+
+            profile = loadProfile();
+            const item = shopItems.find((entry) => entry.id === button.getAttribute('data-id'));
+            if (!item) return;
+
+            if (!item.consumable && profile.inventory.includes(item.id) && item.id !== 'streak-shield') {
+                showMessage(`${item.name} is already in your collection.`);
+                SFX.error();
+                return;
+            }
+
+            if (item.id === 'streak-shield' && profile.streakFreezes >= 3) {
+                showMessage('You can only hold up to 3 Streak Freezes at once.');
+                renderShop();
+                SFX.error();
+                return;
+            }
+
+            // Compute actual charge (heart-full is dynamic)
+            let charge = item.cost;
+            if (item.id === 'heart-full') {
+                const missing = Math.max(0, 5 - profile.hearts);
+                if (missing === 0) {
+                    showMessage('Your hearts are already full.');
+                    SFX.error();
+                    return;
+                }
+                charge = missing * 10;
+            }
+
+            if (profile.diamonds < charge) {
+                showMessage(
+                    `You need ${charge - profile.diamonds} more diamond${charge - profile.diamonds === 1 ? '' : 's'} to buy ${item.name}.`
+                );
+                SFX.error();
+                return;
+            }
+
+            // Charge
+            profile.diamonds -= charge;
+
+            if (item.consumable) {
+                const applied = applyConsumable(item);
+                if (!applied) {
+                    // Refund
+                    profile.diamonds += charge;
+                    SFX.error();
+                    return;
+                }
+            } else {
+                // ── Streak Freeze: purchase logic ──
+                if (item.id === 'streak-shield') {
+                    profile.streakFreezes += 1;
+                } else {
+                    // Normal inventory items
+                    profile.inventory.push(item.id);
+                }
+            }
+
+            saveProfile();
+            renderShop();
+            showMessage(`Purchased ${item.name}! Your diamonds are now ${profile.diamonds}.`);
+
+            // Sound
+            if (item.id === 'heart-1' || item.id === 'heart-full') {
+                SFX.gemEarned();
+            } else {
+                SFX.correct();
+            }
+        });
+
+        window.addEventListener('storage', (event) => {
+            if (event.key !== 'MusalingoProfile') return;
+            profile = loadProfile();
+            renderShop();
+        });
+
+        renderShop();
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Musalingo - The free, fun, and effective way to learn a language</title>
+
+    <!-- PWA META TAGS -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+
+    <style>
+        :root {
+            color-scheme: light;
+            --accent: rgb(236, 150, 199);
+            --accent-dark: rgb(244, 144, 195);
+            --accent-bright: #FF9AC8;
+            --blue: #2b70c9;
+            --text: #4b4b4b;
+            --bg: #f7f7f7;
+            --card: #ffffff;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        a {
+            color: var(--blue);
+            text-decoration: none;
+        }
+
+        .container {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #ffffff 0%, #fdf2f8 100%);
+            padding: 24px 0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* FUTURE-PROOF LOGO SETUP */
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(236, 150, 199, 0.3);
+        }
+
+        .brand-fallback {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            color: white;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            font-weight: 900;
+            box-shadow: 0 4px 10px rgba(236, 150, 199, 0.3);
+        }
+
+        .brand-name {
+            font-weight: 900;
+            font-size: 2rem;
+            letter-spacing: -0.06em;
+            color: #1f2937;
+        }
+
+        .nav-links a {
+            margin-left: 18px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-dark);
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 28px;
+            padding: 48px 0 32px;
+            align-items: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin: 0 0 16px;
+            color: #2b2b2b;
+            line-height: 1.1;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-dark) 0%, var(--purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.05rem;
+            margin: 0 0 20px;
+            color: #6b7280;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 999px;
+            font-weight: 700;
+            color: #fff;
+            background: var(--accent);
+            box-shadow: 0 6px 0 var(--accent-dark);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: transform 0.15s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn.alt {
+            background: var(--blue);
+            box-shadow: 0 6px 0 #205ea5;
+        }
+
+        .btn.install {
+            background: #58cc02;
+            box-shadow: 0 6px 0 #3d8c01;
+        }
+
+        .hero-card,
+        .section-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .hero-card h3 {
+            margin-top: 0;
+            color: #1f2937;
+        }
+
+        .hero-card ul {
+            padding-left: 20px;
+            color: #4b5563;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin: 24px 0 40px;
+        }
+
+        .section-card h3 {
+            margin-top: 0;
+            color: #2b2b2b;
+        }
+
+        .section-card p {
+            color: #6b7280;
+            margin-bottom: 0;
+        }
+
+        /* Comparison Table Styles */
+        .comparison-section {
+            background: #ffffff;
+            padding: 40px 0;
+            border-top: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 40px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .comparison-table th {
+            font-weight: 800;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        .comparison-table td {
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .comparison-table .musalingo-col {
+            background: #fdf2f8;
+            color: var(--accent-dark);
+            font-weight: 800;
+        }
+
+        .comparison-table .musalingo-col i {
+            color: #10b981;
+            margin-right: 8px;
+        }
+
+        footer {
+            padding: 24px 0 40px;
+            color: #6b6b6b;
+            font-size: 0.95rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        @media (max-width: 800px) {
+
+            .hero,
+            .section-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 12px 8px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 560px) {
+            body {
+                line-height: 1.5;
+            }
+
+            header {
+                padding-top: 18px;
+            }
+
+            .hero {
+                padding-top: 28px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .btn-row {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .hero-card,
+            .section-card {
+                padding: 18px 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="brand-wrap">
+                    <!-- FUTURE LOGO: Uses /icons/logo.png -->
+                    <img src="/icons/logo.png" alt="Musalingo Logo" class="brand-logo"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+                    <!-- Fallback shown only if image fails to load -->
+                    <div class="brand-fallback" style="display: none;">μ</div>
+
+                    <div class="brand-name">Musalingo</div>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#why-switch">Why Switch</a>
+                    <a href="#about">About</a>
+                </div>
+            </nav>
+
+            <section class="hero">
+                <div>
+                    <h1>The free, open source way to <span class="gradient-text">learn a language.</span></h1>
+                    <p>Learn with quick, bite-sized lessons that feel like a game. Build real-world reading, writing,
+                        listening, and speaking skills at your own pace. No forced ads, no hidden fees.</p>
+                    <div class="btn-row">
+                        <a class="btn" href="started.html">Get started free</a>
+                        <a class="btn alt" href="signin.html">I already have an account</a>
+                        <button class="btn install" id="installAppBtn" type="button" hidden>📲 Install app</button>
+                    </div>
+                </div>
+                <div class="hero-card">
+                    <h3>Why learners love it</h3>
+                    <ul>
+                        <li>Better than Duolingo, it's FOSS</li>
+                        <li>Short lessons that fit into any schedule</li>
+                        <li>Personalized practice based on your progress</li>
+                        <li>Optional Plus tier for unlimited features</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </header>
+
+    <!-- Comparison Table Section -->
+    <section class="comparison-section" id="why-switch">
+        <div class="container">
+            <h2 style="text-align: center; color: #1f2937; margin-bottom: 8px;">Why Learners Are Switching</h2>
+            <p style="text-align: center; color: #6b7280; margin-top: 0;">Compare Musalingo directly with old-school
+                language apps.</p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Features</th>
+                        <th>Duolingo</th>
+                        <th>Musalingo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Video Ads</td>
+                        <td>❌ Forced Unskippable Ads</td>
+                        <td class="musalingo-col"><i class="fa-solid fa-check"></i> No forced ads (opt-in rewards only)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Pricing Model</td>
+                        <td>Freemium with strict limits</td>
+                        <td class="musalingo-col"><i class="fa-solid fa-check"></i> Free forever, Plus for ₹29/mo</td>
+                    </tr>
+                    <tr>
+                        <td>Open Source</td>
+                        <td>❌ Proprietary Code</td>
+                        <td class="musalingo-col"><i class="fa-solid fa-check"></i> 100% Open Source Core</td>
+                    </tr>
+                    <tr>
+                        <td>Mistake Penalty</td>
+                        <td>Strict Hearts System</td>
+                        <td class="musalingo-col"><i class="fa-solid fa-check"></i> Stress-Free Practice</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <main class="container" id="features">
+        <section class="section-grid">
+            <article class="section-card">
+                <h3>Backed by science</h3>
+                <p>Research-informed teaching methods help make learning feel natural and effective.</p>
+            </article>
+            <article class="section-card">
+                <h3>Stay motivated</h3>
+                <p>Daily streaks, points, and fun challenges keep your practice consistent.</p>
+            </article>
+            <article class="section-card">
+                <h3>Learn anywhere</h3>
+                <p>Practice on the web. Install our PWA to your home screen right now. A dedicated Android app is coming to the Play
+                    Store soon!</p>
+            </article>
+        </section>
+    </main>
+
+    <footer id="about">
+        <div class="container">
+            <p>© 2026-2027 Musalingo the open source language learning platform.<br>
+                Do not distribute or make profit without permission.<br>
+                All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Existing JavaScript for PWA and Install Prompt -->
+    <script>
+        // ---------- SERVICE WORKER ----------
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((reg) => console.log('[sw] registered:', reg.scope))
+                    .catch((err) => console.warn('[sw] registration failed:', err));
+            });
+        }
+
+        // ---------- PWA INSTALL PROMPT ----------
+        let deferredPrompt = null;
+        const installBtn = document.getElementById('installAppBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) installBtn.hidden = false;
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('[pwa] install outcome:', outcome);
+                deferredPrompt = null;
+                installBtn.hidden = true;
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('[pwa] app installed');
+            if (installBtn) installBtn.hidden = true;
+        });
+    </script>
+</body>
+
+</html>

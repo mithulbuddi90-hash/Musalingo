@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f8fbff 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .card {
+            width: min(420px, 100%);
+            background: var(--card);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .brand {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-dark);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        form {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-shadow, var(--accent-dark)) 16%, transparent);
+        }
+
+        .btn {
+            margin-top: 8px;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--accent-shadow, var(--accent-dark));
+        }
+
+        .btn:hover {
+            transform: translateY(1px);
+        }
+
+        .footer {
+            margin-top: 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .footer a {
+            color: var(--accent-dark);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .message {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .message.error {
+            display: block;
+            background: #fff1f2;
+            color: #b91c1c;
+            border: 1px solid #fecdd3;
+        }
+
+        .message.success {
+            display: block;
+            background: #fdf2f8;
+            color: #8a2d63;
+            border: 1px solid #f7bfdc;
+        }
+
+        .message a {
+            color: inherit;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .demo-info {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: var(--muted);
+            background: #f9fafb;
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+
+        .link-btn {
+            margin-top: 10px;
+            border: none;
+            background: transparent;
+            color: var(--accent-dark);
+            cursor: pointer;
+            font-weight: 600;
+            padding: 0;
+        }
+
+        .oauth-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .oauth-btn {
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text);
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .phone-box {
+            margin-top: 18px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fffafc;
+            padding: 14px;
+        }
+
+        .phone-box input {
+            margin-top: 8px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 500px) {
+            body {
+                padding: 14px;
+            }
+
+            .card {
+                padding: 22px 16px;
+                border-radius: 18px;
+            }
+
+            .brand {
+                font-size: 1.7rem;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="auth-page">
+    <div class="card">
+        <div class="brand">Musalingo</div>
+        <div class="subtitle">Sign in to continue your learning journey.</div>
+
+        <form id="loginForm">
+            <label for="email">Email or Phone</label>
+            <input id="email" name="email" type="text" placeholder="Enter your email or phone number" required />
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Enter your password" required />
+
+            <button class="btn" type="submit">Sign In</button>
+        </form>
+
+        <div id="message" class="message"></div>
+        <div class="demo-info" id="demoInfo">Use your email or phone number to sign in.</div>
+
+        <div class="oauth-grid">
+            <button class="oauth-btn" id="googleBtn" type="button">Continue with Google</button>
+            <!-- <button class="oauth-btn" id="microsoftBtn" type="button">Continue with Microsoft</button> -->
+        </div>
+
+        <div class="phone-box" style="display:none;">
+            <strong>Phone sign in</strong>
+            <form id="phoneForm">
+                <input id="phoneInput" type="tel" placeholder="+91 98765 43210" required />
+                <button class="btn" type="submit" style="margin-top: 10px;">Send OTP</button>
+            </form>
+            <div id="recaptcha-container" style="margin-top: 12px;"></div>
+            <form id="otpForm" class="hidden" style="margin-top: 12px;">
+                <input id="otpInput" type="text" placeholder="Enter OTP" required />
+                <button class="btn" type="submit" style="margin-top: 10px;">Verify OTP</button>
+            </form>
+        </div>
+
+        <button class="link-btn" id="resetBtn" type="button">Reset form</button>
+
+        <button class="link-btn" id="guestBtn" type="button">Continue as guest</button>
+
+        <div class="footer">
+            Don’t have an account? <a href="started.html">Create one</a>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const messageBox = document.getElementById('message');
+            const showSetupMessage = () => {
+                messageBox.textContent = 'Account sign-in requires the Musalingo server. Run npm start from the musamain folder, then open ';
+                const link = document.createElement('a');
+                link.href = 'http://localhost:3000/signin.html';
+                link.textContent = 'http://localhost:3000/signin.html';
+                link.style.color = 'inherit';
+                link.style.fontWeight = '700';
+                messageBox.append(link, document.createTextNode('.'));
+                messageBox.className = 'message error';
+            };
+
+            if (location.protocol === 'file:') {
+                showSetupMessage();
+                document.getElementById('loginForm').addEventListener('submit', event => event.preventDefault());
+                document.querySelector('#loginForm button[type="submit"]').disabled = true;
+                document.getElementById('googleBtn').disabled = true;
+                document.getElementById('guestBtn').addEventListener('click', () => {
+                    localStorage.setItem('MusalingoGuest', 'true');
+                    localStorage.setItem('MusalingoLoggedIn', 'false');
+                    localStorage.removeItem('MusalingoUser');
+                    localStorage.removeItem('MusalingoUid');
+                    let profile = {};
+                    try {
+                        profile = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
+                    } catch (error) {
+                        console.warn('[signin] Could not read the local profile for guest navigation.', error);
+                    }
+                    location.href = Array.isArray(profile.courses) && profile.courses.length
+                        ? 'dashboard.html'
+                        : 'catalog.html';
+                });
+                return;
+            }
+
+            window.addEventListener('error', event => {
+                if (window.musalAuthReady) return;
+                console.error('[signin] Could not initialize authentication.', event.error || event.message);
+                messageBox.textContent = 'Sign-in could not start. Check your connection and make sure the Musalingo server is running, then reload this page.';
+                messageBox.className = 'message error';
+            });
+        })();
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script type="module">
+        import app, {
+            clearGuestMode,
+            setGuestMode,
+            upsertSignedInUserDocument,
+            loadLocalProfile,
+            signInWithGooglePopup,
+            // signInWithMicrosoftPopup,
+            createPhoneVerifier,
+            startPhoneSignIn
+        } from './firebase.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const messageBox = document.getElementById('message');
+        const resetBtn = document.getElementById('resetBtn');
+        const guestBtn = document.getElementById('guestBtn');
+        const googleBtn = document.getElementById('googleBtn');
+        // const microsoftBtn = document.getElementById('microsoftBtn');
+        const phoneForm = document.getElementById('phoneForm');
+        const otpForm = document.getElementById('otpForm');
+        const phoneInput = document.getElementById('phoneInput');
+        const otpInput = document.getElementById('otpInput');
+
+        const auth = getAuth(app);
+        let phoneConfirmationResult = null;
+
+        function isPhoneNumber(value) {
+            const cleaned = value.replace(/\s+/g, '');
+            return !cleaned.includes('@') && /^[+]?\d[\d\s()-]{9,}$/.test(cleaned);
+        }
+
+        function showMessage(text, type, isHtml = false) {
+            if (isHtml) {
+                messageBox.innerHTML = text;
+            } else {
+                messageBox.textContent = text;
+            }
+            messageBox.className = `message ${type}`;
+        }
+
+        function redirectAfterAuth() {
+            const profile = loadLocalProfile();
+            const hasCourses = Array.isArray(profile.courses) && profile.courses.length > 0;
+            window.location.href = hasCourses ? 'dashboard.html' : 'catalog.html';
+        }
+
+        async function finishAuthSession(user, source = 'account') {
+            const profile = loadLocalProfile();
+            await upsertSignedInUserDocument(user.uid, user.email || user.phoneNumber || `${user.uid}@auth.local`, {
+                ...profile,
+                name: user.displayName || profile.name || (source === 'phone' ? 'Phone user' : 'Learner'),
+                email: user.email || profile.email || `${user.uid}@auth.local`,
+                friends: Array.isArray(profile.friends) ? profile.friends : [],
+                courses: Array.isArray(profile.courses) ? profile.courses : [],
+                inventory: Array.isArray(profile.inventory) ? profile.inventory : []
+            });
+            clearGuestMode();
+            localStorage.setItem('MusalingoLoggedIn', 'true');
+            localStorage.setItem('MusalingoUser', user.email || user.phoneNumber || `${user.uid}@auth.local`);
+            redirectAfterAuth();
+        }
+
+        resetBtn.addEventListener('click', function () {
+            form.reset();
+            phoneForm.reset();
+            otpForm.reset();
+            otpForm.classList.add('hidden');
+            messageBox.textContent = '';
+            messageBox.className = 'message';
+        });
+
+        guestBtn.addEventListener('click', function () {
+            setGuestMode();
+            localStorage.removeItem('MusalingoLoggedIn');
+            localStorage.removeItem('MusalingoUser');
+            redirectAfterAuth();
+        });
+
+        googleBtn.addEventListener('click', async function () {
+            try {
+                const result = await signInWithGooglePopup();
+                await finishAuthSession(result.user, 'google');
+            } catch (error) {
+                showMessage(error.message || 'Google sign-in failed.', 'error');
+            }
+        });
+
+        // microsoftBtn.addEventListener('click', async function () {
+        //     try {
+        //         const result = await signInWithMicrosoftPopup();
+        //         await finishAuthSession(result.user, 'microsoft');
+        //     } catch (error) {
+        //         showMessage(error.message || 'Microsoft sign-in failed.', 'error');
+        //     }
+        // });
+
+        phoneForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const phoneNumber = phoneInput.value.trim();
+            if (!phoneNumber) {
+                showMessage('Please enter your phone number.', 'error');
+                return;
+            }
+
+            try {
+                const verifier = createPhoneVerifier('recaptcha-container');
+                phoneConfirmationResult = await startPhoneSignIn(phoneNumber, verifier);
+                otpForm.classList.remove('hidden');
+                showMessage('OTP sent. Please enter the code.', 'success');
+            } catch (error) {
+                showMessage(error.message || 'Unable to send phone verification code.', 'error');
+            }
+        });
+
+        otpForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const otpCode = otpInput.value.trim();
+            if (!phoneConfirmationResult || !otpCode) {
+                showMessage('Please enter the OTP sent to your phone.', 'error');
+                return;
+            }
+
+            try {
+                const result = await phoneConfirmationResult.confirm(otpCode);
+                await finishAuthSession(result.user, 'phone');
+            } catch (error) {
+                showMessage(error.message || 'OTP verification failed.', 'error');
+            }
+        });
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const enteredValue = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!enteredValue) {
+                showMessage('Please enter your email or phone number.', 'error');
+                return;
+            }
+
+            if (isPhoneNumber(enteredValue)) {
+                try {
+                    const verifier = createPhoneVerifier('recaptcha-container');
+                    phoneConfirmationResult = await startPhoneSignIn(enteredValue, verifier);
+                    otpForm.classList.remove('hidden');
+                    showMessage('OTP sent. Please enter the code below.', 'success');
+                } catch (error) {
+                    showMessage(error.message || 'Unable to send phone verification code.', 'error');
+                }
+                return;
+            }
+
+            const email = enteredValue.toLowerCase();
+
+            if (!password) {
+                showMessage('Please enter your password.', 'error');
+                return;
+            }
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then(async (userCredential) => {
+                    const profile = loadLocalProfile();
+                    await upsertSignedInUserDocument(userCredential.user.uid, userCredential.user.email, {
+                        ...profile,
+                        name: userCredential.user.displayName || profile.name || 'Learner',
+                        email: userCredential.user.email,
+                        friends: Array.isArray(profile.friends) ? profile.friends : [],
+                        courses: Array.isArray(profile.courses) ? profile.courses : [],
+                        inventory: Array.isArray(profile.inventory) ? profile.inventory : []
+                    });
+                    clearGuestMode();
+                    showMessage(`Welcome back, ${userCredential.user.email}!`, 'success');
+                    localStorage.setItem('MusalingoLoggedIn', 'true');
+                    localStorage.setItem('MusalingoUser', userCredential.user.email);
+                    redirectAfterAuth();
+                })
+                .catch((error) => {
+                    const code = error?.code || '';
+
+                    if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+                        showMessage('No account found for that email. <a href="started.html">Create one first</a>.', 'error', true);
+                    } else if (code === 'auth/wrong-password') {
+                        showMessage('Wrong password. Please try again or create a new account.', 'error');
+                    } else {
+                        showMessage(error.message || 'Unable to sign in right now.', 'error');
+                    }
+                });
+        });
+        window.musalAuthReady = true;
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

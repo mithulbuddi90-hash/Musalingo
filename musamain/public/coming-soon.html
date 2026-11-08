@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coming Soon - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="This feature is coming soon to Musalingo.">
+
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --blue: #2b70c9;
+            --border: #e5e7eb;
+        }
+
+        body.dark-mode {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #e5e7eb;
+            --muted: #aeb9ca;
+            --border: #374151;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f8fbff 100%);
+            color: var(--text);
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        }
+
+        .card {
+            width: min(520px, 100%);
+            background: var(--card);
+            border-radius: 24px;
+            padding: 40px 32px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        body.dark-mode .card {
+            border: 1px solid var(--border);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .art {
+            font-size: 5rem;
+            line-height: 1;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: bob 3s ease-in-out infinite;
+        }
+
+        @keyframes bob {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 1.75rem;
+            color: var(--accent-dark);
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            margin: 0 0 24px;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(236, 150, 199, 0.12);
+            color: var(--accent-dark);
+            font-weight: 800;
+            font-size: 0.8rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 22px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 0.9rem;
+            box-shadow: 0 5px 0 var(--accent-dark);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.1s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 3px 0 var(--accent-dark);
+        }
+
+        .btn.secondary {
+            background: var(--blue);
+            box-shadow: 0 5px 0 #205ea5;
+        }
+
+        .btn.secondary:active {
+            box-shadow: 0 3px 0 #205ea5;
+        }
+
+        .tip {
+            margin-top: 28px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(236, 150, 199, 0.06);
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        .tip strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 14px;
+            }
+
+            .card {
+                padding: 28px 20px;
+                border-radius: 18px;
+            }
+
+            .art {
+                font-size: 3.8rem;
+            }
+
+            h1 {
+                font-size: 1.35rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="art" aria-hidden="true">🚧</div>
+        <div class="pill">Coming soon</div>
+        <h1 id="featureTitle">This feature is on its way</h1>
+        <p id="featureMessage">We're still building this part of Musalingo. Check back soon — or head back to your
+            dashboard and keep learning.</p>
+
+        <div class="actions">
+            <a class="btn" href="dashboard.html">Back to dashboard</a>
+            <a class="btn secondary" href="catalog.html">Browse courses</a>
+        </div>
+
+        <div class="tip">
+            <strong>💡 While you wait</strong>
+            The dashboard, all courses, lessons, chess, and offline practice are already live. Everything else is coming
+            in a future update.
+        </div>
+    </div>
+
+    <script>
+        // Customize the message based on the ?feature= URL param
+        (function customize() {
+            const params = new URLSearchParams(window.location.search);
+            const feature = params.get('feature');
+            if (!feature) return;
+
+            const labels = {
+                online: { title: 'Online multiplayer is on its way', art: '🌐', message: 'Play live chess against learners around the world. We\'re building the matchmaking backend now.' },
+                tournaments: { title: 'Tournaments are on their way', art: '🏆', message: 'Compete in scheduled tournaments with other learners. Coming in a future update.' },
+                subscriptions: { title: 'Subscriptions are coming soon', art: '💎', message: 'We\'re working on Super Musalingo, with an ad-free experience and more ways to practice.' },
+                shop: { title: 'Shop is being refreshed', art: '🛍️', message: 'We\'re rebuilding the shop with better rewards and more variety. Check back soon.' },
+                leaderboards: { title: 'Leaderboards are on their way', art: '🛡️', message: 'Weekly leagues, friend rankings, and global leaderboards are being built.' },
+                sounds: { title: 'Sounds practice is coming', art: '🎧', message: 'Phonetic practice and pronunciation drills are on the roadmap.' },
+                letters: { title: 'Letters practice is coming', art: '🔤', message: 'Character and script practice is on the roadmap for languages that use non-Latin scripts.' }
+            };
+
+            const config = labels[feature];
+            if (!config) return;
+
+            document.getElementById('featureTitle').textContent = config.title;
+            document.getElementById('featureMessage').textContent = config.message;
+            document.querySelector('.art').textContent = config.art;
+            document.title = config.title + ' - Musalingo';
+        })();
+    </script>
+
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

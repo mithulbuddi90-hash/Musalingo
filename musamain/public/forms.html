@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forms - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --border: #e5e7eb;
+        }
+
+        body.dark-mode {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #e5e7eb;
+            --muted: #aeb9ca;
+            --border: #374151;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .page {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .title {
+            margin: 0;
+            color: var(--accent-dark);
+            font-size: 1.6rem;
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--border);
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            color: var(--text);
+            font: inherit;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            border-radius: 999px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--accent-dark);
+            margin-top: 10px;
+            transition: transform 0.1s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(1px);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 700;
+            display: none;
+        }
+
+        .message.success {
+            display: block;
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .message.error {
+            display: block;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 14px;
+            }
+
+            .card {
+                padding: 22px 18px;
+                border-radius: 18px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="card">
+            <div class="topbar">
+                <h1 class="title">Quick Form</h1>
+                <a href="dashboard.html" class="btn-secondary">← Back</a>
+            </div>
+
+            <form id="mainForm">
+                <div class="form-group">
+                    <label for="formTitle">Title</label>
+                    <input type="text" id="formTitle" placeholder="Enter a title..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="formType">Type</label>
+                    <select id="formType">
+                        <option value="bug">🐛 Bug report</option>
+                        <option value="feature">💡 Feature request</option>
+                        <option value="feedback">Feedback</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="formContent">Content</label>
+                    <textarea id="formContent" placeholder="Type your message here..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">Submit</button>
+            </form>
+
+            <div id="formMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script src="sounds.js"></script>
+    <script>
+        const form = document.getElementById('mainForm');
+        const messageEl = document.getElementById('formMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('formTitle').value.trim();
+            const type = document.getElementById('formType').value;
+            const content = document.getElementById('formContent').value.trim();
+
+            if (!title || !content) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+
+            const timestamp = new Date().toISOString();
+            let profile = {};
+            try {
+                profile = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
+            } catch (error) {
+                console.warn('Could not read the saved profile for feedback context.', error);
+            }
+            const context = [
+                'URL: ' + window.location.href,
+                'Browser: ' + navigator.userAgent,
+                'Time: ' + timestamp,
+                'User: ' + (profile.email || 'guest')
+            ].join('\n');
+            const enrichedContent = `Content:\n${content}\n\n---\nContext:\n${context}`;
+            let savedLocally = false;
+            let localSaveError = null;
+
+            try {
+                const storedForms = JSON.parse(localStorage.getItem('MusalingoForms') || '[]');
+                const existingForms = Array.isArray(storedForms) ? storedForms : [];
+                existingForms.push({ id: Date.now(), title, type, content: enrichedContent, date: timestamp });
+                localStorage.setItem('MusalingoForms', JSON.stringify(existingForms));
+                savedLocally = true;
+            } catch (error) {
+                localSaveError = error;
+                console.error('Could not save feedback locally.', error);
+            }
+
+            try {
+                const response = await fetch('/api/send-form', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, type, content: enrichedContent })
+                });
+
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(result.error || 'Server error');
+                }
+
+                if (result.emailSent === false) {
+                    messageEl.textContent = savedLocally
+                        ? 'Saved locally. Email delivery is not configured on the server.'
+                        : 'Email delivery is not configured, and the form could not be saved locally.';
+                    messageEl.className = savedLocally ? 'message success' : 'message error';
+                } else {
+                    messageEl.textContent = savedLocally
+                        ? 'Form sent successfully to email!'
+                        : 'Form sent successfully to email, but could not be saved locally.';
+                    messageEl.className = 'message success';
+                    if (typeof SFX !== 'undefined') SFX.correct();
+                }
+                if (savedLocally || result.emailSent !== false) form.reset();
+            } catch (error) {
+                messageEl.textContent = savedLocally
+                    ? `Saved locally, but email could not be sent: ${error.message}`
+                    : `Could not send or save the form: ${error.message}${localSaveError ? ' (Local storage is unavailable.)' : ''}`;
+                messageEl.className = 'message error';
+                if (typeof SFX !== 'undefined') SFX.error();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+
+                setTimeout(() => {
+                    messageEl.className = 'message';
+                }, 4000);
+            }
+        });
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

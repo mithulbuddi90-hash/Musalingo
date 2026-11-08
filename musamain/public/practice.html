@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Build your Japanese skills with focused practice on Musalingo.">
+    <link rel="manifest" href="/manifest.json">
+    <title>Practice - Musalingo</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f7f8fc;
+            --panel: #fff;
+            --panel-2: #f3f6fb;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #ec96c7;
+            --accent-dark: #c46aa1;
+            --border: #e5e7eb;
+            --shadow: rgba(15, 23, 42, .08);
+            --green: #58cc02;
+            --blue: #1cb0f6;
+            --red: #ff4b4b;
+        }
+
+        body.dark-mode {
+            color-scheme: dark;
+            --bg: #131f24;
+            --panel: #1c2a30;
+            --panel-2: #2b3a42;
+            --text: #f1f7fb;
+            --muted: #a0adb5;
+            --border: #35454d;
+            --shadow: rgba(0, 0, 0, .28);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+        button, a { font: inherit; }
+        a { color: inherit; text-decoration: none; }
+        button { color: inherit; }
+        button:focus-visible, a:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 3px;
+        }
+
+        .app-layout { min-height: 100vh; display: flex; }
+        .sidebar {
+            position: sticky;
+            top: 0;
+            width: 240px;
+            height: 100vh;
+            flex: 0 0 240px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            padding: 24px 16px;
+            border-right: 2px solid var(--border);
+            background: var(--bg);
+            z-index: 4;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 22px;
+            padding: 0 9px;
+            color: var(--accent-dark);
+            font-size: 1.55rem;
+            font-weight: 900;
+            letter-spacing: -.05em;
+        }
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 1.2rem;
+            letter-spacing: 0;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            min-height: 48px;
+            padding: 10px 13px;
+            border: 2px solid transparent;
+            border-radius: 13px;
+            color: var(--muted);
+            font-size: .83rem;
+            font-weight: 850;
+            letter-spacing: .045em;
+            text-transform: uppercase;
+        }
+        .nav-item:hover { background: var(--panel-2); color: var(--text); }
+        .nav-item.active {
+            border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+            background: color-mix(in srgb, var(--accent) 15%, var(--bg));
+            color: var(--accent-dark);
+        }
+        .nav-icon { width: 24px; text-align: center; font-size: 1.25rem; }
+        .sidebar-spacer { flex: 1; }
+        .sidebar-tip {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: var(--panel);
+            color: var(--muted);
+            font-size: .8rem;
+            line-height: 1.5;
+        }
+        .sidebar-tip strong { display: block; margin-bottom: 4px; color: var(--text); }
+
+        .main-content { min-width: 0; flex: 1; }
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            min-height: 74px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 24px;
+            padding: 12px clamp(18px, 4vw, 52px);
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+            background: color-mix(in srgb, var(--bg) 93%, transparent);
+            backdrop-filter: blur(12px);
+        }
+        .top-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: .96rem;
+            font-weight: 850;
+        }
+        .top-stat span:first-child { font-size: 1.2rem; }
+        .top-stat.streak { color: #f59e0b; }
+        .top-stat.gems { color: #1cb0f6; }
+        .top-stat.hearts { color: #ff4b4b; }
+
+        .content-wrap { width: min(1120px, 100%); margin: 0 auto; padding: 32px clamp(18px, 4vw, 52px) 60px; }
+        .welcome-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 25px;
+        }
+        .eyebrow {
+            margin: 0 0 7px;
+            color: var(--accent-dark);
+            font-size: .76rem;
+            font-weight: 900;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+        h1 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.45rem); letter-spacing: -.045em; }
+        .welcome-copy { max-width: 580px; margin: 9px 0 0; color: var(--muted); line-height: 1.55; }
+        .goal-card {
+            width: 220px;
+            flex: 0 0 220px;
+            padding: 15px 16px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--panel);
+            box-shadow: 0 6px 20px var(--shadow);
+        }
+        .goal-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .83rem; font-weight: 850; }
+        .goal-meta { margin: 7px 0 10px; color: var(--muted); font-size: .78rem; }
+        .progress-track { height: 10px; overflow: hidden; border-radius: 999px; background: var(--panel-2); }
+        .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--green); transition: width .3s ease; }
+
+        .hero {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 24px;
+            min-height: 205px;
+            margin-bottom: 34px;
+            padding: 28px clamp(22px, 4vw, 38px);
+            overflow: hidden;
+            border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+            border-radius: 24px;
+            background: linear-gradient(110deg, color-mix(in srgb, var(--accent) 18%, var(--panel)), var(--panel) 70%);
+            box-shadow: 0 14px 32px var(--shadow);
+        }
+        .hero::after {
+            content: "あ";
+            position: absolute;
+            right: 175px;
+            bottom: -55px;
+            color: color-mix(in srgb, var(--accent) 12%, transparent);
+            font-size: 13rem;
+            font-weight: 900;
+            pointer-events: none;
+        }
+        .hero-copy { position: relative; z-index: 1; max-width: 540px; }
+        .hero h2 { margin: 0; font-size: clamp(1.35rem, 2.4vw, 1.8rem); letter-spacing: -.03em; }
+        .hero p { margin: 8px 0 20px; color: var(--muted); line-height: 1.5; }
+        .primary-btn, .secondary-btn, .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            min-height: 46px;
+            padding: 0 19px;
+            border: 0;
+            border-radius: 13px;
+            background: var(--green);
+            box-shadow: 0 4px 0 #46a302;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 900;
+            transition: transform .12s ease, filter .12s ease;
+        }
+        .primary-btn:hover, .secondary-btn:hover, .icon-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+        .primary-btn:active, .secondary-btn:active, .icon-btn:active { transform: translateY(2px); box-shadow: none; }
+        .hero-mascot {
+            position: relative;
+            z-index: 1;
+            width: 128px;
+            height: 128px;
+            display: grid;
+            place-items: center;
+            border: 8px solid color-mix(in srgb, var(--accent) 25%, var(--panel));
+            border-radius: 50%;
+            background: var(--panel);
+            font-size: 4rem;
+            box-shadow: 0 8px 0 color-mix(in srgb, var(--accent) 32%, var(--panel));
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 0 0 16px;
+        }
+        .section-heading h2 { margin: 0; font-size: 1.35rem; letter-spacing: -.025em; }
+        .section-heading p { margin: 5px 0 0; color: var(--muted); font-size: .9rem; }
+        .text-link { border: 0; background: transparent; color: var(--accent-dark); cursor: pointer; font-size: .85rem; font-weight: 850; }
+        .practice-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 38px;
+        }
+        .practice-card {
+            position: relative;
+            min-height: 182px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 19px;
+            border: 2px solid var(--border);
+            border-radius: 18px;
+            background: var(--panel);
+            box-shadow: 0 4px 0 var(--border);
+            color: var(--text);
+            cursor: pointer;
+            text-align: left;
+            transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+        }
+        .practice-card:hover { transform: translateY(-3px); border-color: var(--card-color); box-shadow: 0 7px 0 color-mix(in srgb, var(--card-color) 25%, var(--border)); }
+        .practice-card:active { transform: translateY(1px); box-shadow: 0 2px 0 var(--border); }
+        .card-icon {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 13px;
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--card-color) 14%, var(--panel));
+            font-size: 1.45rem;
+        }
+        .practice-card strong { margin-bottom: 5px; font-size: 1rem; }
+        .practice-card .card-description { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+        .card-tag {
+            position: absolute;
+            top: 19px;
+            right: 16px;
+            padding: 4px 8px;
+            border-radius: 99px;
+            background: color-mix(in srgb, var(--card-color) 14%, var(--panel));
+            color: var(--card-color);
+            font-size: .67rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .card-progress { width: 100%; margin-top: auto; padding-top: 15px; }
+        .card-progress-line { display: flex; justify-content: space-between; margin-bottom: 6px; color: var(--muted); font-size: .72rem; font-weight: 750; }
+        .mini-track { height: 6px; overflow: hidden; border-radius: 99px; background: var(--panel-2); }
+        .mini-fill { width: 0; height: 100%; border-radius: inherit; background: var(--card-color); }
+
+        .bottom-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); gap: 18px; }
+        .panel {
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 19px;
+            background: var(--panel);
+            box-shadow: 0 7px 22px var(--shadow);
+        }
+        .panel h2 { margin: 0; font-size: 1.08rem; }
+        .panel-subtitle { margin: 5px 0 16px; color: var(--muted); font-size: .84rem; }
+        .skill-row { display: grid; grid-template-columns: 35px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--border); }
+        .skill-emoji { font-size: 1.25rem; }
+        .skill-name { font-size: .88rem; font-weight: 850; }
+        .skill-detail { display: block; margin-top: 3px; color: var(--muted); font-size: .75rem; }
+        .skill-level { color: var(--accent-dark); font-size: .73rem; font-weight: 900; }
+        .streak-banner {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 14px;
+            background: color-mix(in srgb, #f59e0b 12%, var(--panel));
+        }
+        .streak-banner .fire { font-size: 1.8rem; }
+        .streak-banner strong { display: block; font-size: .9rem; }
+        .streak-banner span { color: var(--muted); font-size: .78rem; }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            background: rgba(9, 20, 26, .62);
+            backdrop-filter: blur(5px);
+        }
+        .modal-backdrop[hidden] { display: none; }
+        .session-shell {
+            width: min(700px, 100%);
+            max-height: min(840px, 94vh);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 23px;
+            background: var(--panel);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .3);
+        }
+        .session-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+        }
+        .close-btn {
+            width: 38px;
+            height: 38px;
+            border: 0;
+            border-radius: 12px;
+            background: var(--panel-2);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1.15rem;
+        }
+        .session-progress { flex: 1; }
+        .session-progress-top { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--muted); font-size: .76rem; font-weight: 850; }
+        .session-progress .progress-track { height: 12px; }
+        .session-hearts { color: #ff4b4b; font-size: .93rem; font-weight: 900; white-space: nowrap; }
+        .session-body { overflow-y: auto; padding: 28px clamp(20px, 5vw, 48px); }
+        .exercise-kicker { margin: 0 0 8px; color: var(--accent-dark); font-size: .73rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+        .exercise-title { margin: 0 0 8px; font-size: clamp(1.35rem, 3vw, 1.8rem); letter-spacing: -.03em; }
+        .exercise-instruction { margin: 0 0 23px; color: var(--muted); }
+        .prompt-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            min-height: 105px;
+            margin-bottom: 18px;
+            padding: 20px;
+            border: 1px solid color-mix(in srgb, var(--blue) 25%, var(--border));
+            border-radius: 17px;
+            background: color-mix(in srgb, var(--blue) 7%, var(--panel));
+        }
+        .prompt-content { min-width: 0; }
+        .prompt-text { margin: 0; font-size: 1.65rem; font-weight: 900; }
+        .prompt-hint { display: block; margin-top: 4px; color: var(--muted); font-size: .85rem; }
+        .audio-btn {
+            flex: 0 0 auto;
+            width: 48px;
+            height: 48px;
+            border: 2px solid color-mix(in srgb, var(--blue) 25%, var(--border));
+            border-radius: 15px;
+            background: var(--panel);
+            cursor: pointer;
+            font-size: 1.25rem;
+        }
+        .answer-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .answer-btn {
+            min-height: 58px;
+            padding: 13px 15px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            background: var(--panel);
+            cursor: pointer;
+            text-align: left;
+            font-weight: 750;
+            transition: background .12s ease, border-color .12s ease;
+        }
+        .answer-btn:hover:not(:disabled) { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 7%, var(--panel)); }
+        .answer-btn.selected { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, var(--panel)); }
+        .answer-btn.correct { border-color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--panel)); }
+        .answer-btn.wrong { border-color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--panel)); }
+        .answer-btn:disabled { cursor: default; }
+        .session-feedback {
+            display: none;
+            margin-top: 16px;
+            padding: 13px 15px;
+            border-radius: 13px;
+            font-size: .9rem;
+            font-weight: 750;
+        }
+        .session-feedback.show { display: block; }
+        .session-feedback.is-correct { background: color-mix(in srgb, var(--green) 14%, var(--panel)); color: #228300; }
+        .session-feedback.is-wrong { background: color-mix(in srgb, var(--red) 12%, var(--panel)); color: #d33b3b; }
+        .session-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 15px 22px;
+            border-top: 1px solid var(--border);
+        }
+        .footer-hint { color: var(--muted); font-size: .76rem; }
+        .secondary-btn { min-width: 130px; background: var(--blue); box-shadow: 0 4px 0 #168dc5; }
+        .secondary-btn:disabled { background: #aab4ba; box-shadow: 0 4px 0 #89969c; cursor: not-allowed; transform: none; }
+        .completion { padding: 35px 28px; text-align: center; }
+        .completion-icon { font-size: 4rem; }
+        .completion h2 { margin: 10px 0 7px; font-size: 1.8rem; }
+        .completion p { margin: 0 auto 22px; max-width: 420px; color: var(--muted); line-height: 1.5; }
+        .completion-stats { display: flex; justify-content: center; gap: 14px; margin: 0 0 24px; }
+        .completion-stat { min-width: 100px; padding: 13px; border-radius: 14px; background: var(--panel-2); }
+        .completion-stat strong { display: block; font-size: 1.25rem; }
+        .completion-stat span { display: block; margin-top: 3px; color: var(--muted); font-size: .73rem; }
+        .completion .primary-btn { min-width: 160px; }
+        .toast {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 15;
+            max-width: min(380px, calc(100vw - 44px));
+            padding: 13px 16px;
+            border-radius: 13px;
+            background: var(--text);
+            color: var(--bg);
+            box-shadow: 0 10px 28px var(--shadow);
+            font-size: .86rem;
+            font-weight: 750;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity .2s ease, transform .2s ease;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 920px) {
+            .sidebar { width: 76px; flex-basis: 76px; align-items: center; padding: 18px 8px; }
+            .brand { padding: 0; }
+            .brand-name, .nav-label, .sidebar-tip { display: none; }
+            .nav-item { width: 54px; justify-content: center; padding: 10px 0; }
+            .nav-icon { width: auto; font-size: 1.35rem; }
+            .bottom-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 650px) {
+            .sidebar { position: fixed; top: auto; bottom: 0; width: 100%; height: 64px; flex-direction: row; justify-content: space-around; gap: 0; padding: 5px 7px; border-top: 1px solid var(--border); border-right: 0; background: var(--panel); }
+            .brand, .sidebar-spacer { display: none; }
+            .nav-item { width: 46px; height: 48px; min-height: 48px; border-radius: 12px; }
+            .nav-item:nth-of-type(n+6) { display: none; }
+            .main-content { padding-bottom: 64px; }
+            .topbar { min-height: 58px; justify-content: center; gap: clamp(12px, 5vw, 25px); padding: 8px 12px; }
+            .top-stat { gap: 4px; font-size: .83rem; }
+            .content-wrap { padding-top: 23px; padding-bottom: 35px; }
+            .welcome-row { flex-direction: column; gap: 15px; }
+            .goal-card { width: 100%; flex-basis: auto; }
+            .hero { grid-template-columns: minmax(0, 1fr) 78px; gap: 8px; min-height: 182px; padding: 21px 17px; }
+            .hero-mascot { width: 72px; height: 72px; border-width: 5px; font-size: 2.5rem; }
+            .hero::after { right: 64px; font-size: 8rem; }
+            .hero p { margin-bottom: 16px; font-size: .9rem; }
+            .practice-grid { grid-template-columns: 1fr 1fr; gap: 11px; }
+            .practice-card { min-height: 174px; padding: 14px; }
+            .card-icon { width: 40px; height: 40px; margin-bottom: 10px; }
+            .card-tag { top: 13px; right: 11px; font-size: .6rem; }
+            .section-heading { align-items: flex-start; }
+            .panel { padding: 17px; }
+            .answer-list { grid-template-columns: 1fr; }
+            .session-top { padding: 12px 14px; gap: 9px; }
+            .session-body { padding: 22px 18px; }
+            .session-footer { padding: 12px 14px; }
+            .footer-hint { max-width: 120px; }
+        }
+        @media (max-width: 380px) {
+            .practice-grid { grid-template-columns: 1fr; }
+            .practice-card { min-height: 160px; }
+            .session-hearts { font-size: .8rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" aria-label="Main navigation">
+            <a class="brand" href="dashboard.html" aria-label="Musalingo home"><span class="brand-mark">む</span><span class="brand-name">Musalingo</span></a>
+            <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Learn</span></a>
+            <a class="nav-item active" href="practice.html" aria-current="page"><span class="nav-icon">🎯</span><span class="nav-label">Practice</span></a>
+            <a class="nav-item" href="coming-soon.html?feature=leaderboards"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboards</span></a>
+            <a class="nav-item" href="quest.html"><span class="nav-icon">🧭</span><span class="nav-label">Quests</span></a>
+            <a class="nav-item" href="shop.html"><span class="nav-icon">🛍️</span><span class="nav-label">Shop</span></a>
+            <a class="nav-item" href="profile.html"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
+            <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a>
+            <div class="sidebar-spacer"></div>
+            <div class="sidebar-tip"><strong>Little and often wins.</strong>A few minutes of focused review can make your new words stick.</div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar" aria-label="Your learning stats">
+                <a class="top-stat stat-pill streak" href="streak.html" aria-label="Streak"><span>🔥</span><span id="streakLink">0</span></a>
+                <a class="top-stat stat-pill gems" href="shop.html" aria-label="Gems"><span>💎</span><span id="diamondLink">100</span></a>
+                <a class="top-stat stat-pill hearts" href="shop.html" aria-label="Hearts"><span>❤️</span><span id="heartLink">5</span></a>
+                <a class="top-stat stat" href="profile.html" aria-label="Experience points"><span>⚡</span><span id="xpValue">0 XP</span></a>
+            </header>
+
+            <div class="content-wrap">
+                <section class="welcome-row" aria-labelledby="pageTitle">
+                    <div>
+                        <p class="eyebrow">Your daily training</p>
+                        <h1 id="pageTitle">Practice makes progress</h1>
+                        <p class="welcome-copy">Strengthen what you know, revisit tricky words, and build a learning streak one small win at a time.</p>
+                    </div>
+                    <div class="goal-card" aria-label="Daily XP goal">
+                        <div class="goal-title"><span>Daily XP goal</span><span>🎯</span></div>
+                        <p class="goal-meta"><span id="goalXp">0</span> / <span id="goalTarget">20</span> XP today</p>
+                        <div class="progress-track" role="progressbar" aria-label="Daily XP goal progress" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0">
+                            <div class="progress-fill" id="goalProgress"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="hero" aria-labelledby="reviewTitle">
+                    <div class="hero-copy">
+                        <p class="eyebrow">A smart place to start</p>
+                        <h2 id="reviewTitle">Make your tricky words stick</h2>
+                        <p>Review words you missed and get a little closer to remembering them for good.</p>
+                        <button class="primary-btn" type="button" data-mode="mistakes">Start a quick review <span aria-hidden="true">→</span></button>
+                    </div>
+                    <div class="hero-mascot" aria-hidden="true">🦉</div>
+                </section>
+
+                <section aria-labelledby="practiceTitle">
+                    <div class="section-heading">
+                        <div><h2 id="practiceTitle">Choose your practice</h2><p>Pick a skill and jump straight in.</p></div>
+                        <button class="text-link" type="button" id="shufflePractice">Surprise me ↗</button>
+                    </div>
+                    <div class="practice-grid">
+                        <button class="practice-card" type="button" data-mode="mistakes" style="--card-color:#ff9600">
+                            <span class="card-tag">Recommended</span><span class="card-icon">🧠</span>
+                            <strong>Review mistakes</strong><span class="card-description">Revisit questions you got wrong and turn them into wins.</span>
+                            <span class="card-progress"><span class="card-progress-line"><span>Words to revisit</span><span id="mistakeCount">0</span></span><span class="mini-track"><span class="mini-fill" id="mistakeProgress"></span></span></span>
+                        </button>
+                        <button class="practice-card" type="button" data-mode="words" style="--card-color:#a560e8">
+                            <span class="card-icon">📚</span><strong>Words</strong><span class="card-description">Build vocabulary with quick translation rounds.</span>
+                            <span class="card-progress"><span class="card-progress-line"><span>Vocabulary review</span><span>5 min</span></span><span class="mini-track"><span class="mini-fill" style="width:42%"></span></span></span>
+                        </button>
+                        <button class="practice-card" type="button" data-mode="listening" style="--card-color:#1cb0f6">
+                            <span class="card-icon">🎧</span><strong>Listening</strong><span class="card-description">Listen closely and choose the phrase you hear.</span>
+                            <span class="card-progress"><span class="card-progress-line"><span>Audio practice</span><span>5 rounds</span></span><span class="mini-track"><span class="mini-fill" style="width:35%"></span></span></span>
+                        </button>
+                        <button class="practice-card" type="button" data-mode="speaking" style="--card-color:#ff4b4b">
+                            <span class="card-icon">🎙️</span><strong>Speaking</strong><span class="card-description">Say it out loud and practice your pronunciation.</span>
+                            <span class="card-progress"><span class="card-progress-line"><span>Speaking practice</span><span>5 rounds</span></span><span class="mini-track"><span class="mini-fill" style="width:20%"></span></span></span>
+                        </button>
+                        <button class="practice-card" type="button" data-mode="speed" style="--card-color:#58a700">
+                            <span class="card-tag">60 seconds</span><span class="card-icon">⚡</span><strong>Quick practice</strong><span class="card-description">How many can you get right before the timer runs out?</span>
+                            <span class="card-progress"><span class="card-progress-line"><span>Fast recall</span><span>Timed</span></span><span class="mini-track"><span class="mini-fill" style="width:64%"></span></span></span>
+                        </button>
+                        <button class="practice-card" type="button" data-mode="mixed" style="--card-color:#ec75aa">
+                            <span class="card-icon">🔄</span><strong>Mixed review</strong><span class="card-description">A little bit of everything, adapted to keep you learning.</span>
+                            <span class="card-progress"><span class="card-progress-line"><span>All skills</span><span>5 rounds</span></span><span class="mini-track"><span class="mini-fill" style="width:55%"></span></span></span>
+                        </button>
+                    </div>
+                </section>
+
+                <div class="bottom-grid">
+                    <section class="panel" aria-labelledby="skillsTitle">
+                        <h2 id="skillsTitle">Your skills</h2>
+                        <p class="panel-subtitle">Keep each skill fresh with a little review.</p>
+                        <div class="skill-row"><span class="skill-emoji">🗣️</span><span><span class="skill-name">Speaking</span><span class="skill-detail">Practice clear pronunciation</span></span><span class="skill-level">Ready</span></div>
+                        <div class="skill-row"><span class="skill-emoji">🎧</span><span><span class="skill-name">Listening</span><span class="skill-detail">Train your ear to catch more</span></span><span class="skill-level">Ready</span></div>
+                        <div class="skill-row"><span class="skill-emoji">📖</span><span><span class="skill-name">Vocabulary</span><span class="skill-detail">Recall useful words and phrases</span></span><span class="skill-level">Ready</span></div>
+                    </section>
+                    <section class="panel" aria-labelledby="streakPanelTitle">
+                        <h2 id="streakPanelTitle">Keep your streak going</h2>
+                        <p class="panel-subtitle">A little practice today keeps your momentum alive.</p>
+                        <div class="streak-banner"><span class="fire" aria-hidden="true">🔥</span><span><strong><span id="streakCopy">Start a new streak</span></strong><span>Practice today to keep it growing.</span></span></div>
+                        <a class="text-link" href="streak.html" style="display:inline-block;margin-top:16px">View streak details →</a>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="sounds.js"></script>
+    <script>
+        (() => {
+            'use strict';
+
+            const DAILY_GOAL = 20;
+            const HEART_CAP = 5;
+            const PRACTICE_KEY = 'MusalingoPracticeData';
+            const $ = id => document.getElementById(id);
+            let profile = readProfile();
+            let practiceData = readPracticeData();
+            let toastTimer;
+
+            function readProfile() {
+                try {
+                    const raw = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
+                    return {
+                        ...raw,
+                        xp: finiteInt(raw.xp, 0),
+                        diamonds: finiteInt(raw.diamonds, 100),
+                        hearts: Math.min(HEART_CAP, finiteInt(raw.hearts, HEART_CAP)),
+                        streak: finiteInt(raw.streak, 0),
+                        dailyQuestProgress: raw.dailyQuestProgress && typeof raw.dailyQuestProgress === 'object'
+                            ? { ...raw.dailyQuestProgress }
+                            : { xp: 0, lessons: 0, practice: 0, accuracy: 0, streak: 0 }
+                    };
+                } catch (error) {
+                    console.warn('[practice] Could not read learner profile; using a local guest profile.', error);
+                    return { xp: 0, diamonds: 100, hearts: HEART_CAP, streak: 0, dailyQuestProgress: { xp: 0, lessons: 0, practice: 0, accuracy: 0, streak: 0 } };
+                }
+            }
+
+            function finiteInt(value, fallback) {
+                const number = Number(value);
+                return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : fallback;
+            }
+
+            function todayKey() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            function readPracticeData() {
+                try {
+                    const raw = JSON.parse(localStorage.getItem(PRACTICE_KEY) || '{}');
+                    return {
+                        mistakes: Array.isArray(raw.mistakes)
+                            ? raw.mistakes.filter(item => item && typeof item === 'object' && item.question).slice(0, 100)
+                            : []
+                    };
+                } catch (error) {
+                    console.warn('[practice] Could not read practice history; starting a fresh review.', error);
+                    return { mistakes: [] };
+                }
+            }
+
+            function renderStats() {
+                $('streakLink').textContent = profile.streak;
+                $('diamondLink').textContent = profile.diamonds;
+                $('heartLink').textContent = profile.hearts;
+                $('xpValue').textContent = `${profile.xp} XP`;
+                const dailyXp = profile.dailyQuestDate === todayKey()
+                    ? finiteInt(profile.dailyQuestProgress.xp, 0)
+                    : 0;
+                $('goalXp').textContent = dailyXp;
+                $('goalTarget').textContent = DAILY_GOAL;
+                const progress = Math.min(100, (dailyXp / DAILY_GOAL) * 100);
+                $('goalProgress').style.width = `${progress}%`;
+                const goalBar = $('goalProgress').parentElement;
+                goalBar.setAttribute('aria-valuemax', DAILY_GOAL);
+                goalBar.setAttribute('aria-valuenow', Math.min(DAILY_GOAL, dailyXp));
+                $('mistakeCount').textContent = practiceData.mistakes.length;
+                $('mistakeProgress').style.width = `${Math.min(100, practiceData.mistakes.length * 20)}%`;
+                $('streakCopy').textContent = profile.streak ? `${profile.streak} day${profile.streak === 1 ? '' : 's'} in a row` : 'Start a new streak';
+            }
+
+            function showToast(message) {
+                const toast = $('toast');
+                toast.textContent = message;
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+            }
+
+            function startPractice(mode) {
+                profile = readProfile();
+                const courses = Array.isArray(profile.courses) ? profile.courses : [];
+                const course = courses.find(item => item && item.id === profile.activeCourseId) || courses[0];
+                if (!course) {
+                    window.location.href = 'catalog.html';
+                    return;
+                }
+
+                const lessons = Array.isArray(course.lessons) ? course.lessons : [];
+                const lesson = lessons.find(item => item && !item.completed && item.id) || lessons.find(item => item && item.id);
+                if (!lesson) {
+                    window.location.href = `dashboard.html?courseId=${encodeURIComponent(course.id)}`;
+                    return;
+                }
+
+                if (mode === 'mistakes' && !practiceData.mistakes.some(item => item.courseId === course.id)) {
+                    showToast('No missed questions for this course yet. Complete a lesson first.');
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    courseId: course.id,
+                    lessonId: lesson.id,
+                    review: '1',
+                    practiceMode: mode
+                });
+                window.location.href = `lesson.html?${params.toString()}`;
+            }
+
+            function currentQuestion() {
+                if (!session) return null;
+                return session.questions[session.questionIndex % session.questions.length];
+            }
+
+            function renderQuestion() {
+                if (!session) return;
+                const question = currentQuestion();
+                const number = session.questionIndex + 1;
+                const count = session.config.count;
+                $('roundLabel').textContent = session.mode === 'speed' ? `${session.timeLeft}s left` : `${number} / ${count}`;
+                $('sessionProgress').style.width = session.mode === 'speed'
+                    ? `${(session.answered % 10) * 10}%`
+                    : `${Math.min(100, (session.answered / count) * 100)}%`;
+                $('sessionProgress').parentElement.setAttribute('aria-valuenow', String(session.answered));
+                $('sessionProgress').parentElement.setAttribute('aria-valuemax', String(session.mode === 'speed' ? 10 : count));
+                $('sessionHearts').textContent = Math.max(0, profile.hearts - session.wrongIds.length);
+                $('exerciseKicker').textContent = session.config.label;
+                $('exerciseTitle').textContent = session.config.title;
+                $('exerciseInstruction').textContent = session.config.instruction;
+                $('promptText').textContent = question.prompt;
+                $('promptText').lang = question.reverse ? 'en' : 'ja';
+                $('promptHint').textContent = question.hint;
+                $('playAudio').hidden = question.reverse;
+                $('sessionFeedback').className = 'session-feedback';
+                $('sessionFeedback').textContent = '';
+                $('checkAnswer').textContent = 'Check';
+                $('checkAnswer').disabled = true;
+                $('footerHint').textContent = session.mode === 'speaking' ? 'Try saying it aloud before you answer.' : 'Choose an answer to continue.';
+                const answerList = $('answerList');
+                answerList.replaceChildren();
+                shuffle(question.choices).forEach(choice => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'answer-btn';
+                    button.textContent = choice;
+                    button.addEventListener('click', () => selectAnswer(button, choice));
+                    answerList.append(button);
+                });
+            }
+
+            function selectAnswer(button, choice) {
+                if (!session || session.answered >= session.config.count && session.mode !== 'speed') return;
+                if (button.disabled) return;
+                session.selected = choice;
+                $('answerList').querySelectorAll('.answer-btn').forEach(item => item.classList.toggle('selected', item === button));
+                $('checkAnswer').disabled = false;
+            }
+
+            function submitAnswer() {
+                if (!session || session.selected === null) return;
+                const question = currentQuestion();
+                const correct = session.selected === question.answer;
+                session.answered += 1;
+                if (correct) {
+                    session.correct += 1;
+                    practiceData.mistakes = practiceData.mistakes.filter(id => id !== question.id);
+                    if (window.SFX && typeof SFX.correct === 'function') SFX.correct();
+                } else {
+                    if (!session.wrongIds.includes(question.id)) session.wrongIds.push(question.id);
+                    if (!practiceData.mistakes.includes(question.id)) practiceData.mistakes.push(question.id);
+                    if (window.SFX && typeof SFX.wrong === 'function') SFX.wrong();
+                }
+
+                $('answerList').querySelectorAll('.answer-btn').forEach(button => {
+                    button.disabled = true;
+                    if (button.textContent === question.answer) button.classList.add('correct');
+                    if (button.textContent === session.selected && !correct) button.classList.add('wrong');
+                });
+                const feedback = $('sessionFeedback');
+                feedback.className = `session-feedback show ${correct ? 'is-correct' : 'is-wrong'}`;
+                feedback.textContent = correct ? 'Nicely done! That’s right.' : `Not quite. The correct answer is “${question.answer}”.`;
+                $('footerHint').textContent = correct ? 'Great recall!' : 'You’ll see this one again in review.';
+                $('checkAnswer').textContent = 'Continue';
+                $('checkAnswer').disabled = false;
+                session.selected = null;
+            }
+
+            function continueSession() {
+                if (!session) return;
+                if (!$('answerList').querySelector('.answer-btn:disabled')) {
+                    submitAnswer();
+                    return;
+                }
+                if (session.mode !== 'speed' && session.answered >= session.config.count) {
+                    finishSession();
+                    return;
+                }
+                session.questionIndex += 1;
+                renderQuestion();
+                if (session.mode === 'listening') setTimeout(playPronunciation, 180);
+            }
+
+            function finishSession() {
+                if (!session || session.saved) return;
+                session.saved = true;
+                if (session.timer) clearInterval(session.timer);
+                const xpEarned = session.correct * 4 + (session.correct >= 4 ? 5 : 0);
+                profile.xp = finiteInt(profile.xp, 0) + xpEarned;
+                profile.hearts = Math.max(0, Math.min(HEART_CAP, finiteInt(profile.hearts, HEART_CAP) - session.wrongIds.length));
+                profile.dailyQuestProgress = profile.dailyQuestProgress || { xp: 0, lessons: 0, practice: 0, accuracy: 0, streak: 0 };
+                profile.dailyQuestProgress.xp = finiteInt(profile.dailyQuestProgress.xp, 0) + xpEarned;
+                profile.dailyQuestProgress.practice = finiteInt(profile.dailyQuestProgress.practice, 0) + 1;
+                practiceData.xpToday += xpEarned;
+                practiceData.sessionsToday += 1;
+                if (session.mode === 'speed') practiceData.bestSpeed = Math.max(practiceData.bestSpeed, session.correct);
+                persist();
+                if (window.SFX && typeof SFX.complete === 'function') SFX.complete();
+                $('exerciseBody').hidden = true;
+                $('sessionFooter').hidden = true;
+                $('completionPanel').hidden = false;
+                $('completionTitle').textContent = session.answered ? 'Practice complete!' : 'Time is up!';
+                $('completionMessage').textContent = session.answered
+                    ? 'Great work. Every round makes your new language a little stronger.'
+                    : 'Nice effort. Come back for another quick round whenever you’re ready.';
+                $('resultXp').textContent = `+${xpEarned}`;
+                $('resultAccuracy').textContent = `${session.answered ? Math.round((session.correct / session.answered) * 100) : 0}%`;
+                $('resultCorrect').textContent = `${session.correct}/${session.answered}`;
+                $('finishSession').focus();
+            }
+
+            function playPronunciation() {
+                if (!session) return;
+                const question = currentQuestion();
+                if (!question || question.reverse) return;
+                if (window.SFX && typeof SFX.pronounce === 'function') {
+                    SFX.pronounce(question.prompt, { lang: 'Japanese', rate: .82 });
+                } else if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(question.prompt);
+                    utterance.lang = 'ja-JP';
+                    utterance.rate = .82;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    showToast('Audio pronunciation is not available in this browser.');
+                }
+            }
+
+            function closeSession() {
+                if (session && session.timer) clearInterval(session.timer);
+                if (window.SFX && typeof SFX.cancelSpeech === 'function') SFX.cancelSpeech();
+                session = null;
+                modal.hidden = true;
+                document.body.style.overflow = '';
+            }
+
+            document.querySelectorAll('[data-mode]').forEach(button => {
+                button.addEventListener('click', () => startPractice(button.dataset.mode));
+            });
+            $('shufflePractice').addEventListener('click', () => {
+                const options = ['mistakes', 'words', 'listening', 'speaking', 'speed', 'mixed'];
+                startPractice(options[Math.floor(Math.random() * options.length)]);
+            });
+            window.addEventListener('storage', event => {
+                if (event.key === 'MusalingoProfile') profile = readProfile();
+                if (event.key === 'MusalingoPracticeData') practiceData = readPracticeData();
+                renderStats();
+            });
+
+            renderStats();
+        })();
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script>
+        (() => {
+            try {
+                const settings = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+                if (settings.noGamification) {
+                    document.querySelectorAll('#diamondLink, #heartLink, #xpValue').forEach(element => {
+                        const stat = element.closest('.stat-pill, .stat');
+                        if (stat) stat.hidden = true;
+                    });
+                    document.querySelector('.goal-card').hidden = true;
+                    document.querySelectorAll('a[href="shop.html"], a[href="quest.html"]').forEach(link => { link.hidden = true; });
+                } else if (settings.noHearts) {
+                    const hearts = document.getElementById('heartLink');
+                    if (hearts) hearts.closest('.stat-pill').hidden = true;
+                }
+                if (settings.noStreaks) {
+                    const streak = document.getElementById('streakLink');
+                    if (streak) streak.closest('.stat-pill').hidden = true;
+                    document.getElementById('streakPanelTitle').closest('.panel').hidden = true;
+                }
+                if (settings.noLeaderboards) {
+                    const leaderboardLink = document.querySelector('a[href="coming-soon.html?feature=leaderboards"]');
+                    if (leaderboardLink) leaderboardLink.hidden = true;
+                }
+            } catch (error) {
+                console.warn('[practice] Could not apply optional feature settings.', error);
+            }
+        })();
+    </script>
+    <script src="pwa.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Streak Society - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --card: #ffffff;
+            --blue: #2b70c9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+            color: var(--text);
+            padding: 24px;
+        }
+
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .panel {
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 16px;
+            background: #fafafa;
+        }
+
+        .friend-streak-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .friend-streak-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid #f2d4e4;
+        }
+
+        .friend-streak-name {
+            font-weight: 800;
+        }
+
+        .friend-streak-value {
+            color: var(--accent-dark);
+            font-weight: 800;
+        }
+
+        .friends-empty {
+            margin: 12px 0 0;
+            padding: 14px;
+            border-radius: 14px;
+            background: #fdf2f8;
+            color: #6d2d57;
+            font-weight: 700;
+        }
+
+        .add-friends-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 9px 13px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .calendar-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .calendar-nav {
+            display: inline-grid;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            border: 1px solid #f2c4de;
+            border-radius: 50%;
+            background: #fff;
+            color: var(--accent-dark);
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .weekday-row,
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+        }
+
+        .weekday-row {
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .calendar-day {
+            display: grid;
+            min-height: 42px;
+            place-items: center;
+            border: 1px solid #edf0f5;
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .calendar-day.empty {
+            border-color: transparent;
+            background: transparent;
+        }
+
+        .calendar-day.active {
+            border-color: var(--accent);
+            background: #f8d8eb;
+            color: #6d2d57;
+        }
+
+        .calendar-day.missed {
+            border-color: #f2a1a1;
+            background: #fee2e2;
+            color: #b42318;
+        }
+
+        .calendar-day.frozen {
+            border-color: #93c5fd;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .calendar-day.today {
+            outline: 3px solid #f6c0dd;
+            outline-offset: 1px;
+        }
+
+        .calendar-legend {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.completed {
+            background: #f8d8eb;
+            border: 1px solid var(--accent);
+        }
+
+        .legend-dot.missed {
+            background: #fee2e2;
+            border: 1px solid #f2a1a1;
+        }
+
+        .legend-dot.frozen {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+        }
+
+        body.dark-mode .calendar-day.empty {
+            border-color: transparent;
+            background: transparent;
+        }
+
+        body.dark-mode .calendar-day.active,
+        body.dark-mode .legend-dot.completed {
+            border-color: #a85587;
+            background: #4a2d43;
+            color: #fbcfe8;
+        }
+
+        body.dark-mode .calendar-day.missed,
+        body.dark-mode .legend-dot.missed {
+            border-color: #b4535b;
+            background: #4c252b;
+            color: #fecaca;
+        }
+
+        body.dark-mode .calendar-day.frozen,
+        body.dark-mode .legend-dot.frozen {
+            border-color: #4b83bd;
+            background: #1e3a5f;
+            color: #bfdbfe;
+        }
+
+        body.dark-mode .calendar-day.today {
+            outline-color: #ec96c7;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+
+            .page {
+                max-width: 100%;
+            }
+
+            .card {
+                padding: 18px 16px;
+                border-radius: 18px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="card">
+            <div class="topbar">
+                <div>
+                    <h1 style="color:var(--accent-dark);">Streak Society</h1>
+                </div>
+                <a class="btn" href="dashboard.html">Back to dashboard</a>
+            </div>
+
+            <!-- Streak Section -->
+            <div id="streakSection">
+                <div class="pill" id="streakInfo">Loading streak…</div>
+                <div class="grid" style="margin-top:16px;">
+                    <div class="panel">
+                        <h3>Current streak</h3>
+                        <p id="currentStreak">0 days</p>
+                    </div>
+                    <div class="panel">
+                        <h3>Streak Freezes</h3>
+                        <p id="freezeCountDisplay">❄️ 0</p>
+                        <p style="font-size:0.8rem; margin-top:4px; color:var(--muted);">Buy up to 3 in the shop.
+                            Rewards can add more.</p>
+                    </div>
+                </div>
+                <div class="panel" style="margin-top:14px;">
+                    <label style="font-weight:700;"><input type="checkbox" id="pauseToggle" /> Pause streak</label>
+                    <div id="calendar" style="margin-top:15px;">
+                        <div class="calendar-header">
+                            <button class="calendar-nav" id="previousMonth" type="button"
+                                aria-label="Previous month">&lsaquo;</button>
+                            <h3 id="calendarTitle">Loading calendar...</h3>
+                            <button class="calendar-nav" id="nextMonth" type="button"
+                                aria-label="Next month">&rsaquo;</button>
+                        </div>
+                        <div class="weekday-row" aria-hidden="true">
+                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid" aria-label="Streak calendar"></div>
+                        <div class="calendar-legend">
+                            <span class="legend-item"><span
+                                    class="legend-dot completed"></span><span>Completed</span></span>
+                            <span class="legend-item"><span class="legend-dot missed"></span><span>Missed</span></span>
+                            <span class="legend-item"><span class="legend-dot frozen"></span><span>Streak
+                                    freeze</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-top:14px;">
+                    <h3>Friend streaks</h3>
+                    <div id="friendStreaks"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load Data
+        const profile = JSON.parse(localStorage.getItem('MusalingoProfile')) || {};
+        const settings = JSON.parse(localStorage.getItem('MusalingoSettings')) || {};
+        const friends = Array.isArray(profile.friends) ? profile.friends : [];
+
+        // Remove Bloat Logic
+        if (settings.noStreaks) {
+            document.getElementById('streakSection').classList.add('hidden');
+        }
+
+        // Streak Logic
+        const streakInfo = document.getElementById('streakInfo');
+        const currentStreak = document.getElementById('currentStreak');
+        const streakStatus = document.getElementById('streakStatus');
+        const pauseToggle = document.getElementById('pauseToggle');
+        const calendarTitle = document.getElementById('calendarTitle');
+        const calendarGrid = document.getElementById('calendarGrid');
+        const lessonDates = new Set([...(profile.lessonDates || []), profile.lastLessonDate].filter(Boolean));
+        const freezeDates = new Set((profile.streakFreezeDates || []).filter(Boolean));
+        const firstActivityDate = [...lessonDates].sort()[0] || null;
+        let calendarMonth = new Date();
+
+        function dateKey(year, month, day) {
+            return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        function renderCalendar() {
+            const year = calendarMonth.getFullYear();
+            const month = calendarMonth.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+            calendarTitle.textContent = calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+            calendarGrid.innerHTML = '';
+
+            for (let index = 0; index < firstDay; index += 1) {
+                const emptyDay = document.createElement('span');
+                emptyDay.className = 'calendar-day empty';
+                emptyDay.setAttribute('aria-hidden', 'true');
+                calendarGrid.appendChild(emptyDay);
+            }
+
+            for (let day = 1; day <= daysInMonth; day += 1) {
+                const key = dateKey(year, month, day);
+                const dayElement = document.createElement('span');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+                dayElement.setAttribute('aria-label', key);
+                if (lessonDates.has(key)) {
+                    dayElement.classList.add('active');
+                    dayElement.setAttribute('aria-label', `${key}, lesson completed`);
+                } else if (firstActivityDate && key >= firstActivityDate && key < todayKey) {
+                    if (freezeDates.has(key)) {
+                        dayElement.classList.add('frozen');
+                        dayElement.setAttribute('aria-label', `${key}, streak freeze`);
+                    } else {
+                        dayElement.classList.add('missed');
+                        dayElement.setAttribute('aria-label', `${key}, lesson missed`);
+                    }
+                }
+                if (key === todayKey) dayElement.classList.add('today');
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        function updateUI() {
+            if (!profile.streak) {
+                streakInfo.textContent = 'No streak data yet';
+                currentStreak.textContent = '0 days';
+                if (streakStatus) streakStatus.textContent = 'Start a lesson to begin.';
+            } else {
+                const status = profile.streakStatus === 'paused' ? 'Paused' : 'Active';
+                streakInfo.textContent = `Streak: ${profile.streak} days`;
+                currentStreak.textContent = `${profile.streak} days`;
+                if (streakStatus) streakStatus.textContent = status;
+                pauseToggle.checked = profile.streakStatus === 'paused';
+            }
+
+            // Streak Freeze counter
+            const freezes = Math.min(3, Math.max(0, Math.floor(Number(profile.streakFreezes) || 0)));
+            const freezeEl = document.getElementById('freezeCountDisplay');
+            if (freezeEl) freezeEl.textContent = `❄️ ${freezes}`;
+        }
+
+        function renderFriendStreaks() {
+            const container = document.getElementById('friendStreaks');
+            if (!friends.length) {
+                container.innerHTML = '<div class="friends-empty">No friends are there yet.<br><a class="add-friends-link" href="profile.html#friends">Add new friends</a></div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="friend-streak-list"></div>';
+            const list = container.querySelector('.friend-streak-list');
+            friends.forEach(friend => {
+                const row = document.createElement('div');
+                row.className = 'friend-streak-row';
+                row.innerHTML = '<span class="friend-streak-name"></span><span class="friend-streak-value"></span>';
+                row.querySelector('.friend-streak-name').textContent = friend.name || 'Friend';
+                row.querySelector('.friend-streak-value').textContent = `${Number(friend.streak) || 0} days`;
+                list.appendChild(row);
+            });
+        }
+
+        pauseToggle.addEventListener('change', () => {
+            profile.streakStatus = pauseToggle.checked ? 'paused' : 'active';
+            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+            updateUI();
+        });
+
+        document.getElementById('previousMonth').addEventListener('click', () => {
+            calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+            renderCalendar();
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+            renderCalendar();
+        });
+
+        updateUI();
+        renderCalendar();
+        renderFriendStreaks();
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

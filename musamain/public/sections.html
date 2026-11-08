@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sections - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#EC96C7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Musalingo">
+<meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --bg: #131f24;
+            --card: #1c2a30;
+            --card-locked: #1a262b;
+            --text: #f1f7fb;
+            --muted: #8a9aa6;
+            --accent: #EC96C7;
+            --accent-dark: #C46AA1;
+            --accent-shadow: #C46AA1;
+            --blue: #1cb0f6;
+            --blue-dark: #1899d6;
+            --border: #2f3e46;
+            --bubble: #2b3a42;
+            --track: #37464f;
+        }
+
+        body.light-mode {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --card-locked: #f0f2f7;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --bubble: #eef2f7;
+            --track: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px 60px;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .wrap {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-weight: 700;
+            text-decoration: none;
+            padding: 8px 0;
+            margin-bottom: 14px;
+            font-size: 1.05rem;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        .section-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .section-card {
+            position: relative;
+            border-radius: 16px;
+            padding: 22px 24px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            overflow: hidden;
+            transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+        }
+
+        .section-card.completed {
+            background: var(--card);
+        }
+
+        .section-card.completed::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.02) 0 20px,
+                    rgba(255, 255, 255, 0.05) 20px 40px);
+            pointer-events: none;
+        }
+
+        .section-card.locked {
+            background: var(--card-locked);
+            opacity: 0.6;
+        }
+
+        .section-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .section-eyebrow {
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 0.78rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            cursor: pointer;
+        }
+
+        .section-eyebrow:hover {
+            text-decoration: underline;
+        }
+
+        .section-eyebrow .dot {
+            color: var(--muted);
+            margin: 0 6px;
+        }
+
+        .section-title {
+            margin: 0 0 14px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .section-card.locked .section-title {
+            color: var(--muted);
+        }
+
+        .section-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+        }
+
+        .section-status .check {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 0.7rem;
+        }
+
+        .review-btn {
+            flex-shrink: 0;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 2px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.15s ease;
+        }
+
+        .review-btn:hover {
+            background: color-mix(in srgb, var(--accent) 12%, transparent);
+        }
+
+        .progress-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 14px;
+            background: var(--track);
+            border-radius: 999px;
+            overflow: hidden;
+            max-width: 220px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .progress-pct {
+            font-weight: 800;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+
+        .trophy-small {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .units-label {
+            color: var(--muted);
+            font-weight: 700;
+            font-size: 0.88rem;
+            margin-bottom: 14px;
+        }
+
+        .illustration {
+            position: relative;
+            flex-shrink: 0;
+            width: 170px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: var(--bubble);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            line-height: 1.35;
+            text-align: center;
+            max-width: 170px;
+        }
+
+        .speech-bubble::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--bubble);
+            border-bottom: 0;
+        }
+
+        .cat {
+            font-size: 3.4rem;
+            line-height: 1;
+            user-select: none;
+            background: radial-gradient(circle at 50% 55%, rgba(0, 0, 0, 0.12) 0%, transparent 65%);
+            padding: 10px;
+            border-radius: 50%;
+        }
+
+        .continue-btn,
+        .jump-btn {
+            display: inline-block;
+            padding: 13px 40px;
+            border-radius: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            margin-top: 6px;
+        }
+
+        .continue-btn {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 0 var(--accent-shadow, var(--accent-dark));
+        }
+
+        .continue-btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .jump-btn {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+
+        .jump-btn:hover {
+            background: color-mix(in srgb, var(--accent) 12%, transparent);
+        }
+
+        @media (max-width: 620px) {
+            .section-top {
+                flex-direction: column;
+            }
+
+            .illustration {
+                width: 100%;
+            }
+
+            .section-title {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="wrap">
+        <a class="back-link" id="backLink" href="#">
+            <span>←</span><span>Back</span>
+        </a>
+        <div class="section-list" id="sectionList"></div>
+    </div>
+
+    <script src="course-curriculum.js"></script>
+    <script src="theme.js"></script>
+    <script src="sections.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

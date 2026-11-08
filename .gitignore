@@ -1,0 +1,41 @@
+# ── SECRETS — NEVER commit ──
+.env
+.env.*
+!.env.example
+*.env
+!*.env.example
+
+# Firebase service account keys
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+
+# Node modules (both levels)
+node_modules/
+musamain/node_modules/
+
+# Blueprint folder (design drafts, screenshots, videos — not part of app)
+Musalingo blueprint/
+
+# Downloaded webpage assets
+Musalingo - Learn Japanese*
+*_files/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+.render/
+push-musalingo.ps1
+*.ps1
+!smoke-test.ps1

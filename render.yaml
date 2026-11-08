@@ -1,0 +1,77 @@
+# ============================================================
+#  render.yaml — Musalingo deployment blueprint
+#  Docs: https://render.com/docs/blueprint-spec
+#
+#  Place this file at the ROOT of the repo (next to README.md).
+#  Render reads it when you connect the repo or click "Deploy to Render".
+#
+#  Root Directory must be "musamain" because package.json lives there.
+# ============================================================
+
+services:
+  - type: web
+    name: musalingo
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+
+    # ── Build & run ──
+    # The app lives in musamain/, not repo root.
+    rootDir: musamain
+    buildCommand: npm install
+    startCommand: node server.js
+
+    # ── Health check ──
+    # Render pings this to confirm the service is actually up.
+    # Your server.js serves this endpoint with 200 if Firebase config exists.
+    healthCheckPath: /api/firebase-config
+
+    # ── Auto-deploy ──
+    # Re-deploy on every push to `main`.
+    autoDeploy: true
+
+    # ── Environment variables ──
+    # Variables with `sync: false` are prompted during initial setup
+    # (e.g. when clicking "Deploy to Render"). Values are NOT stored
+    # in this file — they're set in the Render dashboard per-service.
+    envVars:
+      # ── Node environment ──
+      - key: NODE_ENV
+        value: production
+
+      # ── AI (Gemini) ──
+      - key: GEMINI_API_KEY
+        sync: false          # paste your comma-separated keys during setup
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash-lite,gemini-2.5-flash,gemini-flash-latest
+
+      # ── Firebase client (public keys — safe to pre-fill placeholders) ──
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+
+      # ── Firebase Admin (server-side secrets) ──
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+
+      # ── Email (feedback form) ──
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_TO
+        sync: false

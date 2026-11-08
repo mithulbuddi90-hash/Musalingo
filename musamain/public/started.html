@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#EC96C7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Musalingo">
+<meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f8fbff 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .card {
+            width: min(460px, 100%);
+            background: var(--card);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .brand {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-dark);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        form {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-shadow, var(--accent-dark)) 16%, transparent);
+        }
+
+        .btn {
+            margin-top: 8px;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--accent-shadow, var(--accent-dark));
+        }
+
+        .btn:hover {
+            transform: translateY(1px);
+        }
+
+        .message {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .message.error {
+            display: block;
+            background: #fff1f2;
+            color: #b91c1c;
+            border: 1px solid #fecdd3;
+        }
+
+        .message.success {
+            display: block;
+            background: #fdf2f8;
+            color: #8a2d63;
+            border: 1px solid #f7bfdc;
+        }
+
+        .footer {
+            margin-top: 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .footer a {
+            color: var(--accent-dark);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        @media (max-width: 500px) {
+            body {
+                padding: 14px;
+            }
+
+            .card {
+                padding: 22px 16px;
+                border-radius: 18px;
+            }
+
+            .brand {
+                font-size: 1.7rem;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="auth-page">
+    <div class="card">
+        <div class="brand">Musalingo</div>
+        <div class="subtitle">Create your new account and start learning.</div>
+
+        <form id="signupForm">
+            <label for="name">Full name</label>
+            <input id="name" name="name" type="text" placeholder="Enter your full name" required />
+
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="Enter your email" required />
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Create a password" required />
+
+            <button class="btn" type="submit">Create Account</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div class="oauth-grid" style="display:grid;gap:10px;margin-top:14px;">
+            <button class="oauth-btn" id="googleBtn" type="button">Continue
+                with Google</button>
+            <!-- <button class="oauth-btn" id="microsoftBtn" type="button"
+                style="border:1px solid #e5e7eb;background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;cursor:pointer;">Continue
+                with Microsoft</button> -->
+        <button class="link-btn" id="guestBtn" type="button">Continue as guest</button>
+        </div>
+
+        
+
+        <div class="footer">
+            Already have an account? <a href="signin.html">Sign in</a>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const messageBox = document.getElementById('message');
+            const showSetupMessage = () => {
+                messageBox.textContent = 'Account creation requires the Musalingo server. Run npm start from the musamain folder, then open ';
+                const link = document.createElement('a');
+                link.href = 'http://localhost:3000/started.html';
+                link.textContent = 'http://localhost:3000/started.html';
+                link.style.color = 'inherit';
+                link.style.fontWeight = '700';
+                messageBox.append(link, document.createTextNode('.'));
+                messageBox.className = 'message error';
+            };
+
+            if (location.protocol === 'file:') {
+                showSetupMessage();
+                document.getElementById('signupForm').addEventListener('submit', event => event.preventDefault());
+                document.querySelector('#signupForm button[type="submit"]').disabled = true;
+                document.getElementById('googleBtn').disabled = true;
+                document.getElementById('guestBtn').addEventListener('click', () => {
+                    localStorage.setItem('MusalingoGuest', 'true');
+                    localStorage.setItem('MusalingoLoggedIn', 'false');
+                    localStorage.removeItem('MusalingoUser');
+                    localStorage.removeItem('MusalingoUid');
+                    let profile = {};
+                    try {
+                        profile = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
+                    } catch (error) {
+                        console.warn('[signup] Could not read the local profile for guest navigation.', error);
+                    }
+                    location.href = Array.isArray(profile.courses) && profile.courses.length
+                        ? 'dashboard.html'
+                        : 'catalog.html';
+                });
+                return;
+            }
+
+            window.addEventListener('error', event => {
+                if (window.musalAuthReady) return;
+                console.error('[signup] Could not initialize authentication.', event.error || event.message);
+                messageBox.textContent = 'Account creation could not start. Check your connection and make sure the Musalingo server is running, then reload this page.';
+                messageBox.className = 'message error';
+            });
+        })();
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script type="module">
+        import app, {
+            clearGuestMode,
+            setGuestMode,
+            upsertSignedInUserDocument,
+            signInWithGooglePopup,
+            // signInWithMicrosoftPopup,
+            loadLocalProfile
+        } from './firebase.js';
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+        const form = document.getElementById('signupForm');
+        const messageBox = document.getElementById('message');
+        const guestBtn = document.getElementById('guestBtn');
+        const googleBtn = document.getElementById('googleBtn');
+        // const microsoftBtn = document.getElementById('microsoftBtn');
+
+        const auth = getAuth(app);
+
+        function showMessage(text, type) {
+            messageBox.textContent = text;
+            messageBox.className = `message ${type}`;
+        }
+
+        function redirectAfterAuth() {
+            const profile = loadLocalProfile();
+            const hasCourses = Array.isArray(profile.courses) && profile.courses.length > 0;
+            window.location.href = hasCourses ? 'dashboard.html' : 'catalog.html';
+        }
+
+        async function finishAuthCreate(user, displayName = 'Learner') {
+            const profile = loadLocalProfile();
+            await upsertSignedInUserDocument(user.uid, user.email || `${user.uid}@auth.local`, {
+                ...profile,
+                name: displayName || profile.name || 'Learner',
+                email: user.email || `${user.uid}@auth.local`,
+                friends: Array.isArray(profile.friends) ? profile.friends : [],
+                courses: Array.isArray(profile.courses) ? profile.courses : [],
+                inventory: Array.isArray(profile.inventory) ? profile.inventory : []
+            });
+            clearGuestMode();
+            localStorage.setItem('MusalingoLoggedIn', 'true');
+            localStorage.setItem('MusalingoUser', user.email || `${user.uid}@auth.local`);
+            redirectAfterAuth();
+        }
+
+        guestBtn.addEventListener('click', function () {
+            setGuestMode();
+            localStorage.removeItem('MusalingoLoggedIn');
+            localStorage.removeItem('MusalingoUser');
+            redirectAfterAuth();
+        });
+
+        googleBtn.addEventListener('click', async function () {
+            try {
+                const result = await signInWithGooglePopup();
+                await finishAuthCreate(result.user, result.user.displayName || 'Google user');
+            } catch (error) {
+                showMessage(error.message || 'Google sign-up failed.', 'error');
+            }
+        });
+
+        // microsoftBtn.addEventListener('click', async function () {
+        //     try {
+        //         const result = await signInWithMicrosoftPopup();
+        //         await finishAuthCreate(result.user, result.user.displayName || 'Microsoft user');
+        //     } catch (error) {
+        //         showMessage(error.message || 'Microsoft sign-up failed.', 'error');
+        //     }
+        // });
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const password = document.getElementById('password').value.trim();
+
+            if (!name || !email || !password) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters long.', 'error');
+                return;
+            }
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(async (userCredential) => {
+                    await updateProfile(userCredential.user, { displayName: name });
+                    const profile = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
+                    await upsertSignedInUserDocument(userCredential.user.uid, email, {
+                        ...profile,
+                        name,
+                        email,
+                        friends: Array.isArray(profile.friends) ? profile.friends : [],
+                        courses: Array.isArray(profile.courses) ? profile.courses : [],
+                        inventory: Array.isArray(profile.inventory) ? profile.inventory : []
+                    });
+                    clearGuestMode();
+                    showMessage(`Account created successfully for ${userCredential.user.email}!`, 'success');
+                    localStorage.setItem('MusalingoLoggedIn', 'true');
+                    localStorage.setItem('MusalingoUser', userCredential.user.email);
+                    redirectAfterAuth();
+                    form.reset();
+                })
+                .catch((error) => {
+                    showMessage(error.message || 'Unable to create account right now.', 'error');
+                });
+        });
+        window.musalAuthReady = true;
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+    
+</body>
+
+</html>

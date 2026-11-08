@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sound Player - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo sound test bench — hear every SFX and pronunciation voice.">
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --border: #e5e7eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --blue: #2b70c9;
+            --purple: #8b5cf6;
+        }
+
+        body.dark-mode {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #e5e7eb;
+            --muted: #aeb9ca;
+            --border: #374151;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px 60px;
+        }
+
+        .page {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 24px 8px 18px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            margin: 0 0 6px;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: var(--accent-dark);
+            font-weight: 900;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .status-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .status-pill {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--muted);
+        }
+
+        .status-pill.on {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #86efac;
+        }
+
+        .status-pill.off {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section h2 {
+            margin: 0 0 14px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .section h2 .desc {
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 10px;
+        }
+
+        .sound-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .sound-btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .sound-btn:active {
+            transform: translateY(1px);
+        }
+
+        .sound-btn .emoji {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        .sound-btn .label {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sound-btn .sub {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .tts-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tts-input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.95rem;
+            min-width: 0;
+        }
+
+        .tts-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-primary {
+            padding: 12px 22px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 4px 0 var(--accent-dark);
+            flex-shrink: 0;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--accent-dark);
+        }
+
+        .lang-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .chip {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .chip:hover {
+            border-color: var(--accent);
+        }
+
+        .chip.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-control {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-control:hover {
+            border-color: var(--accent);
+        }
+
+        .btn-control.danger {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        .btn-control.success {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #86efac;
+        }
+
+        .log {
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .log .entry {
+            display: flex;
+            gap: 8px;
+        }
+
+        .log .time {
+            color: var(--muted);
+            opacity: 0.6;
+            flex-shrink: 0;
+        }
+
+        .log .type-ok {
+            color: var(--success);
+        }
+
+        .log .type-err {
+            color: var(--danger);
+        }
+
+        .log .type-info {
+            color: var(--blue);
+        }
+
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .footer a {
+            color: var(--accent-dark);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 620px) {
+            body {
+                padding: 14px 12px 40px;
+            }
+
+            .section {
+                padding: 16px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tts-row {
+                flex-direction: column;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .btn-control {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <header class="hero">
+            <h1>🔊 Sound Player</h1>
+            <p>Every sound and voice in Musalingo, in one place.</p>
+        </header>
+
+        <div class="status-bar">
+            <span class="status-pill" id="statusSfx">SFX: checking…</span>
+            <span class="status-pill" id="statusSound">Sound: checking…</span>
+            <span class="status-pill" id="statusCtx">AudioContext: checking…</span>
+            <span class="status-pill" id="statusTTS">TTS: checking…</span>
+        </div>
+
+        <!-- ============ UI SOUNDS ============ -->
+        <section class="section">
+            <h2>
+                <span>👆 UI Sounds</span>
+                <span class="desc">Generic feedback</span>
+            </h2>
+            <div class="grid">
+                <button class="sound-btn" data-sfx="correct">
+                    <span class="emoji">✅</span>
+                    <span class="label">Correct<span class="sub">Two-note ding</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="wrong">
+                    <span class="emoji">❌</span>
+                    <span class="label">Wrong<span class="sub">Two-tone buzzer</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="complete">
+                    <span class="emoji">🎉</span>
+                    <span class="label">Complete<span class="sub">Four-note fanfare</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="error">
+                    <span class="emoji">⚠️</span>
+                    <span class="label">Error<span class="sub">Generic buzz</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="click">
+                    <span class="emoji">🖱️</span>
+                    <span class="label">Click<span class="sub">Short UI blip</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="tap">
+                    <span class="emoji">👆</span>
+                    <span class="label">Tap<span class="sub">Piece select</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="heartsLost">
+                    <span class="emoji">💔</span>
+                    <span class="label">Hearts Lost<span class="sub">Descending "aww"</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="gemEarned">
+                    <span class="emoji">💎</span>
+                    <span class="label">Gem Earned<span class="sub">Sparkly high chime</span></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ============ YOUR CHESS MOVES ============ -->
+        <section class="section">
+            <h2>
+                <span>♟️ Your Chess Moves</span>
+                <span class="desc">Normal pitch — this is you</span>
+            </h2>
+            <div class="grid">
+                <button class="sound-btn" data-sfx="move">
+                    <span class="emoji">♟️</span>
+                    <span class="label">Move<span class="sub">440 Hz click</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="capturePawn">
+                    <span class="emoji">♙</span>
+                    <span class="label">Capture Pawn<span class="sub">330 Hz low beep</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="captureMinor">
+                    <span class="emoji">♘</span>
+                    <span class="label">Capture Knight/Bishop<span class="sub">440 Hz medium beep</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="captureRook">
+                    <span class="emoji">♖</span>
+                    <span class="label">Capture Rook<span class="sub">587 Hz higher beep</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="captureQueen">
+                    <span class="emoji">♕</span>
+                    <span class="label">Capture Queen<span class="sub">784 Hz highest beep</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="check">
+                    <span class="emoji">👑</span>
+                    <span class="label">Check<span class="sub">Double beep</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="win">
+                    <span class="emoji">🏆</span>
+                    <span class="label">Win<span class="sub">Rising triad</span></span>
+                </button>
+                <button class="sound-btn" data-sfx="lose">
+                    <span class="emoji">😔</span>
+                    <span class="label">Lose<span class="sub">Descending minor</span></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ============ OPPONENT CHESS MOVES ============ -->
+        <section class="section">
+            <h2>
+                <span>👤 Opponent Chess Moves</span>
+                <span class="desc">Lower pitch — reversed feel</span>
+            </h2>
+            <div class="grid">
+                <button class="sound-btn" data-sfx="moveOpponent">
+                    <span class="emoji">♟️</span>
+                    <span class="label">Opponent Move<span class="sub">311 Hz — lower</span></span>
+                </button>
+                <button class="sound-btn" data-sfx-arg="captureOpponent" data-sfx-arg-value="P">
+                    <span class="emoji">♙</span>
+                    <span class="label">Opponent captures Pawn<span class="sub">220 Hz slide down</span></span>
+                </button>
+                <button class="sound-btn" data-sfx-arg="captureOpponent" data-sfx-arg-value="N">
+                    <span class="emoji">♘</span>
+                    <span class="label">Opponent captures Knight/Bishop<span class="sub">294 Hz slide down</span></span>
+                </button>
+                <button class="sound-btn" data-sfx-arg="captureOpponent" data-sfx-arg-value="R">
+                    <span class="emoji">♖</span>
+                    <span class="label">Opponent captures Rook<span class="sub">392 Hz slide down</span></span>
+                </button>
+                <button class="sound-btn" data-sfx-arg="captureOpponent" data-sfx-arg-value="Q">
+                    <span class="emoji">♕</span>
+                    <span class="label">Opponent captures Queen<span class="sub">523 Hz slide down</span></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ============ PRONUNCIATION ============ -->
+        <section class="section">
+            <h2>
+                <span>🗣️ Pronunciation</span>
+                <span class="desc">Same-origin Google TTS with matching-language Web Speech fallback</span>
+            </h2>
+
+            <div class="lang-chips" id="langChips">
+                <button class="chip active" data-lang="Japanese">Japanese</button>
+                <button class="chip" data-lang="Spanish">Spanish</button>
+                <button class="chip" data-lang="French">French</button>
+                <button class="chip" data-lang="German">German</button>
+                <button class="chip" data-lang="Italian">Italian</button>
+                <button class="chip" data-lang="Hindi">Hindi</button>
+                <button class="chip" data-lang="Arabic">Arabic</button>
+                <button class="chip" data-lang="Korean">Korean</button>
+                <button class="chip" data-lang="Telugu">Telugu</button>
+                <button class="chip" data-lang="English">English</button>
+            </div>
+
+            <div class="tts-row">
+                <input id="ttsInput" class="tts-input" type="text" placeholder="Type or paste text to speak…" />
+                <button class="btn-primary" id="speakBtn">🔈 Speak</button>
+            </div>
+
+            <div class="controls">
+                <button class="btn-control" id="normalRateBtn">Normal (0.85×)</button>
+                <button class="btn-control" id="slowRateBtn">Slow (0.5×)</button>
+                <button class="btn-control" id="fastRateBtn">Fast (1.2×)</button>
+                <button class="btn-control danger" id="cancelSpeechBtn">⏹️ Stop speaking</button>
+            </div>
+        </section>
+
+        <!-- ============ SYSTEM ============ -->
+        <section class="section">
+            <h2>
+                <span>⚙️ System</span>
+                <span class="desc">Audio context and mute toggle</span>
+            </h2>
+
+            <div class="controls">
+                <button class="btn-control success" id="unlockBtn">🔓 Unlock audio</button>
+                <button class="btn-control" id="toggleMuteBtn">🔇 Toggle mute</button>
+                <button class="btn-control" id="showSettingsBtn">📋 Show settings</button>
+            </div>
+
+            <div class="log" id="log">
+                <div class="entry">
+                    <span class="time">—</span>
+                    <span class="type-info">Ready. Tap any button to test audio.</span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <a href="dashboard.html">← Back to dashboard</a>
+            &nbsp;·&nbsp;
+            <a href="settings.html">Settings</a>
+        </footer>
+    </div>
+
+    <script src="sounds.js"></script>
+
+    <script>
+        const logEl = document.getElementById('log');
+        const statusSfx = document.getElementById('statusSfx');
+        const statusSound = document.getElementById('statusSound');
+        const statusCtx = document.getElementById('statusCtx');
+        const statusTTS = document.getElementById('statusTTS');
+
+        let currentLang = 'Japanese';
+        let currentRate = 0.85;
+        let isMuted = false;
+
+        function log(msg, type = 'info') {
+            const now = new Date();
+            const t = now.toTimeString().slice(0, 8);
+            const entry = document.createElement('div');
+            entry.className = 'entry';
+            entry.innerHTML = `<span class="time">${t}</span><span class="type-${type}">${escapeHtml(msg)}</span>`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            while (logEl.children.length > 100) logEl.removeChild(logEl.firstChild);
+        }
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[c]));
+        }
+
+        function refreshStatus() {
+            const hasSfx = typeof window.SFX !== 'undefined';
+            statusSfx.textContent = `SFX: ${hasSfx ? 'loaded' : 'missing'}`;
+            statusSfx.className = 'status-pill ' + (hasSfx ? 'on' : 'off');
+
+            let soundOn = true;
+            try {
+                const s = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+                const a = JSON.parse(localStorage.getItem('MusalingoAppSettings') || '{}');
+                soundOn = s.sound !== false && a.sound !== false;
+            } catch { }
+            statusSound.textContent = `Sound: ${soundOn ? 'on' : 'muted'}`;
+            statusSound.className = 'status-pill ' + (soundOn ? 'on' : 'off');
+
+            let ctxState = 'n/a';
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                ctxState = AudioContextClass ? 'available' : 'unsupported';
+            } catch { }
+            statusCtx.textContent = `AudioContext: ${ctxState}`;
+            statusCtx.className = 'status-pill ' + (ctxState === 'available' ? 'on' : 'off');
+
+            const hasTTS = typeof window.SFX?.pronounce === 'function';
+            const hasSpeech = 'speechSynthesis' in window;
+            statusTTS.textContent = `TTS: ${hasTTS && hasSpeech ? 'ready' : (hasTTS ? 'partial' : 'missing')}`;
+            statusTTS.className = 'status-pill ' + (hasTTS && hasSpeech ? 'on' : 'off');
+        }
+
+        const SFX_METHODS = {
+            correct: 'Two-note ding',
+            wrong: 'Sawtooth buzz',
+            complete: 'Four-note fanfare',
+            move: 'Own piece moved',
+            moveOpponent: 'Opponent moved',
+            capturePawn: 'Capture pawn',
+            captureMinor: 'Capture knight/bishop',
+            captureRook: 'Capture rook',
+            captureQueen: 'Capture queen',
+            capture: 'Capture (auto)',
+            captureOpponent: 'Opponent capture',
+            check: 'Check',
+            win: 'Win',
+            lose: 'Lose',
+            error: 'Error',
+            click: 'UI click',
+            tap: 'Piece select',
+            heartsLost: 'Heart lost',
+            gemEarned: 'Gem earned'
+        };
+
+        // Simple buttons
+        document.querySelectorAll('[data-sfx]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                playSfxByName(btn.dataset.sfx);
+            });
+        });
+
+        // Buttons with an argument (captureOpponent needs a piece)
+        document.querySelectorAll('[data-sfx-arg]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                playSfxByName(btn.dataset.sfxArg, btn.dataset.sfxArgValue);
+            });
+        });
+
+        function playSfxByName(name, arg) {
+            if (typeof window.SFX === 'undefined') {
+                log(`SFX not loaded — cannot play ${name}`, 'err');
+                return;
+            }
+            if (typeof window.SFX[name] !== 'function') {
+                log(`SFX.${name}() does not exist`, 'err');
+                return;
+            }
+            try { window.SFX.unlock(); } catch { }
+
+            if (isMuted) {
+                const prevSettings = localStorage.getItem('MusalingoSettings');
+                const prevApp = localStorage.getItem('MusalingoAppSettings');
+                try {
+                    const s = JSON.parse(prevSettings || '{}');
+                    const a = JSON.parse(prevApp || '{}');
+                    s.sound = true;
+                    a.sound = true;
+                    localStorage.setItem('MusalingoSettings', JSON.stringify(s));
+                    localStorage.setItem('MusalingoAppSettings', JSON.stringify(a));
+                    if (arg !== undefined) window.SFX[name](arg);
+                    else window.SFX[name]();
+                    log(`Played SFX.${name}() (forced while muted)`, 'ok');
+                } finally {
+                    setTimeout(() => {
+                        if (prevSettings) localStorage.setItem('MusalingoSettings', prevSettings);
+                        if (prevApp) localStorage.setItem('MusalingoAppSettings', prevApp);
+                    }, 300);
+                }
+                return;
+            }
+
+            try {
+                if (arg !== undefined) window.SFX[name](arg);
+                else window.SFX[name]();
+                log(`Played SFX.${name}(${arg !== undefined ? `"${arg}"` : ''}) — ${SFX_METHODS[name] || ''}`, 'ok');
+            } catch (err) {
+                log(`SFX.${name}() threw: ${err.message}`, 'err');
+            }
+        }
+
+        // Language chips
+        document.querySelectorAll('#langChips .chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('#langChips .chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                currentLang = chip.dataset.lang;
+                log(`Language set to ${currentLang}`, 'info');
+                document.getElementById('ttsInput').placeholder = getExampleText(currentLang);
+            });
+        });
+
+        function getExampleText(lang) {
+            const examples = {
+                Japanese: 'こんにちは',
+                Spanish: 'hola',
+                French: 'bonjour',
+                German: 'hallo',
+                Italian: 'ciao',
+                Hindi: 'नमस्ते',
+                Arabic: 'مرحبا',
+                Korean: '안녕하세요',
+                Telugu: 'హలో',
+                English: 'hello'
+            };
+            return examples[lang] || 'Type or paste text to speak…';
+        }
+        document.getElementById('ttsInput').value = getExampleText(currentLang);
+
+        // Speak
+        function speakCurrent() {
+            const text = document.getElementById('ttsInput').value.trim();
+            if (!text) {
+                log('Nothing to speak — enter some text first.', 'err');
+                return;
+            }
+            if (typeof window.SFX?.pronounce !== 'function') {
+                log('SFX.pronounce() not available', 'err');
+                return;
+            }
+            try { window.SFX.unlock(); } catch { }
+            try {
+                window.SFX.pronounce(text, { lang: currentLang, rate: currentRate });
+                log(`Speaking "${text}" in ${currentLang} at ${currentRate}×`, 'ok');
+            } catch (err) {
+                log(`Speak failed: ${err.message}`, 'err');
+            }
+        }
+
+        document.getElementById('speakBtn').addEventListener('click', speakCurrent);
+        document.getElementById('ttsInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') speakCurrent();
+        });
+
+        document.getElementById('normalRateBtn').addEventListener('click', () => {
+            currentRate = 0.85; log('Rate 0.85×', 'info'); speakCurrent();
+        });
+        document.getElementById('slowRateBtn').addEventListener('click', () => {
+            currentRate = 0.5; log('Rate 0.5×', 'info'); speakCurrent();
+        });
+        document.getElementById('fastRateBtn').addEventListener('click', () => {
+            currentRate = 1.2; log('Rate 1.2×', 'info'); speakCurrent();
+        });
+        document.getElementById('cancelSpeechBtn').addEventListener('click', () => {
+            if (typeof window.SFX?.cancelSpeech === 'function') {
+                window.SFX.cancelSpeech();
+                log('Speech cancelled.', 'info');
+            }
+        });
+
+        // System
+        document.getElementById('unlockBtn').addEventListener('click', () => {
+            if (typeof window.SFX?.unlock === 'function') {
+                window.SFX.unlock();
+                log('Audio unlocked.', 'ok');
+                refreshStatus();
+            }
+        });
+
+        document.getElementById('toggleMuteBtn').addEventListener('click', () => {
+            isMuted = !isMuted;
+            try {
+                const s = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+                s.sound = !isMuted;
+                localStorage.setItem('MusalingoSettings', JSON.stringify(s));
+                const a = JSON.parse(localStorage.getItem('MusalingoAppSettings') || '{}');
+                a.sound = !isMuted;
+                localStorage.setItem('MusalingoAppSettings', JSON.stringify(a));
+            } catch { }
+            document.getElementById('toggleMuteBtn').textContent = isMuted ? '🔊 Unmute' : '🔇 Toggle mute';
+            log(isMuted ? 'Muted.' : 'Unmuted.', 'info');
+            refreshStatus();
+        });
+
+        document.getElementById('showSettingsBtn').addEventListener('click', () => {
+            const s = localStorage.getItem('MusalingoSettings') || '{}';
+            const a = localStorage.getItem('MusalingoAppSettings') || '{}';
+            log(`Settings: ${s}`, 'info');
+            log(`AppSettings: ${a}`, 'info');
+            log(`SFX.isEnabled(): ${typeof window.SFX?.isEnabled === 'function' ? window.SFX.isEnabled() : '?'}`, 'info');
+        });
+
+        refreshStatus();
+        setInterval(refreshStatus, 2000);
+
+        document.addEventListener('click', () => {
+            try { window.SFX?.unlock?.(); } catch { }
+        }, { once: true });
+
+        log('Sound Player ready. Tap any sound to test.', 'ok');
+    </script>
+    <script src="theme.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quests - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #ec96c7;
+            --accent-dark: #f490c3;
+            --soft-pink: #fdf2f8;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 24px;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .page {
+            width: min(780px, 100%);
+            margin: 0 auto;
+        }
+
+        .card {
+            padding: 26px;
+            background: var(--card);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--accent-dark);
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 16px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 5px 0 var(--accent-shadow, var(--accent-dark));
+        }
+
+        .quest-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .quest-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #fff;
+        }
+
+        .quest-icon {
+            display: grid;
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            place-items: center;
+            border-radius: 15px;
+            background: var(--soft-pink);
+            font-size: 1.5rem;
+        }
+
+        .quest-copy {
+            flex: 1;
+        }
+
+        .quest-copy h2 {
+            margin: 0 0 4px;
+            font-size: 1.05rem;
+        }
+
+        .quest-copy p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .tick {
+            display: grid;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            place-items: center;
+            border: 2px solid #d98bb5;
+            border-radius: 50%;
+            color: transparent;
+            font-weight: 900;
+        }
+
+        .quest-card.completed {
+            background: #f8d8eb;
+            border-color: var(--accent);
+        }
+
+        .quest-card.completed .tick {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .quest-card.completed .quest-copy h2 {
+            text-decoration: line-through;
+        }
+
+        .note {
+            margin: 20px 0 0;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #f8f5ff;
+            color: #4a3b7d;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .reward-panel {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .reward-panel h2 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .reward-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .reward-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border: 1px solid #f1c5dc;
+            border-radius: 16px;
+            background: #fff7fb;
+        }
+
+        .reward-card.mega {
+            border-color: #e8b84a;
+            background: #fff8df;
+        }
+
+        .chest-icon {
+            font-size: 2rem;
+        }
+
+        .reward-card strong,
+        .reward-card span {
+            display: block;
+        }
+
+        .reward-card span {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 14px;
+            }
+
+            .card {
+                padding: 20px 16px;
+                border-radius: 18px;
+            }
+
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <main class="page">
+        <section class="card">
+            <header class="topbar">
+                <div>
+                    <h1>Quests</h1>
+                    <p class="subtitle" id="questSubtitle">Complete lessons to finish your quests.</p>
+                </div>
+                <a class="btn" href="dashboard.html">Back to dashboard</a>
+            </header>
+
+            <div class="quest-list" id="questList" aria-live="polite"></div>
+            <section class="reward-panel" id="rewardPanel" hidden aria-live="polite">
+                <h2>Today's rewards</h2>
+                <div class="reward-list" id="rewardList"></div>
+            </section>
+            <p class="note">Quest ticks are added automatically when the related learning activity is completed.</p>
+        </section>
+    </main>
+    <script src="sounds.js"></script>
+    <script src="quest.js"></script>
+    <script>
+        const profile = JSON.parse(localStorage.getItem('MusalingoProfile')) || { courses: [] };
+        const settings = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+        profile.inventory = Array.isArray(profile.inventory) ? profile.inventory : [];
+
+        function renderQuests() {
+            if (settings.noGamification) {
+                document.getElementById('questSubtitle').textContent = 'Quests are turned off in Remove Bloat settings.';
+                document.querySelector('.note').hidden = true;
+                return;
+            }
+            const quests = window.MUSALINGO_QUESTS.getDailyQuests(profile);
+            const completedCount = quests.filter(quest => quest.isComplete).length;
+            window.MUSALINGO_QUESTS.grantDailyRewards(profile);
+            document.getElementById('questList').innerHTML = quests.map(quest => {
+                const isComplete = quest.isComplete;
+                return `
+                    <article class="quest-card${isComplete ? ' completed' : ''}" role="status" aria-label="${quest.title}${isComplete ? ' completed' : ' not completed'}">
+                        <div class="quest-icon" aria-hidden="true">${quest.icon}</div>
+                        <div class="quest-copy">
+                            <h2>${quest.title}</h2>
+                            <p>${quest.detail}</p>
+                        </div>
+                        <span class="tick" aria-hidden="true">✓</span>
+                    </article>
+                `;
+            }).join('');
+            renderRewards(completedCount);
+        }
+
+        function renderRewards(completedCount) {
+            const rewards = Array.isArray(profile.dailyQuestRewards) ? profile.dailyQuestRewards : [];
+            const rewardPanel = document.getElementById('rewardPanel');
+            const rewardList = document.getElementById('rewardList');
+            if (!rewards.length) {
+                rewardPanel.hidden = true;
+                return;
+            }
+            rewardPanel.hidden = false;
+            rewardList.innerHTML = rewards.map((reward) => reward === 'mega-chest'
+                ? '<div class="reward-card mega"><span class="chest-icon">👑</span><div><strong>Mega Chest</strong><span>+100 diamonds</span></div></div>'
+                : '<div class="reward-card"><span class="chest-icon">🎁</span><div><strong>Quest Chest</strong><span>+25 diamonds</span></div></div>'
+            ).join('');
+        }
+
+        renderQuests();
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+    
+</body>
+
+</html>

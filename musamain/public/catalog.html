@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catalog - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --blue: #2b70c9;
+        }
+
+        body.dark-mode {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #e5e7eb;
+            --muted: #aeb9ca;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f8fbff 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        }
+
+        body.dark-mode .catalog-card {
+            background: #273449;
+            border-color: #374151;
+        }
+
+        body.dark-mode .pill {
+            background: #4b2941;
+        }
+
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .title {
+            margin: 0;
+            color: var(--accent-dark);
+            font-size: 1.6rem;
+        }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #fdf2f8;
+            color: var(--accent-dark);
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .picker-note {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .catalog-section {
+            margin-top: 16px;
+        }
+
+        .catalog-section h3 {
+            margin: 0 0 10px;
+            font-size: 1.05rem;
+            color: var(--accent-dark);
+        }
+
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .catalog-card {
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 14px;
+        }
+
+        .catalog-card h4 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .catalog-card h4 .icon {
+            font-size: 1.4rem;
+        }
+
+        .catalog-card p {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .catalog-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 6px 0 var(--accent-shadow, var(--accent-dark));
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn.secondary {
+            background: var(--blue);
+            box-shadow: 0 6px 0 #205ea5;
+        }
+
+        .btn.small {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .interview-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(31, 41, 55, 0.48);
+        }
+
+        .interview-backdrop[hidden] {
+            display: none;
+        }
+
+        .interview {
+            width: min(480px, 100%);
+            max-height: calc(100vh - 40px);
+            overflow: auto;
+            padding: 24px;
+            border-radius: 22px;
+            background: var(--card);
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+        }
+
+        .interview h2 {
+            margin: 0 0 6px;
+        }
+
+        .interview p {
+            margin: 0 0 18px;
+            color: var(--muted);
+        }
+
+        .interview-fields {
+            display: grid;
+            gap: 14px;
+        }
+
+        .interview label {
+            display: grid;
+            gap: 7px;
+            font-weight: 700;
+        }
+
+        .interview select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            background: var(--card);
+            color: var(--text);
+            font: inherit;
+        }
+
+        .interview-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .interview-cancel {
+            border: 1px solid #d1d5db;
+            border-radius: 999px;
+            padding: 10px 14px;
+            background: transparent;
+            color: var(--text);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+
+            .page {
+                max-width: 100%;
+            }
+
+            .card {
+                padding: 18px 16px;
+                border-radius: 18px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .catalog-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="card">
+            <div class="topbar">
+                <div>
+                    <h1 class="title">All courses</h1>
+                    <p class="subtitle">Choose the paths you want to add to your dashboard.</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <a class="btn secondary" href="settings.html">Settings</a>
+                    <a class="btn secondary" href="dashboard.html">Back to dashboard</a>
+                </div>
+            </div>
+            <div class="pill">Course picker</div>
+            <div id="contentArea"></div>
+        </div>
+    </div>
+
+    <div class="interview-backdrop" id="interviewBackdrop" hidden>
+        <form class="interview" id="courseInterview">
+            <h2 id="interviewTitle">Make this course yours</h2>
+            <p id="interviewIntro">A few quick answers will personalize your starting path.</p>
+            <div class="interview-fields">
+                <label for="experienceAnswer" id="experienceLabel">How much do you already know?</label>
+                <select id="experienceAnswer" required></select>
+                <label for="reasonAnswer">Why do you want to learn?</label>
+                <select id="reasonAnswer" required>
+                    <option value="curiosity">Curiosity and fun</option>
+                    <option value="school">School or study</option>
+                    <option value="work">Work and career</option>
+                    <option value="travel">Travel and conversation</option>
+                </select>
+                <label for="goalAnswer">What would you like to practice most?</label>
+                <select id="goalAnswer" required>
+                    <option value="confidence">Build confidence</option>
+                    <option value="vocabulary">Learn useful vocabulary</option>
+                    <option value="speed">Improve speed and recall</option>
+                </select>
+            </div>
+            <div class="interview-actions">
+                <button class="interview-cancel" id="interviewCancel" type="button">Not now</button>
+                <button class="btn small" type="submit">Build my course</button>
+            </div>
+        </form>
+    </div>
+    
+    <script src="course-curriculum.js"></script>
+    <script src="sounds.js"></script>
+    <script>
+        /* ============================================================
+           Musalingo — catalog page (Fixed)
+           ============================================================ */
+
+        // SAFE JSON PARSE
+        function safeParse(key, fallback) {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : fallback;
+            } catch (e) {
+                console.warn(`Corrupted localStorage for ${key}, resetting.`);
+                return fallback;
+            }
+        }
+
+        // ---------- THEME ----------
+        const savedTheme = safeParse('MusalingoSettings', { theme: 'light' });
+        document.body.classList.toggle('dark-mode', savedTheme.theme === 'dark');
+
+        // ---------- PROFILE ----------
+        function createDefaultProfile() {
+            return {
+                email: '', name: 'Guest learner', streak: 0, diamonds: 100,
+                lastActiveDate: null, lastLessonDate: null, streakStatus: 'inactive',
+                selectedCourse: null, courses: [], inventory: []
+            };
+        }
+
+        function loadProfile() {
+            const s = localStorage.getItem('MusalingoProfile');
+            if (!s) return createDefaultProfile();
+            try {
+                const p = JSON.parse(s);
+                if (!p) return createDefaultProfile();
+                p.courses = Array.isArray(p.courses) ? p.courses : [];
+                p.inventory = Array.isArray(p.inventory) ? p.inventory : [];
+                p.diamonds = Number(p.diamonds) || 100;
+                return p;
+            } catch { return createDefaultProfile(); }
+        }
+
+        function saveProfile(p) {
+            localStorage.setItem('MusalingoProfile', JSON.stringify(p));
+        }
+
+        const curriculum = window.MUSALINGO_CURRICULUM;
+        const COURSE_ICONS = Object.fromEntries(
+            Object.values(curriculum.courses).map(course => [course.id, course.icon])
+        );
+        const courseCatalog = curriculum.catalogGroups.map(group => ({
+            audience: group.audience,
+            speakerLanguage: group.audience.replace(/^For\s+/, '').replace(/\s+speakers?$/i, '').trim(),
+            courses: group.courseIds.map(id => curriculum.courses[id])
+        }));
+
+        function getCatalogCourse(courseId) {
+            const course = curriculum.courses[courseId];
+            if (!course) return null;
+
+            return {
+                ...course,
+                lessons: curriculum.getCourseLessons(courseId)
+            };
+        }
+
+        function ensureProfileCourse(profile, courseId, speakerLanguage = 'English') {
+            const cat = getCatalogCourse(courseId);
+            if (!cat) return null;
+
+            const existing = profile.courses.find(c => c.id === courseId);
+            if (existing) {
+                const saved = Array.isArray(existing.lessons) ? existing.lessons : [];
+                existing.lessons = curriculum.getCourseLessons(courseId, saved, existing.learningProfile?.experience);
+                existing.speakerLanguage = speakerLanguage;
+                return existing;
+            }
+
+            const course = {
+                id: cat.id,
+                name: cat.name,
+                icon: COURSE_ICONS[cat.id] || '📘',
+                level: cat.level,
+                description: cat.description,
+                speakerLanguage,
+                progress: 0,
+                lessons: cat.lessons.map(l => ({ ...l, completed: false }))
+            };
+            profile.courses.push(course);
+            saveProfile(profile);
+            return course;
+        }
+
+        // ---------- DOM ----------
+        const profile = loadProfile();
+        const contentArea = document.getElementById('contentArea');
+        const interviewBackdrop = document.getElementById('interviewBackdrop');
+        const courseInterview = document.getElementById('courseInterview');
+        const interviewTitle = document.getElementById('interviewTitle');
+        const interviewIntro = document.getElementById('interviewIntro');
+        const experienceLabel = document.getElementById('experienceLabel');
+        const experienceAnswer = document.getElementById('experienceAnswer');
+        let pendingCourseId = null;
+        let pendingSpeakerLanguage = 'English';
+
+        // ---------- RENDER CATALOG ----------
+        function renderCatalog() {
+            contentArea.innerHTML = `
+                <p class="picker-note">Select a course below to add it to your dashboard and begin learning.</p>
+                ${courseCatalog.map(group => `
+                    <section class="catalog-section">
+                        <h3>${group.audience}</h3>
+                        <div class="catalog-grid">
+                            ${group.courses.map(course => `
+                                <div class="catalog-card">
+                                    <h4><span class="icon">${COURSE_ICONS[course.id] || '📘'}</span>${course.name}</h4>
+                                    <p>${course.description}</p>
+                                    <div class="catalog-meta">
+                                        <span>${course.level}</span>
+                                        <button class="btn small add-course-btn" type="button" data-course-id="${course.id}" data-speaker-language="${group.speakerLanguage}">Add course</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+                `).join('')}
+            `;
+
+            contentArea.querySelectorAll('.add-course-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (typeof SFX !== 'undefined') SFX.click();
+                    openCourseInterview(btn.dataset.courseId, btn.dataset.speakerLanguage);
+                });
+            });
+        }
+
+        // ---------- INTERVIEW ----------
+        function openCourseInterview(id, speakerLanguage = 'English') {
+            const course = getCatalogCourse(id);
+            if (!course) return;
+            pendingCourseId = id;
+            pendingSpeakerLanguage = speakerLanguage || 'English';
+
+            const isMath = course.id === 'math';
+            const isChess = course.id === 'chess';
+
+            interviewTitle.textContent = `Set up your ${course.name} path`;
+            interviewIntro.textContent = isMath
+                ? 'Choose the kind of Math practice that fits you best.'
+                : isChess
+                    ? 'Tell us your chess level so we can choose the right starting point.'
+                    : 'A few quick answers will personalize your starting path.';
+
+            experienceLabel.textContent = isMath
+                ? 'What kind of Math do you want to learn?'
+                : isChess
+                    ? 'What is your Elo rating?'
+                    : 'How much do you already know?';
+
+            experienceAnswer.innerHTML = isMath
+                ? `<option value="grade-1">Grade 1 Math</option>${Array.from({ length: 9 }, (_, i) => `<option value="grade-${i + 2}">Grade ${i + 2} Math</option>`).join('')}<option value="fun-math">Fun Math</option><option value="adult-math">Adult Math</option>`
+                : isChess
+                    ? '<option value="unrated">I do not have an Elo rating yet</option><option value="under-800">Under 800</option><option value="800-1000">800-1000</option><option value="1000-1200">1000-1200</option><option value="1200-1400">1200-1400</option><option value="1400-plus">1400+</option>'
+                    : '<option value="new">I am completely new</option><option value="some">I know a few basics</option><option value="comfortable">I can hold simple conversations</option><option value="advanced">I want a challenge</option>';
+
+            interviewBackdrop.hidden = false;
+            experienceAnswer.focus();
+        }
+
+        function closeCourseInterview() {
+            pendingCourseId = null;
+            pendingSpeakerLanguage = 'English';
+            interviewBackdrop.hidden = true;
+            courseInterview.reset();
+        }
+
+        // ---------- BOOT ----------
+        renderCatalog();
+
+        document.getElementById('interviewCancel').addEventListener('click', closeCourseInterview);
+
+        courseInterview.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!pendingCourseId) return;
+
+            const course = ensureProfileCourse(profile, pendingCourseId, pendingSpeakerLanguage);
+            const previousExperience = course.learningProfile?.experience || 'grade-1';
+            const savedLessons = Array.isArray(course.lessons) ? course.lessons : [];
+            
+            // SAVE THE INTERVIEW DATA
+            course.learningProfile = {
+                experience: experienceAnswer.value,
+                eloRating: pendingCourseId === 'chess' ? experienceAnswer.value : null,
+                reason: document.getElementById('reasonAnswer').value,
+                goal: document.getElementById('goalAnswer').value
+            };
+            if (pendingCourseId === 'math') {
+                const gradeChanged = previousExperience !== course.learningProfile.experience;
+                course.lessons = curriculum.getCourseLessons(
+                    course.id,
+                    gradeChanged ? [] : savedLessons,
+                    course.learningProfile.experience
+                );
+                if (gradeChanged) course.progress = 0;
+            }
+            
+            saveProfile(profile);
+            
+            if (typeof SFX !== 'undefined') SFX.correct();
+
+            // Go to the course node view
+            window.location.href = `course.html?courseId=${encodeURIComponent(pendingCourseId)}`;
+        });
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

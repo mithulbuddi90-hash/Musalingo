@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile - Musalingo</title>
+
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #ec96c7;
+            --accent-dark: #f490c3;
+            --soft-pink: #fdf2f8;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 24px;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .page {
+            width: min(980px, 100%);
+            margin: 0 auto;
+        }
+
+        .shell {
+            overflow: hidden;
+            background: var(--card);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        .profile-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 30px;
+            background: linear-gradient(135deg, #fce7f3, #fff7fb);
+        }
+
+        .identity {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar {
+            display: grid;
+            width: 76px;
+            height: 76px;
+            place-items: center;
+            border-radius: 24px;
+            background: linear-gradient(135deg, var(--accent), #ff9ac8);
+            color: #fff;
+            font-size: 2rem;
+            font-weight: 900;
+            box-shadow: inset 0 -6px rgba(0, 0, 0, 0.08);
+        }
+
+        h1,
+        h2,
+        p {
+            margin-top: 0;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            font-size: 2rem;
+        }
+
+        .email {
+            margin: 0;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 16px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 5px 0 var(--accent-shadow, var(--accent-dark));
+        }
+
+        .btn.secondary {
+            background: #2b70c9;
+            box-shadow: 0 5px 0 #205ea5;
+        }
+
+        .content {
+            padding: 24px 30px 30px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 26px;
+        }
+
+        .stat {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .stat-label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #6d2d57;
+            font-size: 1.45rem;
+            font-weight: 900;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .section-title h2 {
+            margin-bottom: 0;
+            font-size: 1.3rem;
+        }
+
+        .course-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .course-card {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #fff;
+        }
+
+        .course-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .course-heading h3 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .course-percent {
+            color: var(--accent-dark);
+            font-size: 0.9rem;
+            font-weight: 900;
+        }
+
+        .progress {
+            height: 10px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #f1f5f9;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--accent), #ff8cdd);
+        }
+
+        .empty-state {
+            padding: 22px;
+            border: 1px dashed #e5b8d3;
+            border-radius: 16px;
+            background: var(--soft-pink);
+            color: #6d2d57;
+            font-weight: 700;
+        }
+
+        .friends-section {
+            margin-top: 26px;
+        }
+
+        .friends-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .friend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .friend-name {
+            font-weight: 800;
+        }
+
+        .friend-streak {
+            color: var(--accent-dark);
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .add-friends-link {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 4px 0 var(--accent-shadow, var(--accent-dark));
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+
+            .profile-hero {
+                align-items: flex-start;
+                flex-direction: column;
+                padding: 22px 18px;
+            }
+
+            .content {
+                padding: 20px 18px 24px;
+            }
+
+            .actions,
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .course-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <main class="page">
+        <section class="shell">
+            <header class="profile-hero">
+                <div class="identity">
+                    <div class="avatar" id="avatar" aria-hidden="true">L</div>
+                    <div>
+                        <h1 id="profileName">Learner</h1>
+                        <p class="email" id="profileEmail">Guest account</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <a class="btn secondary" href="settings.html">Edit settings</a>
+                    <a class="btn" href="dashboard.html">Dashboard</a>
+
+                </div>
+            </header>
+
+            <div class="content">
+                <section class="stats" aria-label="Learning statistics">
+                    <div class="stat"><span class="stat-label">Streak</span><span class="stat-value" id="streakValue">0
+                            days</span></div>
+                    <div class="stat"><span class="stat-label">Diamonds</span><span class="stat-value"
+                            id="diamondValue">0</span></div>
+                    <div class="stat"><span class="stat-label">XP</span><span class="stat-value" id="xpValue">0</span>
+                    </div>
+                    <div class="stat"><span class="stat-label">Lessons</span><span class="stat-value"
+                            id="lessonValue">0</span></div>
+                </section>
+
+                <section>
+                    <div class="section-title">
+                        <h2>Course progress</h2>
+                    </div>
+                    <div class="course-list" id="courseList"></div>
+                </section>
+
+                <section class="friends-section" id="friends">
+                    <div class="section-title">
+                        <h2>Friends</h2>
+                    </div>
+                    <div class="friends-list" id="friendsList"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const defaultProfile = {
+            name: 'Learner',
+            streak: 0,
+            diamonds: 0,
+            xp: 0,
+            hearts: 5,
+            courses: []
+        };
+        const storedProfile = JSON.parse(localStorage.getItem('MusalingoProfile') || 'null');
+        const profile = { ...defaultProfile, ...(storedProfile || {}) };
+        const courses = Array.isArray(profile.courses) ? profile.courses : [];
+        const friends = Array.isArray(profile.friends) ? profile.friends : [];
+        const displayName = String(profile.name || 'Learner').trim() || 'Learner';
+        const completedLessons = courses.reduce((total, course) => {
+            return total + (Array.isArray(course.lessons) ? course.lessons.filter(lesson => lesson.completed).length : 0);
+        }, 0);
+        const email = profile.email || localStorage.getItem('MusalingoUser') || 'Guest account';
+
+        document.getElementById('profileName').textContent = displayName;
+        document.getElementById('profileEmail').textContent = email;
+        document.getElementById('avatar').textContent = Array.from(displayName)[0].toUpperCase();
+        document.getElementById('streakValue').textContent = `${Number(profile.streak) || 0} days`;
+        document.getElementById('diamondValue').textContent = Number(profile.diamonds) || 0;
+        document.getElementById('xpValue').textContent = Number(profile.xp) || 0;
+        document.getElementById('lessonValue').textContent = completedLessons;
+
+        const courseList = document.getElementById('courseList');
+        if (!courses.length) {
+            courseList.innerHTML = '<div class="empty-state">No courses added yet. Visit the dashboard to choose a course.</div>';
+        } else {
+            courses.forEach(course => {
+                const progress = Math.min(100, Math.max(0, Number(course.progress) || 0));
+                const card = document.createElement('article');
+                card.className = 'course-card';
+                card.innerHTML = `
+                    <div class="course-heading">
+                        <h3></h3>
+                        <span class="course-percent">${progress}%</span>
+                    </div>
+                    <div class="progress" aria-label="${progress}% complete">
+                        <div class="progress-bar" style="width: ${progress}%"></div>
+                    </div>
+                `;
+                card.querySelector('h3').textContent = course.name || 'Course';
+                courseList.appendChild(card);
+            });
+        }
+
+        const friendsList = document.getElementById('friendsList');
+        if (!friends.length) {
+            friendsList.innerHTML = '<div class="empty-state">No friends are there yet.<br><a class="add-friends-link" href="friends.html#friends">Add new friends</a></div>';
+        } else {
+            friends.forEach(friend => {
+                const row = document.createElement('div');
+                row.className = 'friend-row';
+                row.innerHTML = '<span class="friend-name"></span><span class="friend-streak"></span>';
+                row.querySelector('.friend-name').textContent = friend.name || 'Friend';
+                row.querySelector('.friend-streak').textContent = `${Number(friend.streak) || 0} day streak`;
+                friendsList.appendChild(row);
+            });
+        }
+    </script>
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

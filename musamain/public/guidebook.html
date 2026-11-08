@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guidebook - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --bg: #131f24;
+            --card: #1c2a30;
+            --text: #f1f7fb;
+            --muted: #8a9aa6;
+            --accent: #EC96C7;
+            --accent-dark: #C46AA1;
+            --blue: #1cb0f6;
+            --border: #2f3e46;
+            --bubble: #2b3a42;
+        }
+
+        body.light-mode {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --bubble: #eef2f7;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px 60px;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .wrap {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-weight: 700;
+            text-decoration: none;
+            padding: 8px 0;
+            margin-bottom: 14px;
+            font-size: 1.05rem;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 16px 8px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .hero-art {
+            font-size: 4.2rem;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .hero-text h1 {
+            margin: 0 0 6px;
+            font-size: 1.45rem;
+            font-weight: 800;
+        }
+
+        .hero-text p {
+            margin: 0;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* ===== SECTION LABEL ===== */
+        .section-label {
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        /* ===== PHRASE LIST ===== */
+        .phrase-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .phrase {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: border-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .phrase:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .speaker-btn {
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--bubble);
+            border: none;
+            color: var(--accent);
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+        }
+
+        .speaker-btn:hover {
+            background: color-mix(in srgb, var(--accent) 15%, var(--bubble));
+        }
+
+        .speaker-btn:active {
+            transform: scale(0.94);
+        }
+
+        .phrase-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .phrase-jp {
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .phrase-en {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* ===== TIP BLOCK ===== */
+        .tip-block {
+            margin-top: 28px;
+            padding: 16px 18px;
+            background: var(--card);
+            border-left: 4px solid var(--accent);
+            border-radius: 12px;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .tip-block strong {
+            color: var(--text);
+        }
+
+        @media (max-width: 620px) {
+            .hero-art {
+                font-size: 3.2rem;
+            }
+
+            .hero-text h1 {
+                font-size: 1.2rem;
+            }
+
+            .phrase-jp {
+                font-size: 1.05rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="wrap">
+        <a class="back-link" id="backLink" href="#">
+            <span>←</span><span>Back</span>
+        </a>
+
+        <div class="hero">
+            <div class="hero-art" id="heroArt">🧑‍🎨</div>
+            <div class="hero-text">
+                <h1 id="guideTitle">Unit 3 Guidebook</h1>
+                <p id="guideIntro">Explore grammar tips and key phrases for this unit</p>
+            </div>
+        </div>
+
+        <div class="section-label" id="phrasesLabel">KEY PHRASES</div>
+        <div class="phrase-list" id="phraseList"></div>
+
+        <div class="tip-block" id="tipBlock" hidden></div>
+    </div>
+
+    <!-- sounds.js must load BEFORE the inline script that uses SFX -->
+    <script src="sounds.js"></script>
+
+    <script>
+        // ============================================================
+        //  Musalingo — guidebook page
+        //  Works for all courses. Reads theme + accent from settings.
+        //  Speech via sounds.js (SFX.pronounce)
+        // ============================================================
+
+        // ---------- 1. SETTINGS ----------
+        const settings = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+
+        if (settings.theme === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        if (settings.accent) {
+            document.documentElement.style.setProperty('--accent', settings.accent);
+            document.documentElement.style.setProperty('--accent-dark', darken(settings.accent, 0.2));
+        }
+
+        function darken(hex, amount) {
+            const c = hex.replace('#', '');
+            const r = parseInt(c.slice(0, 2), 16);
+            const g = parseInt(c.slice(2, 4), 16);
+            const b = parseInt(c.slice(4, 6), 16);
+            const adj = v => Math.max(0, Math.min(255, Math.round(v * (1 - amount))));
+            return '#' +
+                adj(r).toString(16).padStart(2, '0') +
+                adj(g).toString(16).padStart(2, '0') +
+                adj(b).toString(16).padStart(2, '0');
+        }
+
+        // ---------- 2. URL PARAMS ----------
+        const params = new URLSearchParams(window.location.search);
+        const courseId = params.get('courseId') || 'japanese';
+        const sectionNo = params.get('section') || '1';
+
+        // ---------- 3. GUIDE DATA ----------
+        const GUIDES = {
+            // ===== JAPANESE =====
+            japanese: {
+                1: {
+                    title: 'Unit 1 Guidebook',
+                    intro: 'Explore grammar tips and key phrases for this unit',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'こんにちは、はなです。', en: "Hello, I'm Hana." },
+                        { jp: 'こんばんは！', en: 'Good evening!' },
+                        { jp: 'なおみさん、またあした。', en: 'See you tomorrow, Naomi.' }
+                    ],
+                    tip: '<strong>Tip:</strong> こんにちは (konnichiwa) is used during the day. Use こんばんは (konbanwa) in the evening.'
+                },
+                2: {
+                    title: 'Unit 2 Guidebook',
+                    intro: 'Everyday phrases for greetings and goodbyes',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'おはようございます', en: 'Good morning' },
+                        { jp: 'ありがとう', en: 'Thank you' },
+                        { jp: 'さようなら', en: 'Goodbye' },
+                        { jp: 'すみません', en: 'Excuse me' }
+                    ],
+                    tip: '<strong>Tip:</strong> ありがとう (arigatou) is casual. Add ございます (gozaimasu) to make it formal.'
+                },
+                3: {
+                    title: 'Unit 3 Guidebook',
+                    intro: 'Polite expressions for daily situations',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'おねがいします', en: 'Please' },
+                        { jp: 'どういたしまして', en: "You're welcome" },
+                        { jp: 'いただきます', en: 'Thanks for the meal (before eating)' }
+                    ],
+                    tip: '<strong>Tip:</strong> いただきます is said before eating. ごちそうさま is said after.'
+                }
+            },
+
+            // ===== SPANISH =====
+            spanish: {
+                1: {
+                    title: 'Unidad 1 Guidebook',
+                    intro: 'Saludos y presentaciones',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: '¡Hola!', en: 'Hello!' },
+                        { jp: '¿Cómo estás?', en: 'How are you?' },
+                        { jp: 'Mucho gusto', en: 'Nice to meet you' },
+                        { jp: 'Buenos días', en: 'Good morning' }
+                    ],
+                    tip: '<strong>Tip:</strong> Use "tú" with friends and "usted" in formal situations.'
+                },
+                2: {
+                    title: 'Unidad 2 Guidebook',
+                    intro: 'Frases para el día a día',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: '¿Dónde está?', en: 'Where is it?' },
+                        { jp: 'La cuenta, por favor', en: 'The bill, please' },
+                        { jp: 'Necesito ayuda', en: 'I need help' }
+                    ],
+                    tip: '<strong>Tip:</strong> "por favor" is a polite addition to any request.'
+                },
+                3: {
+                    title: 'Unidad 3 Guidebook',
+                    intro: 'Conversación básica',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Lo siento', en: 'I am sorry' },
+                        { jp: 'No entiendo', en: 'I do not understand' },
+                        { jp: '¿Habla inglés?', en: 'Do you speak English?' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Lo siento" is a general apology. Use "perdón" for smaller mistakes.'
+                }
+            },
+
+            // ===== FRENCH =====
+            french: {
+                1: {
+                    title: 'Unité 1 Guidebook',
+                    intro: 'Salutations et présentations',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Bonjour !', en: 'Hello!' },
+                        { jp: 'Comment ça va ?', en: 'How are you?' },
+                        { jp: 'Enchanté', en: 'Nice to meet you' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Bonjour" works all day. Use "Bonsoir" in the evening.'
+                },
+                2: {
+                    title: 'Unité 2 Guidebook',
+                    intro: 'Phrases du quotidien',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Merci beaucoup', en: 'Thank you very much' },
+                        { jp: 'S\'il vous plaît', en: 'Please (formal)' },
+                        { jp: 'Au revoir', en: 'Goodbye' }
+                    ],
+                    tip: '<strong>Tip:</strong> "S\'il vous plaît" for strangers, "s\'il te plaît" for friends.'
+                },
+                3: {
+                    title: 'Unité 3 Guidebook',
+                    intro: 'Expressions utiles',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Où est la gare ?', en: 'Where is the station?' },
+                        { jp: 'Je ne comprends pas', en: 'I do not understand' },
+                        { jp: 'Pouvez-vous m\'aider ?', en: 'Can you help me?' }
+                    ],
+                    tip: '<strong>Tip:</strong> In French, "vous" is formal and "tu" is casual.'
+                }
+            },
+
+            // ===== GERMAN =====
+            german: {
+                1: {
+                    title: 'Einheit 1 Guidebook',
+                    intro: 'Begrüßungen und Vorstellungen',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Hallo!', en: 'Hello!' },
+                        { jp: 'Wie geht es dir?', en: 'How are you?' },
+                        { jp: 'Freut mich', en: 'Nice to meet you' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Guten Tag" is formal. "Hallo" works with anyone.'
+                },
+                2: {
+                    title: 'Einheit 2 Guidebook',
+                    intro: 'Alltagsphrasen',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Danke schön', en: 'Thank you very much' },
+                        { jp: 'Bitte', en: 'Please / You\'re welcome' },
+                        { jp: 'Auf Wiedersehen', en: 'Goodbye' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Bitte" means both "please" and "you\'re welcome".'
+                },
+                3: {
+                    title: 'Einheit 3 Guidebook',
+                    intro: 'Nützliche Ausdrücke',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Wo ist der Bahnhof?', en: 'Where is the station?' },
+                        { jp: 'Ich verstehe nicht', en: 'I do not understand' },
+                        { jp: 'Können Sie mir helfen?', en: 'Can you help me?' }
+                    ],
+                    tip: '<strong>Tip:</strong> German nouns are always capitalized.'
+                }
+            },
+
+            // ===== HINDI =====
+            hindi: {
+                1: {
+                    title: 'इकाई 1 Guidebook',
+                    intro: 'अभिवादन और परिचय',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'नमस्ते!', en: 'Hello!' },
+                        { jp: 'आप कैसे हैं?', en: 'How are you?' },
+                        { jp: 'मिलकर खुशी हुई', en: 'Nice to meet you' }
+                    ],
+                    tip: '<strong>Tip:</strong> नमस्ते works for both hello and goodbye.'
+                },
+                2: {
+                    title: 'इकाई 2 Guidebook',
+                    intro: 'रोज़मर्रा के वाक्य',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'धन्यवाद', en: 'Thank you' },
+                        { jp: 'कृपया', en: 'Please' },
+                        { jp: 'फिर मिलेंगे', en: 'See you again' }
+                    ],
+                    tip: '<strong>Tip:</strong> Use "आप" for respect, "तुम" for close friends.'
+                },
+                3: {
+                    title: 'इकाई 3 Guidebook',
+                    intro: 'उपयोगी वाक्यांश',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'स्टेशन कहाँ है?', en: 'Where is the station?' },
+                        { jp: 'मुझे समझ नहीं आया', en: 'I did not understand' },
+                        { jp: 'मेरी मदद करें', en: 'Please help me' }
+                    ],
+                    tip: '<strong>Tip:</strong> Hindi word order is Subject-Object-Verb.'
+                }
+            },
+
+            // ===== ITALIAN =====
+            italian: {
+                1: {
+                    title: 'Unità 1 Guidebook',
+                    intro: 'Saluti e presentazioni',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Ciao!', en: 'Hello!' },
+                        { jp: 'Come stai?', en: 'How are you?' },
+                        { jp: 'Piacere', en: 'Nice to meet you' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Ciao" is casual. Use "Buongiorno" formally.'
+                },
+                2: {
+                    title: 'Unità 2 Guidebook',
+                    intro: 'Frasi quotidiane',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Grazie mille', en: 'Thanks a lot' },
+                        { jp: 'Per favore', en: 'Please' },
+                        { jp: 'Arrivederci', en: 'Goodbye' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Grazie" alone is fine; add "mille" for extra thanks.'
+                },
+                3: {
+                    title: 'Unità 3 Guidebook',
+                    intro: 'Espressioni utili',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Dov\'è la stazione?', en: 'Where is the station?' },
+                        { jp: 'Non capisco', en: 'I do not understand' },
+                        { jp: 'Puoi aiutarmi?', en: 'Can you help me?' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Lei" is formal, "tu" is informal.'
+                }
+            },
+
+            // ===== ARABIC =====
+            arabic: {
+                1: {
+                    title: 'الوحدة 1 Guidebook',
+                    intro: 'التحيات والتعريفات',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'مرحبا!', en: 'Hello!' },
+                        { jp: 'كيف حالك؟', en: 'How are you?' },
+                        { jp: 'تشرفت بلقائك', en: 'Nice to meet you' }
+                    ],
+                    tip: '<strong>Tip:</strong> Arabic reads right to left.'
+                },
+                2: {
+                    title: 'الوحدة 2 Guidebook',
+                    intro: 'عبارات يومية',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'شكرا جزيلا', en: 'Thank you very much' },
+                        { jp: 'من فضلك', en: 'Please' },
+                        { jp: 'إلى اللقاء', en: 'Goodbye' }
+                    ],
+                    tip: '<strong>Tip:</strong> "شكرا" (shukran) is universal for thanks.'
+                },
+                3: {
+                    title: 'الوحدة 3 Guidebook',
+                    intro: 'عبارات مفيدة',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'أين المحطة؟', en: 'Where is the station?' },
+                        { jp: 'لا أفهم', en: 'I do not understand' },
+                        { jp: 'هل يمكنك مساعدتي؟', en: 'Can you help me?' }
+                    ],
+                    tip: '<strong>Tip:</strong> Arabic verbs change based on who is speaking.'
+                }
+            },
+
+            // ===== ENGLISH =====
+            english: {
+                1: {
+                    title: 'Unit 1 Guidebook',
+                    intro: 'Greetings and introductions',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Hello!', en: '¡Hola!' },
+                        { jp: 'How are you?', en: '¿Cómo estás?' },
+                        { jp: 'Nice to meet you', en: 'Mucho gusto' }
+                    ],
+                    tip: '<strong>Tip:</strong> English word order is Subject-Verb-Object.'
+                },
+                2: {
+                    title: 'Unit 2 Guidebook',
+                    intro: 'Everyday phrases',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Thank you very much', en: 'Muchas gracias' },
+                        { jp: 'Please', en: 'Por favor' },
+                        { jp: 'Goodbye', en: 'Adiós' }
+                    ],
+                    tip: '<strong>Tip:</strong> "Please" and "thank you" make requests polite.'
+                },
+                3: {
+                    title: 'Unit 3 Guidebook',
+                    intro: 'Useful expressions',
+                    art: '🧑‍🎨',
+                    phrases: [
+                        { jp: 'Where is the station?', en: '¿Dónde está la estación?' },
+                        { jp: 'I do not understand', en: 'No entiendo' },
+                        { jp: 'Can you help me?', en: '¿Puedes ayudarme?' }
+                    ],
+                    tip: '<strong>Tip:</strong> Use "could" instead of "can" for polite requests.'
+                }
+            },
+
+            // ===== CHESS =====
+            chess: {
+                1: {
+                    title: 'Section 1 Guidebook',
+                    intro: 'Piece movement and board basics',
+                    art: '♟',
+                    phrases: [
+                        { jp: 'Pawn', en: 'Moves forward 1 (or 2 from start). Captures diagonally.' },
+                        { jp: 'Knight', en: 'Moves in an L-shape: 2 + 1.' },
+                        { jp: 'Bishop', en: 'Moves diagonally, any distance.' },
+                        { jp: 'Rook', en: 'Moves in straight lines: ranks and files.' }
+                    ],
+                    tip: '<strong>Tip:</strong> Control the center four squares (d4, e4, d5, e5) early.'
+                },
+                2: {
+                    title: 'Section 2 Guidebook',
+                    intro: 'Captures and tactics',
+                    art: '♞',
+                    phrases: [
+                        { jp: 'Capture', en: 'Move onto an enemy piece\'s square to take it.' },
+                        { jp: 'Fork', en: 'Attack two pieces at once with one piece.' },
+                        { jp: 'Pin', en: 'Attack a piece so moving it exposes a bigger piece.' },
+                        { jp: 'Skewer', en: 'Attack a valuable piece so it must move, exposing a lesser one.' }
+                    ],
+                    tip: '<strong>Tip:</strong> Before every move, ask: "Is my piece safe there?"'
+                },
+                3: {
+                    title: 'Section 3 Guidebook',
+                    intro: 'Skewers, pins, and escaping them',
+                    art: '🧔',
+                    phrases: [
+                        { jp: 'Skewer', en: 'Attack the king first, then capture the piece behind.' },
+                        { jp: 'Absolute pin', en: 'Pinned piece cannot move — king is behind it.' },
+                        { jp: 'Relative pin', en: 'Pinned piece can move, but at a cost.' },
+                        { jp: 'Escape a pin', en: 'Move the king, block the line, or capture the attacker.' }
+                    ],
+                    tip: '<strong>Tip:</strong> Look for pins along the same rank, file, or diagonal.'
+                },
+                4: {
+                    title: 'Section 4 Guidebook',
+                    intro: 'Endgames and checkmate patterns',
+                    art: '♔',
+                    phrases: [
+                        { jp: 'Checkmate', en: 'King is in check and cannot escape.' },
+                        { jp: 'Stalemate', en: 'Player has no legal moves but is not in check — draw.' },
+                        { jp: 'Promotion', en: 'Pawn reaches the last rank and becomes a queen.' },
+                        { jp: 'King + pawn', en: 'Key endgame. Push the pawn, escort with the king.' }
+                    ],
+                    tip: '<strong>Tip:</strong> In king + pawn endgames, the king must lead the pawn.'
+                }
+            },
+
+            // ===== MATH =====
+            math: {
+                1: {
+                    title: 'Grade 1 Guidebook',
+                    intro: 'Addition basics',
+                    art: '➕',
+                    phrases: [
+                        { jp: '2 + 3 = 5', en: 'Two plus three equals five.' },
+                        { jp: '4 + 4 = 8', en: 'Four plus four equals eight.' },
+                        { jp: '10 + 5 = 15', en: 'Ten plus five equals fifteen.' }
+                    ],
+                    tip: '<strong>Tip:</strong> Start with the bigger number and count up.'
+                },
+                2: {
+                    title: 'Grade 2 Guidebook',
+                    intro: 'Multiplication tables',
+                    art: '✖️',
+                    phrases: [
+                        { jp: '3 × 4 = 12', en: 'Three times four equals twelve.' },
+                        { jp: '5 × 6 = 30', en: 'Five times six equals thirty.' },
+                        { jp: '7 × 8 = 56', en: 'Seven times eight equals fifty-six.' }
+                    ],
+                    tip: '<strong>Tip:</strong> Learn 2×, 5×, 10× first — they are the easiest patterns.'
+                },
+                3: {
+                    title: 'Grade 3 Guidebook',
+                    intro: 'Division and fractions',
+                    art: '➗',
+                    phrases: [
+                        { jp: '12 ÷ 4 = 3', en: 'Twelve divided by four equals three.' },
+                        { jp: '1/2 = 0.5', en: 'One half equals zero point five.' },
+                        { jp: '3/4 = 0.75', en: 'Three quarters equals zero point seven five.' }
+                    ],
+                    tip: '<strong>Tip:</strong> Division is the opposite of multiplication.'
+                }
+            },
+
+            // ===== MUSIC =====
+            music: {
+                1: {
+                    title: 'Unit 1 Guidebook',
+                    intro: 'Rhythm and beat',
+                    art: '🎵',
+                    phrases: [
+                        { jp: 'Do', en: 'First note of the scale' },
+                        { jp: 'Re', en: 'Second note' },
+                        { jp: 'Mi', en: 'Third note' }
+                    ],
+                    tip: '<strong>Tip:</strong> Clap on each beat to feel the rhythm.'
+                },
+                2: {
+                    title: 'Unit 2 Guidebook',
+                    intro: 'Continuing the scale',
+                    art: '🎶',
+                    phrases: [
+                        { jp: 'Fa', en: 'Fourth note' },
+                        { jp: 'Sol', en: 'Fifth note' },
+                        { jp: 'La', en: 'Sixth note' }
+                    ],
+                    tip: '<strong>Tip:</strong> The 5th note (Sol) is the strongest after Do.'
+                },
+                3: {
+                    title: 'Unit 3 Guidebook',
+                    intro: 'Completing the scale',
+                    art: '🎼',
+                    phrases: [
+                        { jp: 'Ti', en: 'Seventh note' },
+                        { jp: 'Do (high)', en: 'Octave — start of the next scale' }
+                    ],
+                    tip: '<strong>Tip:</strong> Ti creates tension that resolves to Do.'
+                }
+            }
+        };
+
+        function defaultGuide() {
+            return {
+                title: `Unit ${sectionNo} Guidebook`,
+                intro: 'Explore grammar tips and key phrases for this unit',
+                art: '🧑‍🎨',
+                phrases: [],
+                tip: ''
+            };
+        }
+
+        const courseGuides = GUIDES[courseId] || {};
+        const guide = courseGuides[sectionNo] || defaultGuide();
+
+        // ---------- 4. RENDER ----------
+        document.getElementById('guideTitle').textContent = guide.title;
+        document.getElementById('guideIntro').textContent = guide.intro;
+        document.getElementById('heroArt').textContent = guide.art || '🧑‍🎨';
+
+        document.getElementById('backLink').href =
+            `sections.html?courseId=${encodeURIComponent(courseId)}`;
+
+        const list = document.getElementById('phraseList');
+        if (!guide.phrases.length) {
+            list.innerHTML = `<p style="color:var(--muted);">No phrases for this unit yet.</p>`;
+        } else {
+            list.innerHTML = guide.phrases.map((p, i) => `
+                <div class="phrase" data-idx="${i}">
+                    <button class="speaker-btn" data-idx="${i}" aria-label="Play audio">🔊</button>
+                    <div class="phrase-text">
+                        <div class="phrase-jp">${p.jp}</div>
+                        <div class="phrase-en">${p.en}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        if (guide.tip) {
+            const tipBlock = document.getElementById('tipBlock');
+            tipBlock.innerHTML = guide.tip;
+            tipBlock.hidden = false;
+        }
+
+        // ---------- 5. TTS via sounds.js ----------
+        // Map course ids to display names for SFX.pronounce.
+        const COURSE_ID_TO_LANG = {
+            japanese: 'Japanese',
+            spanish: 'Spanish',
+            french: 'French',
+            german: 'German',
+            italian: 'Italian',
+            hindi: 'Hindi',
+            arabic: 'Arabic',
+            english: 'English',
+            korean: 'Korean',
+            telugu: 'Telugu',
+            chinese: 'Chinese',
+            portuguese: 'Portuguese',
+            russian: 'Russian',
+            turkish: 'Turkish',
+            chess: 'English',
+            math: 'English',
+            music: 'English'
+        };
+
+        document.getElementById('phraseList').addEventListener('click', (e) => {
+            const btn = e.target.closest('.speaker-btn');
+            const row = e.target.closest('.phrase');
+            if (!btn && !row) return;
+
+            const idx = Number((btn || row).dataset.idx);
+            const phrase = guide.phrases[idx];
+            if (!phrase) return;
+
+            const spokenLang = COURSE_ID_TO_LANG[courseId] || 'English';
+            SFX.pronounce(phrase.jp, { lang: spokenLang, rate: 0.85 });
+        });
+    </script>
+
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

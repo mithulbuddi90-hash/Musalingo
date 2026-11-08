@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --accent-shadow: #bd78a0;
+            --border: #e5e7eb;
+        }
+
+        body.dark-mode {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #e5e7eb;
+            --muted: #aeb9ca;
+            --border: #374151;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .page {
+            max-width: 640px;
+            margin: auto;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            margin: 0 0 16px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .row label {
+            font-weight: 600;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .row input[type="text"],
+        .row select {
+            flex: 1;
+            min-width: 0;
+            max-width: 240px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font: inherit;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .row input[type="color"] {
+            width: 48px;
+            height: 34px;
+            padding: 2px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--card);
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 12px 20px;
+            border-radius: 99px;
+            border: none;
+            font-weight: bold;
+            margin: 5px;
+            color: white;
+            font: inherit;
+            font-weight: 800;
+        }
+
+        .btn-save {
+            background: var(--accent);
+            box-shadow: 0 4px 0 var(--accent-shadow);
+        }
+
+        .btn-save:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-reset {
+            background: #2b70c9;
+            box-shadow: 0 4px 0 #1e4f8f;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            box-shadow: 0 4px 0 #991b1b;
+        }
+
+        .btn-test {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #2b70c9;
+            box-shadow: 0 4px 0 #1e4f8f;
+            padding: 8px 14px;
+            border: 0;
+            border-radius: 99px;
+            color: white;
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.1s ease;
+        }
+
+        .btn-test:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+
+        .btn-test:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 0 #1e4f8f;
+        }
+
+        .message {
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .message.success {
+            display: block;
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .message.error {
+            display: block;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .course-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .course-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .course-row span {
+            font-weight: 700;
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        .course-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            margin: 0;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .btn-remove-course {
+            background: #dc2626;
+            box-shadow: 0 3px 0 #991b1b;
+        }
+
+        .btn-reset-level {
+            background: #8d6de7;
+            box-shadow: 0 3px 0 #6a4fbf;
+        }
+
+        .empty-courses {
+            color: var(--muted);
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .footer-actions {
+            text-align: center;
+            margin-top: 8px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+
+            .page {
+                max-width: 100%;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 12px 0;
+            }
+
+            .row input[type="text"],
+            .row select {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .brand {
+                font-size: 1.6rem;
+            }
+
+            .footer-actions button {
+                width: 100%;
+                margin: 6px 0;
+            }
+
+            .course-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .course-actions {
+                flex-direction: column;
+            }
+
+            .btn-small {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <div class="page">
+        <div class="brand">Musalingo</div>
+        <div id="message" class="message" role="status" aria-live="polite"></div>
+
+        <!-- Profile -->
+        <div class="card">
+            <h2>👤 Profile</h2>
+            <div class="row">
+                <label for="nameInput">Display Name</label>
+                <input type="text" id="nameInput" maxlength="30" placeholder="Learner" />
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="card">
+            <h2>⚙️ Preferences</h2>
+            <div class="row">
+                <label for="soundToggle">Sound Effects</label>
+                <input type="checkbox" id="soundToggle" />
+            </div>
+            <div class="row">
+                <label>Test sound</label>
+                <button type="button" id="testSoundBtn" class="btn-test">🔊 Play test</button>
+            </div>
+            <div class="row">
+                <label for="notificationsToggle">Notifications</label>
+                <input type="checkbox" id="notificationsToggle" />
+            </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="card">
+            <h2>🎨 Appearance</h2>
+            <div class="row">
+                <label for="themeSelect">Theme</label>
+                <select id="themeSelect">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="system">Use device setting</option>
+                </select>
+            </div>
+            <div class="row">
+                <label for="accentPicker">Accent Color</label>
+                <input type="color" id="accentPicker" value="#EC96C7" />
+            </div>
+            <div class="row">
+                <label for="shadowPicker">Shadow Color</label>
+                <input type="color" id="shadowPicker" value="#bd78a0" />
+            </div>
+        </div>
+
+        <!-- Bloat Controls -->
+        <div class="card">
+            <h2>🧹 Remove Bloat</h2>
+            <div class="row">
+                <label for="noGamification">Gamification (hearts, XP, shop)</label>
+                <input type="checkbox" id="noGamification" />
+            </div>
+            <div class="row">
+                <label for="noStreaks">Streaks</label>
+                <input type="checkbox" id="noStreaks" />
+            </div>
+            <div class="row">
+                <label for="noHearts">Hearts</label>
+                <input type="checkbox" id="noHearts" />
+            </div>
+            <div class="row">
+                <label for="noLeaderboards">Leaderboards</label>
+                <input type="checkbox" id="noLeaderboards" />
+            </div>
+            <div class="row">
+                <label for="noNonsense">Nonsense Sentences</label>
+                <input type="checkbox" id="noNonsense" />
+            </div>
+        </div>
+
+        <!-- Social -->
+        <div class="card">
+            <h2>👥 Social</h2>
+            <div class="row">
+                <label for="publicProfile">Public Profile</label>
+                <input type="checkbox" id="publicProfile" />
+            </div>
+            <div class="row">
+                <label for="showFriends">Show Friends List</label>
+                <input type="checkbox" id="showFriends" />
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>💬 Feedback</h2>
+            <div class="row">
+                <label>Report a bug or request a feature</label>
+                <a href="forms.html" class="btn-test" style="text-decoration:none;">Open form</a>
+            </div>
+        </div>
+
+        <!-- Your Courses -->
+        <div class="card">
+            <h2>📚 Your Courses</h2>
+            <div class="course-list" id="courseList"></div>
+        </div>
+
+        <div class="footer-actions">
+            <button id="saveBtn" class="btn-save">Save Settings</button>
+            <button id="resetBtn" class="btn-reset">Reset Progress</button>
+            <button id="deleteBtn" class="btn-danger">Delete All Data</button>
+        </div>
+    </div>
+
+    <script src="sounds.js"></script>
+
+    <script>
+        /* ============================================================
+           Musalingo — settings.js (inline)
+           ============================================================ */
+
+        // SAFE JSON PARSE
+        function safeParse(key, fallback) {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : fallback;
+            } catch (e) {
+                console.warn(`Corrupted localStorage for ${key}, resetting.`);
+                return fallback;
+            }
+        }
+
+        /* ---------- DEFAULT STATE ---------- */
+        const DEFAULT_SETTINGS = {
+            theme: 'light',
+            accent: '#EC96C7',
+            shadow: '',
+            notifications: true,
+            sound: true,
+            noGamification: false,
+            noStreaks: false,
+            noHearts: false,
+            noLeaderboards: false,
+            noNonsense: false,
+            publicProfile: true,
+            showFriends: true
+        };
+
+        /* ---------- LOAD ---------- */
+        let profile = safeParse('MusalingoProfile', { courses: [] });
+        if (!Array.isArray(profile.courses)) profile.courses = [];
+
+        const settings = Object.assign({}, DEFAULT_SETTINGS, safeParse('MusalingoSettings', {}));
+        let shadowWasCustomized = Boolean(settings.shadow);
+
+        /* ---------- HELPERS ---------- */
+        function darkenAccent(hex, amount) {
+            if (!/^#[0-9a-f]{6}$/i.test(hex)) return '#bd78a0';
+            const channels = [1, 3, 5].map(index =>
+                Math.max(0, Math.min(255, Math.round(parseInt(hex.slice(index, index + 2), 16) * (1 - amount))))
+            );
+            return '#' + channels.map(c => c.toString(16).padStart(2, '0')).join('');
+        }
+
+        function showMessage(text, type = 'success') {
+            const el = document.getElementById('message');
+            el.textContent = text;
+            el.className = `message ${type}`;
+            if (type === 'success') {
+                clearTimeout(showMessage._timer);
+                showMessage._timer = setTimeout(() => {
+                    el.className = 'message';
+                }, 3000);
+            }
+        }
+
+        function applyTheme(s) {
+            const root = document.documentElement;
+            const darkMode = s.theme === 'dark'
+                || (s.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            root.style.setProperty('--accent', s.accent);
+            root.style.setProperty('--accent-dark', darkenAccent(s.accent, 0.2));
+            root.style.setProperty('--accent-shadow', s.shadow || darkenAccent(s.accent, 0.2));
+            root.style.setProperty('--bg', darkMode ? '#111827' : '#f7f8fc');
+            root.style.setProperty('--card', darkMode ? '#1f2937' : '#ffffff');
+            root.style.setProperty('--panel', darkMode ? '#1f2937' : '#ffffff');
+            root.style.setProperty('--panel-2', darkMode ? '#273449' : '#f3f6fb');
+            root.style.setProperty('--text', darkMode ? '#e5e7eb' : '#1f2937');
+            root.style.setProperty('--muted', darkMode ? '#aeb9ca' : '#6b7280');
+            root.style.setProperty('--border', darkMode ? '#374151' : '#e5e7eb');
+            root.style.colorScheme = darkMode ? 'dark' : 'light';
+            document.body.classList.toggle('dark-mode', darkMode);
+            document.body.classList.toggle('light-mode', !darkMode);
+        }
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[c]));
+        }
+
+        /* ---------- COURSE LIST (With Reset Level) ---------- */
+        function renderCourses() {
+            const courseList = document.getElementById('courseList');
+            if (!profile.courses.length) {
+                courseList.innerHTML = '<p class="empty-courses">No courses added yet. Visit the dashboard to pick one.</p>';
+                return;
+            }
+            courseList.innerHTML = profile.courses.map(course => `
+                <div class="course-row">
+                    <span>${escapeHtml(course.name || course.id)}</span>
+                    <div class="course-actions">
+                        <button class="btn-small btn-reset-level" type="button" data-reset-id="${escapeHtml(course.id)}">Reset Level</button>
+                        <button class="btn-small btn-remove-course" type="button" data-course-id="${escapeHtml(course.id)}">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Handle Remove
+            courseList.querySelectorAll('.btn-remove-course').forEach(button => {
+                button.addEventListener('click', () => {
+                    const courseId = button.dataset.courseId;
+                    const course = profile.courses.find(item => item.id === courseId);
+                    if (!course) return;
+                    const lessonCount = Array.isArray(course.lessons) ? course.lessons.filter(l => l.completed).length : 0;
+                    const warning = lessonCount > 0
+                        ? `\n\nThis will also delete progress on ${lessonCount} completed lesson${lessonCount === 1 ? '' : 's'}.`
+                        : '';
+                    if (!confirm(`Remove ${course.name || course.id}?${warning}`)) return;
+                    profile.courses = profile.courses.filter(item => item.id !== courseId);
+                    if (profile.activeCourseId === courseId) profile.activeCourseId = null;
+                    localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+                    renderCourses();
+                    showMessage(`Removed ${course.name || course.id}.`);
+                    if (typeof SFX !== 'undefined') SFX.correct();
+                });
+            });
+
+            // Handle Reset Level (Per Course)
+            courseList.querySelectorAll('.btn-reset-level').forEach(button => {
+                button.addEventListener('click', () => {
+                    const courseId = button.dataset.resetId;
+                    const course = profile.courses.find(item => item.id === courseId);
+                    if (!course) return;
+                    if (!confirm(`Reset your level for ${course.name || course.id}? You will start from Unit 1 again.`)) return;
+
+                    delete course.learningProfile;
+                    localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+
+                    showMessage(`Level reset for ${course.name || course.id}. You can redo the interview next time.`);
+                    if (typeof SFX !== 'undefined') SFX.correct();
+                });
+            });
+        }
+
+        /* ---------- POPULATE FORM ---------- */
+        document.getElementById('nameInput').value = profile.name || '';
+        document.getElementById('themeSelect').value = settings.theme;
+        document.getElementById('accentPicker').value = settings.accent;
+        document.getElementById('shadowPicker').value = settings.shadow || darkenAccent(settings.accent, 0.2);
+        document.getElementById('soundToggle').checked = settings.sound !== false;
+        document.getElementById('notificationsToggle').checked = settings.notifications !== false;
+        document.getElementById('noGamification').checked = !!settings.noGamification;
+        document.getElementById('noStreaks').checked = !!settings.noStreaks;
+        document.getElementById('noHearts').checked = !!settings.noHearts;
+        document.getElementById('noLeaderboards').checked = !!settings.noLeaderboards;
+        document.getElementById('noNonsense').checked = !!settings.noNonsense;
+        document.getElementById('publicProfile').checked = settings.publicProfile !== false;
+        document.getElementById('showFriends').checked = settings.showFriends !== false;
+
+        applyTheme(settings);
+        renderCourses();
+
+        /* ---------- LIVE PREVIEW ---------- */
+        let previewSettings = { ...settings };
+        const systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const updateSystemPreview = () => {
+            if (previewSettings.theme === 'system') applyTheme(previewSettings);
+        };
+        if (systemThemeQuery.addEventListener) systemThemeQuery.addEventListener('change', updateSystemPreview);
+        else systemThemeQuery.addListener(updateSystemPreview);
+
+        document.getElementById('themeSelect').addEventListener('change', (e) => {
+            previewSettings = { ...settings, theme: e.target.value };
+            applyTheme(previewSettings);
+            if (typeof SFX !== 'undefined') SFX.click();
+        });
+
+        document.getElementById('accentPicker').addEventListener('input', (e) => {
+            const accent = e.target.value;
+            if (!shadowWasCustomized) {
+                document.getElementById('shadowPicker').value = darkenAccent(accent, 0.2);
+            }
+            const preview = {
+                ...previewSettings,
+                accent,
+                shadow: shadowWasCustomized ? document.getElementById('shadowPicker').value : ''
+            };
+            previewSettings = preview;
+            applyTheme(preview);
+        });
+
+        document.getElementById('shadowPicker').addEventListener('input', () => {
+            shadowWasCustomized = true;
+            previewSettings = {
+                ...previewSettings,
+                accent: document.getElementById('accentPicker').value,
+                shadow: document.getElementById('shadowPicker').value
+            };
+            applyTheme(previewSettings);
+        });
+
+        document.getElementById('soundToggle').addEventListener('change', (e) => {
+            if (e.target.checked && typeof SFX !== 'undefined') SFX.correct();
+        });
+
+        /* ---------- TEST SOUND BUTTON (Fixed) ---------- */
+        document.getElementById('testSoundBtn').addEventListener('click', async () => {
+            if (typeof SFX === 'undefined') {
+                showMessage('Sound engine not loaded. Check that sounds.js exists.', 'error');
+                return;
+            }
+
+            const currentSettings = safeParse('MusalingoSettings', {}) || {};
+            const appSettings = safeParse('MusalingoAppSettings', {}) || {};
+            const originalMainSound = currentSettings.sound;
+            const originalAppSound = appSettings.sound;
+            const hadMainSound = Object.prototype.hasOwnProperty.call(currentSettings, 'sound');
+            const hadAppSound = Object.prototype.hasOwnProperty.call(appSettings, 'sound');
+
+            currentSettings.sound = true;
+            appSettings.sound = true;
+            localStorage.setItem('MusalingoSettings', JSON.stringify(currentSettings));
+            localStorage.setItem('MusalingoAppSettings', JSON.stringify(appSettings));
+
+            try {
+                if (!await SFX.unlock()) {
+                    showMessage('Could not start audio. Try clicking the test button again.', 'error');
+                    return;
+                }
+                SFX.correct();
+            } finally {
+                const restoreSound = (key, original, existed) => {
+                    const saved = safeParse(key, {}) || {};
+                    if (existed) saved.sound = original;
+                    else delete saved.sound;
+                    localStorage.setItem(key, JSON.stringify(saved));
+                };
+                restoreSound('MusalingoSettings', originalMainSound, hadMainSound);
+                restoreSound('MusalingoAppSettings', originalAppSound, hadAppSound);
+            }
+        });
+
+        /* ---------- SAVE ---------- */
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const displayName = document.getElementById('nameInput').value.trim();
+
+            if (!displayName) {
+                showMessage('Display name cannot be empty.', 'error');
+                if (typeof SFX !== 'undefined') SFX.error();
+                return;
+            }
+
+            const newSettings = {
+                theme: document.getElementById('themeSelect').value,
+                accent: document.getElementById('accentPicker').value,
+                shadow: shadowWasCustomized ? document.getElementById('shadowPicker').value : '',
+                sound: document.getElementById('soundToggle').checked,
+                notifications: document.getElementById('notificationsToggle').checked,
+                noGamification: document.getElementById('noGamification').checked,
+                noStreaks: document.getElementById('noStreaks').checked,
+                noHearts: document.getElementById('noHearts').checked,
+                noLeaderboards: document.getElementById('noLeaderboards').checked,
+                noNonsense: document.getElementById('noNonsense').checked,
+                publicProfile: document.getElementById('publicProfile').checked,
+                showFriends: document.getElementById('showFriends').checked
+            };
+
+            localStorage.setItem('MusalingoSettings', JSON.stringify(newSettings));
+            const appSettings = safeParse('MusalingoAppSettings', {});
+            appSettings.sound = newSettings.sound;
+            appSettings.notifications = newSettings.notifications;
+            localStorage.setItem('MusalingoAppSettings', JSON.stringify(appSettings));
+
+            profile.name = displayName;
+            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+
+            applyTheme(newSettings);
+            showMessage('Settings saved!');
+
+            if (typeof SFX !== 'undefined') {
+                if (newSettings.sound) SFX.correct();
+            }
+
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 600);
+        });
+
+        /* ---------- RESET PROGRESS ---------- */
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (!confirm('Reset all learning progress?\n\nThis clears your courses and lesson history but keeps your name, theme, and settings.')) return;
+
+            profile.courses = [];
+            profile.streak = 0;
+            profile.xp = 0;
+            profile.lastLessonDate = null;
+            profile.lastActiveDate = null;
+            profile.streakStatus = 'inactive';
+            profile.lessonDates = [];
+            profile.activeCourseId = null;
+            profile.dailyQuestDate = null;
+            profile.dailyQuestProgress = { xp: 0, lessons: 0, practice: 0, accuracy: 0, streak: 0 };
+            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+
+            renderCourses();
+            showMessage('Progress reset. Your courses will need to be added again.');
+            if (typeof SFX !== 'undefined') SFX.correct();
+        });
+
+        /* ---------- DELETE ALL DATA ---------- */
+        document.getElementById('deleteBtn').addEventListener('click', () => {
+            if (!confirm(
+                'Delete ALL data?\n\nThis will remove:\n' +
+                '• Your profile and courses\n' +
+                '• All learning progress\n' +
+                '• Login state (you will be signed out)\n\n' +
+                'Your theme and sound settings will be kept.'
+            )) return;
+
+            const themeToKeep = localStorage.getItem('MusalingoSettings');
+            const appSettingsToKeep = localStorage.getItem('MusalingoAppSettings');
+
+            localStorage.clear();
+
+            if (themeToKeep) localStorage.setItem('MusalingoSettings', themeToKeep);
+            if (appSettingsToKeep) localStorage.setItem('MusalingoAppSettings', appSettingsToKeep);
+
+            (async () => {
+                try {
+                    const { getAuth, signOut } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
+                    const { app } = await import('./firebase.js');
+                    const auth = getAuth(app);
+                    if (auth.currentUser) await signOut(auth);
+                } catch (e) { /* firebase not available, ignore */ }
+            })();
+
+            showMessage('All data deleted. Redirecting…', 'error');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 800);
+        });
+    </script>
+
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>

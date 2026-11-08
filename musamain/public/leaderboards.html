@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaderboards - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Weekly leaderboards on Musalingo.">
+    <meta http-equiv="refresh" content="0;url=coming-soon.html?feature=leaderboards">
+    <script>window.location.replace('coming-soon.html?feature=leaderboards');</script>
+    <style>
+        :root {
+            --bg: #f7f8fc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --border: #e5e7eb;
+            --gold: #f59e0b;
+        }
+
+        body.dark-mode {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #e5e7eb;
+            --muted: #aeb9ca;
+            --border: #374151;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        }
+
+        .page {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--accent-dark);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin: 6px 0 0;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 18px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 5px 0 var(--accent-dark);
+            border: none;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .league-card {
+            background: linear-gradient(135deg, #fff7ed, #fef3c7);
+            border: 2px solid #fcd34d;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        body.dark-mode .league-card {
+            background: linear-gradient(135deg, #2d2419, #3d3020);
+            border-color: var(--gold);
+        }
+
+        .league-icon {
+            font-size: 2.6rem;
+        }
+
+        .league-title {
+            margin: 8px 0 4px;
+            font-size: 1.2rem;
+            color: var(--gold);
+        }
+
+        .league-sub {
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .leader-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .leader-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--card);
+        }
+
+        .leader-row.me {
+            border-color: var(--accent);
+            background: rgba(236, 150, 199, 0.08);
+        }
+
+        .rank {
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--bg);
+            font-weight: 800;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .leader-row:nth-child(1) .rank {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .leader-row:nth-child(2) .rank {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .leader-row:nth-child(3) .rank {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .leader-name {
+            flex: 1;
+            min-width: 0;
+            font-weight: 700;
+        }
+
+        .leader-xp {
+            color: var(--accent-dark);
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+
+        .you-row {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 14px;
+            background: var(--bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .you-label {
+            font-weight: 800;
+        }
+
+        .you-stats {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .note {
+            margin-top: 20px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(236, 150, 199, 0.08);
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="card">
+            <div class="topbar">
+                <div>
+                    <h1>🛡️ Leaderboards</h1>
+                    <p class="subtitle">Weekly leagues and rankings</p>
+                </div>
+                <a class="btn" href="dashboard.html">← Back</a>
+            </div>
+
+            <div class="league-card">
+                <div class="league-icon">💎</div>
+                <h2 class="league-title">Diamond Tournament</h2>
+                <p class="league-sub" id="leagueStatus">Loading…</p>
+            </div>
+
+            <div class="leader-list" id="leaderList"></div>
+
+            <div class="you-row">
+                <span class="you-label">You</span>
+                <span class="you-stats" id="youStats">—</span>
+            </div>
+
+            <div class="note">
+                💡 <strong>Coming soon:</strong> Live rankings across all users. Right now this shows a sample
+                leaderboard and your own stats.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const profile = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
+        const xp = Number(profile.xp) || 0;
+        const streak = Number(profile.streak) || 0;
+        const name = (profile.name && !/^guest( learner)?$/i.test(profile.name)) ? profile.name : 'You';
+
+        // Sample leaderboard — replace with Firestore aggregation post-beta
+        const sample = [
+            { name: 'Wren', xp: 1125 },
+            { name: 'Kai', xp: 940 },
+            { name: 'Aster', xp: 820 },
+            { name: 'Juno', xp: 760 },
+            { name: 'Sage', xp: 690 },
+            { name: 'Rowan', xp: 610 },
+            { name: 'Iris', xp: 540 }
+        ];
+
+        // Insert the user into the sorted list by XP
+        const all = [...sample, { name, xp, me: true }]
+            .sort((a, b) => b.xp - a.xp);
+
+        const myRank = all.findIndex(p => p.me) + 1;
+        document.getElementById('leagueStatus').textContent = `You're ranked #${myRank} of ${all.length} · ${xp} XP`;
+        document.getElementById('youStats').textContent = `${xp} XP · ${streak}🔥`;
+
+        document.getElementById('leaderList').innerHTML = all.map((p, i) => `
+            <div class="leader-row ${p.me ? 'me' : ''}">
+                <div class="rank">${i + 1}</div>
+                <div class="leader-name">${p.me ? 'You' : p.name}</div>
+                <div class="leader-xp">${p.xp} XP</div>
+            </div>
+        `).join('');
+    </script>
+
+    <script src="theme.js"></script>
+    <script src="bloat.js"></script>
+    <script src="pwa.js" defer></script>
+</body>
+
+</html>
