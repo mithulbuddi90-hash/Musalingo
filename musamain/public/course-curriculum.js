@@ -116,7 +116,10 @@ window.MUSALINGO_CURRICULUM = (() => {
             { topic: 'Trapped pieces', kind: 'puzzle' },
             { topic: 'Opening traps', kind: 'opening' },
             { topic: 'Gaining material', kind: 'practice' },
-            { topic: 'Checkmate practice', kind: 'puzzle' }
+            { topic: 'Checkmate practice', kind: 'puzzle' },
+            { topic: 'Mate in 2 puzzles', kind: 'puzzle' },    // → mate-in-2
+            { topic: 'Mate in 3 puzzles', kind: 'puzzle' },    // → mate-in-3
+            { topic: 'Move sequences', kind: 'practice' },     // → move-sequence
         ],
         // ===== Section 4 — Intermediate Development =====
         [

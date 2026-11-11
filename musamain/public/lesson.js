@@ -1,5 +1,12 @@
 /* ============================================================
-   Musalingo — lesson.js (Fully Fixed + Interview + Fallbacks)
+   Musalingo — lesson.js (v3)
+   Features:
+     • 10 language question types
+     • Multi-move chess sequences
+     • King hiding on non-king-relevant puzzles
+     • Exit confirmation when lesson is in progress
+     • AI/Offline source badge with error codes
+     • Clean fallback messaging
    ============================================================ */
 
 const savedTheme = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
@@ -26,34 +33,77 @@ function playSound(name, arg) {
     }
 }
 
-// ---------- JUMP MEMORY ----------
-(function rememberJump() {
-    try {
-        const jumpSection = Number(urlParams.get('section')) || null;
-        const jumpUnit = Number(urlParams.get('unit')) || null;
-        const jumpCourse = courseId;
-        const combine = urlParams.get('combine') === '1';
-        if (combine && jumpSection && jumpUnit && jumpCourse) {
-            sessionStorage.setItem('MusalingoJumpState', JSON.stringify({
-                courseId: jumpCourse, section: jumpSection, unit: jumpUnit, combine, at: Date.now()
-            }));
-        }
-    } catch (e) { }
-})();
+// ---------- SOURCE BADGE HELPERS ----------
+const SOURCE_BADGES = {
+    ai: { label: 'AI-generated', color: '#278a44', icon: '✨' },
+    fallback: { label: 'Offline questions', color: '#b45309', icon: '📴' },
+    mixed: { label: 'AI + offline', color: '#7c3aed', icon: '🔀' },
+    'built-in': { label: 'Built-in', color: '#2563eb', icon: '📚' },
+    review: { label: 'Review', color: '#0ea5e9', icon: '🎯' }
+};
 
-// ---------- FETCH AI QUESTIONS (With Interview Data) ----------
+const ERROR_CODES = {
+    E10: 'No Gemini API keys configured on the server',
+    E11: 'Gemini API returned 401 (key invalid or revoked)',
+    E12: 'Gemini API returned 403 (key forbidden or quota exceeded)',
+    E20: 'Rate limited — too many requests, try again in a minute',
+    E21: 'Daily quota exhausted on all API keys',
+    E30: 'Gemini model not found on this API version',
+    E40: 'Gemini request timed out',
+    E50: 'All Gemini attempts failed (unknown reason)',
+    E60: 'Network error talking to Gemini',
+    E70: 'Empty response from Gemini (safety filter or malformed JSON)',
+    E99: 'Unexpected error'
+};
+
+function errorLabel(code) {
+    return `${code} — ${ERROR_CODES[code] || 'Unknown error'}`;
+}
+
+function extractErrorCode(message) {
+    if (!message) return 'E99';
+    const text = String(message).toLowerCase();
+    if (text.includes('no gemini') || text.includes('no gemini api keys')) return 'E10';
+    if (text.includes('unauthorized') || text.includes('http 401')) return 'E11';
+    if (text.includes('forbidden') || text.includes('http 403')) return 'E12';
+    if (text.includes('rate limited (daily)') || text.includes('daily quota')) return 'E21';
+    if (text.includes('rate limited') || text.includes('http 429')) return 'E20';
+    if (text.includes('model not found') || text.includes('http 404')) return 'E30';
+    if (text.includes('timeout') || text.includes('abort')) return 'E40';
+    if (text.includes('empty')) return 'E70';
+    if (text.includes('network') || text.includes('fetch')) return 'E60';
+    return 'E50';
+}
+
+function setSourceBadge(element, source, errorMessage) {
+    if (!element) return;
+    const badge = SOURCE_BADGES[source] || SOURCE_BADGES.fallback;
+    let label = badge.label;
+    if (source === 'fallback' && errorMessage) {
+        const code = extractErrorCode(errorMessage);
+        label = `Offline questions (${code})`;
+        element.title = errorLabel(code);
+    } else if (source === 'fallback') {
+        element.title = 'AI unavailable — using local questions';
+    } else {
+        element.title = `${badge.label} — source: ${source}`;
+    }
+    element.textContent = `${badge.icon} ${label}`;
+    element.style.color = badge.color;
+    element.style.fontWeight = '700';
+    element.style.fontSize = '0.85rem';
+    element.style.marginLeft = '8px';
+}
+
+// ---------- FETCH AI QUESTIONS ----------
 async function fetchAIQuestions(topic, language, count = 10, level = 1, learningProfile = null, unitIndex = null, audienceLanguage = 'English', practiceMode = '') {
+    let errorMessage = null;
     try {
         const res = await fetch('/api/generate-questions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                topic,
-                language,
-                audienceLanguage,
-                count,
-                level,
-                unitIndex,
+                topic, language, audienceLanguage, count, level, unitIndex,
                 noNonsense: savedTheme.noNonsense === true,
                 reason: learningProfile?.reason || 'curiosity',
                 goal: learningProfile?.goal || 'confidence',
@@ -61,23 +111,44 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
                 practiceMode
             })
         });
+
+        const sourceHeader = res.headers.get('X-Musal-Question-Source') || 'unknown';
+
         if (!res.ok) {
+            errorMessage = `HTTP ${res.status}`;
             console.warn('⚠️ AI failed, using FALLBACK questions. Status:', res.status);
-            return { questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }), source: 'fallback' };
+            return {
+                questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }),
+                source: 'fallback',
+                error: errorMessage
+            };
         }
+
         const data = await res.json();
         if (Array.isArray(data) && data.length) {
-            return { questions: data, source: res.headers.get('X-Musal-Question-Source') || 'ai' };
+            return { questions: data, source: sourceHeader === 'ai' ? 'ai' : sourceHeader, error: null };
         }
         if (Array.isArray(data?.questions) && data.questions.length) {
-            return { questions: data.questions, source: data.source || 'ai' };
+            return { questions: data.questions, source: data.source || sourceHeader, error: null };
         }
-        return { questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }), source: 'fallback' };
+
+        errorMessage = 'Empty response';
+        return {
+            questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }),
+            source: 'fallback',
+            error: errorMessage
+        };
     } catch (error) {
+        errorMessage = error?.message || 'Unknown network error';
         console.warn('AI fetch failed:', error);
-        return { questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }), source: 'fallback' };
+        return {
+            questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }),
+            source: 'fallback',
+            error: errorMessage
+        };
     }
 }
+
 /* ============ PROFILE ============ */
 function createDefaultProfile() {
     return { email: '', name: 'Guest learner', streak: 0, diamonds: 100, hearts: 5, lastActiveDate: null, lastLessonDate: null, streakStatus: 'inactive', selectedCourse: null, courses: [], inventory: [], streakFreezes: 0, streakFreezeDates: [] };
@@ -92,24 +163,10 @@ function loadProfile() {
         p.inventory = Array.isArray(p.inventory) ? p.inventory : [];
         const d = Number(p.diamonds); p.diamonds = Number.isFinite(d) ? Math.max(0, Math.floor(d)) : 100;
         const h = Number(p.hearts); p.hearts = Number.isFinite(h) ? Math.max(0, Math.floor(h)) : 5;
-        const streak = Number(p.streak);
-        const freezes = Number(p.streakFreezes);
-        p.streak = Number.isFinite(streak) ? Math.max(0, Math.floor(streak)) : 0;
-        p.streakFreezes = Number.isFinite(freezes) ? Math.min(3, Math.max(0, Math.floor(freezes))) : 0;
-        p.streakFreezeDates = Array.isArray(p.streakFreezeDates)
-            ? p.streakFreezeDates.filter((date) => typeof date === 'string')
-            : [];
         return p;
     } catch { return createDefaultProfile(); }
 }
 function saveProfile(p) { localStorage.setItem('MusalingoProfile', JSON.stringify(p)); }
-
-function getLocalDateKey(date = new Date()) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
 
 const HEART_CAP = 5;
 const HEART_REFILL_INTERVAL = 30 * 60 * 1000;
@@ -136,10 +193,6 @@ const lesson = course?.lessons?.find((l) => l.id === lessonId) || course?.lesson
 
 const lessonTitle = document.getElementById('lessonTitle');
 const lessonSubtitle = document.getElementById('lessonSubtitle');
-const lessonProgressLabel = document.getElementById('lessonProgressLabel');
-const lessonProgressCount = document.getElementById('lessonProgressCount');
-const lessonProgressTrack = document.getElementById('lessonProgressTrack');
-const lessonProgressFill = document.getElementById('lessonProgressFill');
 const promptText = document.getElementById('promptText');
 const audioControls = document.getElementById('audioControls');
 const normalVoiceBtn = document.getElementById('normalVoiceBtn');
@@ -164,6 +217,15 @@ const accuracyLabel = document.getElementById('accuracyLabel');
 const xpEarnedLabel = document.getElementById('xpEarnedLabel');
 const backDashboardLink = document.getElementById('backDashboardLink');
 
+// Inject source badge next to the subtitle
+const sourceBadge = document.createElement('span');
+sourceBadge.id = 'lessonSourceBadge';
+sourceBadge.style.marginLeft = '8px';
+sourceBadge.style.fontSize = '0.85rem';
+sourceBadge.style.fontWeight = '700';
+sourceBadge.textContent = '';
+lessonSubtitle.appendChild(sourceBadge);
+
 function renderHeartGauge() {
     if (!heartGauge || !heartGaugeCount) return;
     const heartsDisabled = savedTheme.noHearts || savedTheme.noGamification;
@@ -179,118 +241,15 @@ function shuffle(arr) {
     return c;
 }
 
-function getChessLegalMoves(board, from, fen) {
-    const piece = board[from];
-    if (!piece) return [];
-    const color = piece[0];
-    const type = piece[1].toUpperCase();
-    const [file, rank] = [from.charCodeAt(0) - 97, Number(from[1])];
-    const position = (x, y) => x >= 0 && x < 8 && y >= 1 && y <= 8 ? `${String.fromCharCode(97 + x)}${y}` : null;
-    const enemy = color === 'w' ? 'b' : 'w';
-    const candidates = [];
-    const addStep = (x, y) => {
-        const square = position(x, y);
-        if (!square) return;
-        const target = board[square];
-        if (!target || target[0] !== color) candidates.push(square);
-    };
-
-    if (type === 'P') {
-        const direction = color === 'w' ? 1 : -1;
-        const next = position(file, rank + direction);
-        if (next && !board[next]) {
-            candidates.push(next);
-            const startRank = color === 'w' ? 2 : 7;
-            const doubleStep = position(file, rank + direction * 2);
-            if (rank === startRank && doubleStep && !board[doubleStep]) candidates.push(doubleStep);
-        }
-        for (const offset of [-1, 1]) {
-            const capture = position(file + offset, rank + direction);
-            if (capture && board[capture]?.[0] === enemy) candidates.push(capture);
-        }
-        const enPassant = String(fen || '').split(/\s+/)[3];
-        if (enPassant && enPassant !== '-' && Math.abs(enPassant.charCodeAt(0) - 97 - file) === 1
-            && Number(enPassant[1]) === rank + direction && board[`${enPassant[0]}${rank}`] === `${enemy}P`) {
-            candidates.push(enPassant);
-        }
-    } else if (type === 'N' || type === 'K') {
-        const offsets = type === 'N'
-            ? [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]]
-            : [[1, 1], [1, 0], [1, -1], [0, 1], [0, -1], [-1, 1], [-1, 0], [-1, -1]];
-        offsets.forEach(([dx, dy]) => addStep(file + dx, rank + dy));
-    } else {
-        const directions = [];
-        if (type === 'R' || type === 'Q') directions.push([1, 0], [-1, 0], [0, 1], [0, -1]);
-        if (type === 'B' || type === 'Q') directions.push([1, 1], [1, -1], [-1, 1], [-1, -1]);
-        directions.forEach(([dx, dy]) => {
-            let x = file + dx;
-            let y = rank + dy;
-            while (position(x, y)) {
-                const square = position(x, y);
-                const target = board[square];
-                if (!target) candidates.push(square);
-                else {
-                    if (target[0] !== color) candidates.push(square);
-                    break;
-                }
-                x += dx;
-                y += dy;
-            }
-        });
-    }
-
-    const isAttacked = (state, target, byColor) => {
-        const [targetFile, targetRank] = [target.charCodeAt(0) - 97, Number(target[1])];
-        for (const [square, attacker] of Object.entries(state)) {
-            if (attacker[0] !== byColor) continue;
-            const [x, y] = [square.charCodeAt(0) - 97, Number(square[1])];
-            const dx = targetFile - x;
-            const dy = targetRank - y;
-            const kind = attacker[1].toUpperCase();
-            if (kind === 'P' && Math.abs(dx) === 1 && dy === (byColor === 'w' ? 1 : -1)) return true;
-            if (kind === 'N' && Math.abs(dx) * Math.abs(dy) === 2) return true;
-            if (kind === 'K' && Math.max(Math.abs(dx), Math.abs(dy)) === 1) return true;
-            const diagonal = Math.abs(dx) === Math.abs(dy) && dx !== 0;
-            const straight = (dx === 0) !== (dy === 0);
-            if (!((kind === 'B' && diagonal) || (kind === 'R' && straight)
-                || (kind === 'Q' && (diagonal || straight)))) continue;
-            const stepX = Math.sign(dx);
-            const stepY = Math.sign(dy);
-            let checkX = x + stepX;
-            let checkY = y + stepY;
-            let blocked = false;
-            while (checkX !== targetFile || checkY !== targetRank) {
-                if (state[position(checkX, checkY)]) { blocked = true; break; }
-                checkX += stepX;
-                checkY += stepY;
-            }
-            if (!blocked) return true;
-        }
-        return false;
-    };
-
-    return candidates.filter((to) => {
-        const nextBoard = { ...board };
-        delete nextBoard[from];
-        if (type === 'P' && to === String(fen || '').split(/\s+/)[3] && !board[to]) {
-            delete nextBoard[`${to[0]}${rank}`];
-        }
-        nextBoard[to] = piece;
-        const kingSquare = type === 'K' ? to : Object.keys(nextBoard).find(square => nextBoard[square] === `${color}K`);
-        return !kingSquare || !isAttacked(nextBoard, kingSquare, enemy);
-    });
-}
-
 function normalizeLanguageName(language) {
     const value = String(language || '').trim();
     if (!value) return 'English';
-    const map = { telugu: 'Telugu', japanese: 'Japanese', spanish: 'Spanish', french: 'French', german: 'German', italian: 'Italian', arabic: 'Arabic', hindi: 'Hindi', english: 'English', chinese: 'Chinese', korean: 'Korean', portuguese: 'Portuguese', russian: 'Russian', turkish: 'Turkish', music: 'Music' };
+    const map = { telugu: 'Telugu', japanese: 'Japanese', spanish: 'Spanish', french: 'French', german: 'German', italian: 'Italian', arabic: 'Arabic', hindi: 'Hindi', english: 'English', chinese: 'Chinese', korean: 'Korean', portuguese: 'Portuguese', russian: 'Russian', turkish: 'Turkish', music: 'Music', chess: 'Chess', math: 'Math' };
     return map[value.toLowerCase()] || value;
 }
 
 const LESSON_COPY = {
     English: {
-        lessonProgress: 'Lesson progress',
         practicePrompt: 'Practice prompt', loadingLesson: 'Loading lesson…', generatingQuestions: 'Generating lesson questions…',
         askingAI: 'Asking the AI for fresh questions…', lessonNotFound: 'Lesson not found', missingLesson: 'This lesson is missing.',
         noLesson: 'No lesson available.', exit: 'Exit', hint: 'Hint', check: 'Check', next: 'Next', finish: 'Finish lesson',
@@ -308,14 +267,18 @@ const LESSON_COPY = {
         resultsReady: 'Your lesson results are ready.', practiceLabel: 'Practice prompt',
         completeTitle: 'Lesson complete!', accuracy: 'Accuracy', xpEarned: 'XP earned', backDashboard: 'Back to dashboard',
         completeToEarn: 'Complete the lesson to earn rewards.', aiPractice: 'AI-generated practice',
-        offlinePractice: 'Practice set offline', loadQuestionsError: 'Could not load questions. Check the server.',
+        offlinePractice: 'Practice set (offline mode)', loadQuestionsError: 'Could not load questions. Check the server.',
         questionSkipped: 'Question skipped.', notMatch: 'Not a match. Try again.',
         normalVoice: 'Normal', slowVoice: 'Slow', heartsCount: 'Hearts: {count}', unlimitedHearts: 'Unlimited hearts', heartsDisabled: 'Hearts are disabled in settings',
         continueSpeaking: 'Are you sure you want to skip speaking questions for the rest of this lesson?',
-        speechUnsupported: 'Speech recognition is not supported here.', takeYourTime: 'Take your time.'
+        speechUnsupported: 'Speech recognition is not supported here.', takeYourTime: 'Take your time.',
+        aiBadge: 'AI-generated', offlineBadge: 'Offline questions',
+        exitConfirm: 'Are you sure you want to exit? Your current lesson progress will not be saved.',
+        exitConfirmTitle: 'Exit lesson?',
+        exitConfirmCancel: 'Keep learning',
+        exitConfirmLeave: 'Exit anyway'
     },
     Spanish: {
-        lessonProgress: 'Progreso de la lección',
         practicePrompt: 'Instrucciones', loadingLesson: 'Cargando lección…', generatingQuestions: 'Generando preguntas…',
         askingAI: 'Preparando preguntas para tu lección…', lessonNotFound: 'Lección no encontrada', missingLesson: 'No se encontró esta lección.',
         noLesson: 'No hay ninguna lección disponible.', exit: 'Salir', hint: 'Pista', check: 'Comprobar', next: 'Siguiente', finish: 'Terminar lección',
@@ -323,7 +286,7 @@ const LESSON_COPY = {
         buyOrWait: 'Compra un corazón con diamantes o espera 30 minutos para que se recargue.',
         translateTarget: 'Traduce al {language}:', translateAudience: 'Traduce al {language}:',
         arrange: 'Ordena:', listen: '¿Qué has oído?', say: 'Di:', spell: 'Escucha y escribe:',
-        typeWhatHeard: 'Escribe lo que oyes…', typeHeardLanguage: 'O escribe lo que has oído en {language} o su pronunciación',
+        typeWhatHeard: 'Escribe lo que oyes…',
         matchPairs: 'Une las parejas', startSpeaking: '🎤 Empezar a hablar', cantSpeak: 'No puedo hablar',
         listening: 'Escuchando…', chooseAnswer: 'Elige una respuesta primero.', answerFirst: 'Responde primero.',
         correct: '¡Correcto! ¡Muy bien!', incorrect: 'No exactamente. La respuesta correcta es: {answer}', tryAgain: 'Intentar de nuevo',
@@ -337,10 +300,14 @@ const LESSON_COPY = {
         questionSkipped: 'Pregunta omitida.', notMatch: 'No coincide. Inténtalo de nuevo.',
         normalVoice: 'Normal', slowVoice: 'Lento', heartsCount: 'Corazones: {count}', unlimitedHearts: 'Corazones ilimitados', heartsDisabled: 'Los corazones están desactivados en los ajustes',
         continueSpeaking: '¿Seguro que quieres saltarte las preguntas habladas durante el resto de esta lección?',
-        speechUnsupported: 'El reconocimiento de voz no está disponible aquí.', takeYourTime: 'Tómate tu tiempo.'
+        speechUnsupported: 'El reconocimiento de voz no está disponible aquí.', takeYourTime: 'Tómate tu tiempo.',
+        aiBadge: 'Generado por IA', offlineBadge: 'Preguntas sin conexión',
+        exitConfirm: '¿Seguro que quieres salir? El progreso de esta lección no se guardará.',
+        exitConfirmTitle: '¿Salir de la lección?',
+        exitConfirmCancel: 'Seguir aprendiendo',
+        exitConfirmLeave: 'Salir de todos modos'
     },
     French: {
-        lessonProgress: 'Progression de la leçon',
         practicePrompt: 'Consigne', loadingLesson: 'Chargement de la leçon…', generatingQuestions: 'Génération des questions…',
         askingAI: 'Préparation des questions…', lessonNotFound: 'Leçon introuvable', missingLesson: 'Cette leçon est introuvable.',
         noLesson: 'Aucune leçon disponible.', exit: 'Quitter', hint: 'Indice', check: 'Vérifier', next: 'Suivant', finish: 'Terminer la leçon',
@@ -348,7 +315,7 @@ const LESSON_COPY = {
         buyOrWait: 'Achetez un cœur avec des diamants ou attendez 30 minutes qu’il se recharge.',
         translateTarget: 'Traduisez en {language} :', translateAudience: 'Traduisez en {language} :',
         arrange: 'Remettez dans l’ordre :', listen: 'Qu’avez-vous entendu ?', say: 'Dites :', spell: 'Écoutez et écrivez :',
-        typeWhatHeard: 'Saisissez ce que vous entendez…', typeHeardLanguage: 'Ou saisissez ce que vous avez entendu en {language} ou sa prononciation',
+        typeWhatHeard: 'Saisissez ce que vous entendez…',
         matchPairs: 'Associez les éléments', startSpeaking: '🎤 Commencer à parler', cantSpeak: 'Je ne peux pas parler',
         listening: 'Écoute en cours…', chooseAnswer: 'Choisissez d’abord une réponse.', answerFirst: 'Répondez d’abord.',
         correct: 'Correct ! Bravo !', incorrect: 'Pas tout à fait. La bonne réponse est : {answer}', tryAgain: 'Réessayer',
@@ -362,10 +329,14 @@ const LESSON_COPY = {
         questionSkipped: 'Question ignorée.', notMatch: 'Ce n’est pas une correspondance. Réessayez.',
         normalVoice: 'Normal', slowVoice: 'Lent', heartsCount: 'Cœurs : {count}', unlimitedHearts: 'Cœurs illimités', heartsDisabled: 'Les cœurs sont désactivés dans les paramètres',
         continueSpeaking: 'Voulez-vous vraiment ignorer les exercices oraux pour le reste de cette leçon ?',
-        speechUnsupported: 'La reconnaissance vocale n’est pas disponible ici.', takeYourTime: 'Prenez votre temps.'
+        speechUnsupported: 'La reconnaissance vocale n’est pas disponible ici.', takeYourTime: 'Prenez votre temps.',
+        aiBadge: 'Généré par IA', offlineBadge: 'Questions hors ligne',
+        exitConfirm: 'Voulez-vous vraiment quitter ? Votre progression actuelle ne sera pas enregistrée.',
+        exitConfirmTitle: 'Quitter la leçon ?',
+        exitConfirmCancel: 'Continuer',
+        exitConfirmLeave: 'Quitter quand même'
     },
     Japanese: {
-        lessonProgress: 'レッスンの進捗',
         practicePrompt: '練習の指示', loadingLesson: 'レッスンを読み込み中…', generatingQuestions: '問題を作成中…',
         askingAI: 'レッスンの問題を準備しています…', lessonNotFound: 'レッスンが見つかりません', missingLesson: 'このレッスンは見つかりません。',
         noLesson: '利用できるレッスンはありません。', exit: '終了', hint: 'ヒント', check: '答え合わせ', next: '次へ', finish: 'レッスンを終了',
@@ -373,7 +344,7 @@ const LESSON_COPY = {
         buyOrWait: 'ダイヤでハートを購入するか、30分待つと回復します。',
         translateTarget: '{language}に翻訳してください：', translateAudience: '{language}に翻訳してください：',
         arrange: '正しい順に並べてください：', listen: '何と聞こえましたか？', say: '声に出してください：', spell: '聞いて書いてください：',
-        typeWhatHeard: '聞こえた内容を入力…', typeHeardLanguage: '{language}またはその発音を入力することもできます',
+        typeWhatHeard: '聞こえた内容を入力…',
         matchPairs: '組み合わせてください', startSpeaking: '🎤 話し始める', cantSpeak: '話せません',
         listening: '聞き取り中…', chooseAnswer: '先に答えを選んでください。', answerFirst: '先に答えてください。',
         correct: '正解です！よくできました。', incorrect: '残念！正解は「{answer}」です。', tryAgain: 'もう一度',
@@ -387,10 +358,14 @@ const LESSON_COPY = {
         questionSkipped: '問題をスキップしました。', notMatch: '一致しません。もう一度試してください。',
         normalVoice: '通常', slowVoice: 'ゆっくり', heartsCount: 'ハート：{count}', unlimitedHearts: 'ハート無制限', heartsDisabled: '設定でハートが無効になっています',
         continueSpeaking: 'このレッスンの残りのスピーキング問題をスキップしますか？',
-        speechUnsupported: 'この環境では音声認識を利用できません。', takeYourTime: '落ち着いて考えてください。'
+        speechUnsupported: 'この環境では音声認識を利用できません。', takeYourTime: '落ち着いて考えてください。',
+        aiBadge: 'AI生成', offlineBadge: 'オフライン問題',
+        exitConfirm: '本当に終了しますか？このレッスンの進捗は保存されません。',
+        exitConfirmTitle: 'レッスンを終了しますか？',
+        exitConfirmCancel: '学習を続ける',
+        exitConfirmLeave: '終了する'
     },
     Hindi: {
-        lessonProgress: 'पाठ की प्रगति',
         practicePrompt: 'अभ्यास निर्देश', loadingLesson: 'पाठ लोड हो रहा है…', generatingQuestions: 'प्रश्न तैयार हो रहे हैं…',
         askingAI: 'पाठ के प्रश्न तैयार किए जा रहे हैं…', lessonNotFound: 'पाठ नहीं मिला', missingLesson: 'यह पाठ उपलब्ध नहीं है।',
         noLesson: 'कोई पाठ उपलब्ध नहीं है।', exit: 'बाहर जाएँ', hint: 'संकेत', check: 'जाँचें', next: 'अगला', finish: 'पाठ समाप्त करें',
@@ -398,7 +373,7 @@ const LESSON_COPY = {
         buyOrWait: 'हीरे से दिल खरीदें या उसके वापस आने के लिए 30 मिनट प्रतीक्षा करें।',
         translateTarget: '{language} में अनुवाद करें:', translateAudience: '{language} में अनुवाद करें:',
         arrange: 'सही क्रम में लगाएँ:', listen: 'आपने क्या सुना?', say: 'बोलें:', spell: 'सुनें और लिखें:',
-        typeWhatHeard: 'जो सुनाई दे उसे लिखें…', typeHeardLanguage: '{language} में सुना हुआ या उसका उच्चारण लिखें',
+        typeWhatHeard: 'जो सुनाई दे उसे लिखें…',
         matchPairs: 'जोड़े मिलाएँ', startSpeaking: '🎤 बोलना शुरू करें', cantSpeak: 'मैं बोल नहीं सकता/सकती',
         listening: 'सुना जा रहा है…', chooseAnswer: 'पहले एक उत्तर चुनें।', answerFirst: 'पहले उत्तर दें।',
         correct: 'सही! बहुत बढ़िया।', incorrect: 'सही नहीं। सही उत्तर है: {answer}', tryAgain: 'फिर से कोशिश करें',
@@ -412,13 +387,19 @@ const LESSON_COPY = {
         questionSkipped: 'प्रश्न छोड़ दिया गया।', notMatch: 'जोड़ा सही नहीं है। फिर कोशिश करें।',
         normalVoice: 'सामान्य', slowVoice: 'धीमा', heartsCount: 'दिल: {count}', unlimitedHearts: 'असीमित दिल', heartsDisabled: 'सेटिंग में दिल बंद हैं',
         continueSpeaking: 'क्या आप इस पाठ के बाकी बोलने वाले प्रश्न छोड़ना चाहते हैं?',
-        speechUnsupported: 'यहाँ वाक् पहचान उपलब्ध नहीं है।', takeYourTime: 'आराम से सोचें।'
+        speechUnsupported: 'यहाँ वाक् पहचान उपलब्ध नहीं है।', takeYourTime: 'आराम से सोचें।',
+        aiBadge: 'AI जनित', offlineBadge: 'ऑफ़लाइन प्रश्न',
+        exitConfirm: 'क्या आप वाकई बाहर जाना चाहते हैं? इस पाठ की प्रगति सहेजी नहीं जाएगी।',
+        exitConfirmTitle: 'पाठ से बाहर जाएँ?',
+        exitConfirmCancel: 'सीखना जारी रखें',
+        exitConfirmLeave: 'फिर भी बाहर जाएँ'
     }
 };
 
 const audienceLanguage = normalizeLanguageName(course?.speakerLanguage || 'English');
 const lessonCopy = LESSON_COPY[audienceLanguage] || LESSON_COPY.English;
 document.documentElement.lang = { English: 'en', Spanish: 'es', French: 'fr', Japanese: 'ja', Hindi: 'hi' }[audienceLanguage] || 'en';
+
 const AUDIENCE_LANGUAGE_NAMES = {
     Spanish: { English: 'inglés', Japanese: 'japonés', Spanish: 'español', French: 'francés', German: 'alemán', Italian: 'italiano', Hindi: 'hindi', Arabic: 'árabe', Korean: 'coreano', Telugu: 'telugu' },
     French: { English: 'anglais', Japanese: 'japonais', Spanish: 'espagnol', French: 'français', German: 'allemand', Italian: 'italien', Hindi: 'hindi', Arabic: 'arabe', Korean: 'coréen', Telugu: 'télougou' },
@@ -435,8 +416,6 @@ function lessonText(key, values = {}) {
 }
 
 promptHeading.textContent = lessonText('practicePrompt');
-lessonProgressLabel.textContent = lessonText('lessonProgress');
-lessonProgressTrack.setAttribute('aria-label', lessonText('lessonProgress'));
 lessonSubtitle.textContent = lessonText('loadingLesson');
 statusText.textContent = lessonText('completeToEarn');
 exitBtn.textContent = lessonText('exit');
@@ -453,6 +432,82 @@ accuracyLabel.textContent = lessonText('accuracy');
 xpEarnedLabel.textContent = lessonText('xpEarned');
 backDashboardLink.textContent = lessonText('backDashboard');
 renderHeartGauge();
+
+// ═══════════════════════════════════════════════════════════
+//  EXIT CONFIRMATION (NEW)
+//  - Asks before leaving when there are unsaved changes
+//  - Skipped if lesson is finished, no questions answered, or exit button already clicked
+// ═══════════════════════════════════════════════════════════
+
+let lessonInProgress = false;     // Set to true once the first question renders
+let lessonFinished = false;        // Set to true when completion panel shows
+let exitConfirmed = false;         // Prevents double prompts
+
+function requestExitConfirmation() {
+    if (lessonFinished || !lessonInProgress) return true;
+    if (exitConfirmed) return true;
+    const confirmed = window.confirm(lessonText('exitConfirm'));
+    if (confirmed) exitConfirmed = true;
+    return confirmed;
+}
+
+// Intercept all navigation triggers
+window.addEventListener('beforeunload', (e) => {
+    if (lessonFinished || !lessonInProgress || exitConfirmed) return;
+    // Modern browsers ignore the custom message, but show a native prompt
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+});
+
+// Intercept clicks on anchors/links that navigate away
+document.addEventListener('click', (e) => {
+    const anchor = e.target.closest('a[href]');
+    if (!anchor) return;
+    if (anchor.id === 'exitBtn' || anchor.id === 'backDashboardLink') return;
+    const href = anchor.getAttribute('href') || '';
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+    if (!requestExitConfirmation()) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+}, true);
+
+// Intercept finish button — no confirmation needed
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#finishBtn')) exitConfirmed = true;
+}, true);
+
+// Wire the exit button specifically
+if (exitBtn) {
+    exitBtn.addEventListener('click', (e) => {
+        if (lessonFinished) return;    // Let it navigate normally
+        if (lessonInProgress) {
+            e.preventDefault();
+            if (requestExitConfirmation()) {
+                window.location.href = exitBtn.getAttribute('href') || 'dashboard.html';
+            }
+        }
+    });
+}
+
+if (backDashboardLink) {
+    backDashboardLink.addEventListener('click', (e) => {
+        if (lessonFinished) return;
+        if (lessonInProgress) {
+            e.preventDefault();
+            if (requestExitConfirmation()) {
+                window.location.href = backDashboardLink.getAttribute('href') || 'dashboard.html';
+            }
+        }
+    });
+}
+
+// Expose to lesson logic
+window.__musalingoLessonState = {
+    setInProgress: () => { lessonInProgress = true; },
+    setFinished: () => { lessonFinished = true; exitConfirmed = true; }
+};
 
 function getAudienceLanguageName(language) {
     const targetLanguage = normalizeLanguageName(language);
@@ -588,6 +643,7 @@ if (!course || !lesson) {
     } else {
         (async () => {
             let practice;
+            let sourceError = null;
             promptText.textContent = lessonText('generatingQuestions');
             statusText.textContent = lessonText('askingAI');
 
@@ -617,7 +673,6 @@ if (!course || !lesson) {
                     }
                 }
 
-                // --- CAT BRAIN: Random Question Count ---
                 let minQuestions = 8;
                 let maxQuestions = 12;
                 if (lesson.kind === 'test') { minQuestions = 15; maxQuestions = 20; }
@@ -631,7 +686,8 @@ if (!course || !lesson) {
                         language: selectedLanguage,
                         title: lesson.title,
                         questions: savedMistakeQuestions,
-                        source: 'review'
+                        source: 'review',
+                        error: null
                     };
                 } else {
                     const aiResult = await fetchAIQuestions(
@@ -646,7 +702,14 @@ if (!course || !lesson) {
                     );
 
                     if (!Array.isArray(aiResult.questions) || aiResult.questions.length === 0) throw new Error('No questions');
-                    practice = { language: selectedLanguage, title: lesson.title, questions: aiResult.questions, source: aiResult.source };
+                    practice = {
+                        language: selectedLanguage,
+                        title: lesson.title,
+                        questions: aiResult.questions,
+                        source: aiResult.source,
+                        error: aiResult.error
+                    };
+                    sourceError = aiResult.error;
                 }
             } catch (err) {
                 console.error('AI generation failed:', err);
@@ -658,7 +721,8 @@ if (!course || !lesson) {
             }
 
             lessonTitle.textContent = practice.title || lesson.title;
-            lessonSubtitle.textContent = practice.source === 'ai'
+
+            const baseSubtitle = practice.source === 'ai'
                 ? `${course.name} • ${lessonText('aiPractice')}`
                 : practice.source === 'review'
                     ? `${course.name} • Saved lesson mistakes`
@@ -667,6 +731,13 @@ if (!course || !lesson) {
                         : practice.source === 'built-in'
                             ? `${course.name} • Built-in practice`
                             : `${course.name} • ${lessonText('offlinePractice')}`;
+
+            lessonSubtitle.textContent = baseSubtitle;
+            setSourceBadge(sourceBadge, practice.source, practice.error);
+            if (practice.error) {
+                console.warn('[lesson] Fallback reason:', errorLabel(extractErrorCode(practice.error)));
+            }
+
             if (isReview) {
                 const practiceLabels = {
                     mistakes: 'Mistake review',
@@ -685,6 +756,7 @@ if (!course || !lesson) {
                         : practice.source === 'mixed'
                             ? `${course.name} • AI and offline review`
                             : `${course.name} • Offline review`;
+                if (practice.error) setSourceBadge(sourceBadge, practice.source, practice.error);
                 exitBtn.href = 'practice.html';
                 backDashboardLink.href = 'practice.html';
                 backDashboardLink.textContent = 'Back to practice';
@@ -711,18 +783,6 @@ if (!course || !lesson) {
                 return results.filter((r) => typeof r === 'boolean').length + skippedQuestionIndices.size;
             }
 
-            function updateLessonProgress() {
-                const total = questions.length;
-                const completed = Math.min(total, answeredCount());
-                const percentage = total ? Math.round((completed / total) * 100) : 0;
-                lessonProgressCount.textContent = `${completed} / ${total}`;
-                lessonProgressTrack.setAttribute('aria-valuemax', String(total));
-                lessonProgressTrack.setAttribute('aria-valuenow', String(completed));
-                lessonProgressTrack.setAttribute('aria-valuetext', `${completed} of ${total} questions completed`);
-                lessonProgressFill.style.width = `${percentage}%`;
-            }
-
-            // ---- Completion gate: all answered AND at least 50% correct ----
             const MIN_PASS_ACCURACY = 0.5;
             const finishLabel = lessonText('finish');
             function allAnswered() { return questions.length > 0 && answeredCount() >= questions.length; }
@@ -735,7 +795,6 @@ if (!course || !lesson) {
                 if (!allAnswered()) { finishBtn.disabled = true; finishBtn.textContent = finishLabel; return; }
                 finishBtn.disabled = false;
                 if (canEnableFinish()) { finishBtn.textContent = finishLabel; return; }
-                // All answered but below the pass mark: offer a retry instead of completing.
                 finishBtn.textContent = lessonText('tryAgain');
                 const msg = `You scored ${Math.round(currentAccuracy() * 100)}%. You need at least ${Math.round(MIN_PASS_ACCURACY * 100)}% to complete this lesson.`;
                 if (!String(feedback.textContent).includes('You need at least')) {
@@ -761,7 +820,6 @@ if (!course || !lesson) {
 
             function recordAnswer(correct) {
                 results[currentIndex] = correct;
-                updateLessonProgress();
                 rememberPracticeAnswer(questions[currentIndex], correct);
                 if (!correct) { deductHeart(); playSound('heartsLost'); }
             }
@@ -795,7 +853,6 @@ if (!course || !lesson) {
                 activeRecognition = null;
                 if (recognition) { try { recognition.abort(); } catch (e) { } }
                 skippedQuestionIndices.add(currentIndex);
-                updateLessonProgress();
                 refreshFinishState();
                 if (currentIndex === questions.length - 1) {
                     if (canEnableFinish()) finishBtn.click();
@@ -916,7 +973,7 @@ if (!course || !lesson) {
 
             function renderSpeak(q) {
                 const targetLanguage = normalizeLanguageName(practice.language || course.name || 'English');
-                    const phraseDisplay = formatDisplayText(q.phrase, targetLanguage, q.pronunciation || q.english, true);
+                const phraseDisplay = formatDisplayText(q.phrase, targetLanguage, q.pronunciation || q.english, true);
                 promptText.innerHTML = `${escapeHtml(lessonText('say'))} <strong>${escapeHtml(phraseDisplay)}</strong><br><small>${escapeHtml((q.translation || q.english) ? `(${q.translation || q.english})` : '')}</small>`;
                 options.innerHTML = `
                     <div class="speak-wrap">
@@ -1159,21 +1216,34 @@ if (!course || !lesson) {
                 });
             }
 
+            // ═══════════════════════════════════════════════════════════
+            //  CHESS RENDERER (single-move + multi-move + king hiding)
+            // ═══════════════════════════════════════════════════════════
             function renderChessQuestion(q) {
-                questionPhrase = q.prompt || 'Tap the piece, then tap where it should move.';
-                questionSpeechLanguage = 'English';
-                audioControls.style.display = '';
+                audioControls.style.display = 'none';
                 options.innerHTML = '';
                 feedback.textContent = '';
-                promptText.textContent = questionPhrase;
+
+                const isMultiMove = Array.isArray(q.moves) && q.moves.length > 1;
+                const isSingleMove = !isMultiMove && q.from && q.answer;
+
+                if (!isMultiMove && !isSingleMove) {
+                    promptText.textContent = 'This chess question could not be loaded.';
+                    chessActivity.hidden = true;
+                    results[currentIndex] = false;
+                    refreshFinishState();
+                    nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
+                    return;
+                }
+
+                promptText.textContent = q.prompt || 'Tap the piece, then tap where it should move.';
+                chessActivity.hidden = false;
 
                 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
                 const board = {};
-                const placement = String(q.fen || '').split(' ')[0] || '';
-                let rank = 8;
-                let fileIdx = 0;
-
-                for (const ch of placement) {
+                const initialFen = String(q.fen || '').split(' ')[0] || '';
+                let rank = 8, fileIdx = 0;
+                for (const ch of initialFen) {
                     if (ch === '/') { rank -= 1; fileIdx = 0; continue; }
                     if (/\d/.test(ch)) { fileIdx += Number(ch); continue; }
                     if (fileIdx > 7) continue;
@@ -1182,30 +1252,7 @@ if (!course || !lesson) {
                     board[square] = `${color}${ch.toUpperCase()}`;
                     fileIdx += 1;
                 }
-                const hiddenPieces = new Set(Array.isArray(q.hiddenPieces) ? q.hiddenPieces : []);
-                const hideUnneededKings = !isReview
-                    && !/king|checkmate|mate|opening|endgame/i.test(String(lesson?.title || ''));
-                if (hideUnneededKings) {
-                    for (const [square, piece] of Object.entries(board)) {
-                        if (piece[1] === 'K' && square !== q.from) hiddenPieces.add(square);
-                    }
-                }
-                const legalMoves = new Set(
-                    (Array.isArray(q.legalMoves) && q.legalMoves.length
-                        ? q.legalMoves
-                        : getChessLegalMoves(board, q.from, q.fen))
-                        .map(square => String(square || '').toLowerCase())
-                        .filter(square => /^[a-h][1-8]$/.test(square))
-                );
-                const captureSquares = new Set(
-                    (Array.isArray(q.captureSquares) && q.captureSquares.length
-                        ? q.captureSquares
-                        : [...legalMoves].filter(square => board[square] && board[square][0] !== board[q.from]?.[0]))
-                        .map(square => String(square || '').toLowerCase())
-                        .filter(square => legalMoves.has(square))
-                );
 
-                chessActivity.hidden = false;
                 chessActivity.innerHTML = `
                     <div class="chess-lesson-layout">
                         <div class="board-wrap">
@@ -1217,7 +1264,10 @@ if (!course || !lesson) {
                         </div>
                         <div>
                             <p class="board-copy" id="boardPrompt">${escapeHtml(q.prompt || '')}</p>
-                            <p class="board-feedback" id="boardFeedback">Tap the highlighted piece to see its legal squares.</p>
+                            <p class="board-feedback" id="boardFeedback">
+                                ${isMultiMove ? 'Play the sequence. Your moves and the replies will alternate.' : 'Tap the highlighted piece to see its legal squares.'}
+                            </p>
+                            ${isMultiMove ? `<p class="board-progress" id="boardProgress">Move 1 of ${q.moves.length}</p>` : ''}
                         </div>
                     </div>`;
 
@@ -1242,157 +1292,322 @@ if (!course || !lesson) {
                 }
 
                 const boardEl = document.getElementById('lessonBoard');
-                boardEl.innerHTML = '';
                 const bf = document.getElementById('boardFeedback');
-                let locked = false;
+                const progressEl = document.getElementById('boardProgress');
+
+                const rootStyle = getComputedStyle(document.documentElement);
+                const LIGHT = rootStyle.getPropertyValue('--light').trim() || '#ebecd0';
+                const DARK = rootStyle.getPropertyValue('--dark').trim() || '#739552';
+
+                let chess;
+                try {
+                    chess = new Chess(q.fen);
+                } catch {
+                    promptText.textContent = 'This chess position could not be loaded.';
+                    chessActivity.hidden = true;
+                    results[currentIndex] = false;
+                    refreshFinishState();
+                    nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
+                    return;
+                }
+
+                let currentStep = 0;
                 let selectedSquare = null;
+                let locked = false;
+                let timeoutIds = [];
 
-                const LIGHT = getComputedStyle(document.documentElement).getPropertyValue('--light').trim() || '#ebecd0';
-                const DARK = getComputedStyle(document.documentElement).getPropertyValue('--dark').trim() || '#739552';
+                function scheduleTimeout(fn, ms) {
+                    const id = setTimeout(fn, ms);
+                    timeoutIds.push(id);
+                    return id;
+                }
 
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 8; c++) {
-                        const sq = squareName(r, c);
-                        const isLight = (r + c) % 2 === 0;
-                        const s = document.createElement('div');
-                        s.className = 'square ' + (isLight ? 'light' : 'dark');
-                        s.dataset.square = sq;
-                        s.style.cssText = `position:relative;cursor:pointer;background:${isLight ? LIGHT : DARK};transition:box-shadow 0.12s ease, filter 0.12s ease;width:100%;height:100%;`;
+                const firstFrom = isMultiMove ? q.moves[0].from : q.from;
+                const legalFirstMoves = (() => {
+                    if (isMultiMove && Array.isArray(q.legalFirstMoves)) return new Set(q.legalFirstMoves);
+                    if (isSingleMove && Array.isArray(q.legalMoves)) return new Set(q.legalMoves);
+                    try {
+                        return new Set(chess.moves({ square: firstFrom, verbose: true }).map(m => m.to));
+                    } catch { return new Set(); }
+                })();
 
-                        if (sq === q.from) {
-                            s.style.boxShadow = 'inset 0 0 0 3px #2b70c9';
-                            s.title = 'Piece to move';
+                const captureSquares = (() => {
+                    if (isMultiMove) return new Set();
+                    if (Array.isArray(q.captureSquares)) return new Set(q.captureSquares);
+                    try {
+                        return new Set(chess.moves({ square: q.from, verbose: true }).filter(m => m.captured).map(m => m.to));
+                    } catch { return new Set(); }
+                })();
+
+                function renderSquare(sq) {
+                    const fileIdx = files.indexOf(sq[0]);
+                    const rankNum = parseInt(sq[1], 10);
+                    const isLight = (fileIdx + rankNum) % 2 === 1;
+
+                    const s = document.createElement('div');
+                    s.className = 'square ' + (isLight ? 'light' : 'dark');
+                    s.dataset.square = sq;
+                    s.style.cssText = `position:relative;cursor:pointer;background:${isLight ? LIGHT : DARK};transition:box-shadow 0.12s ease, filter 0.12s ease;width:100%;height:100%;`;
+                    s.setAttribute('role', 'button');
+                    s.setAttribute('aria-label', `Square ${sq}`);
+
+                    const piece = chess.get(sq);
+
+                    // ── KING HIDING (NEW) ──
+                    const kingsHidden = piece && piece.type === 'k' && q.hideKings;
+                    if (kingsHidden) {
+                        s.style.opacity = '0.15';
+                        s.style.pointerEvents = 'none';
+                    }
+
+                    if (isMultiMove) {
+                        if (currentStep < q.moves.length && q.moves[currentStep].color === 'white') {
+                            const stepFrom = q.moves[currentStep].from;
+                            if (sq === stepFrom) {
+                                s.style.boxShadow = 'inset 0 0 0 3px #2b70c9';
+                                s.title = 'Piece to move';
+                            }
                         }
+                    } else if (sq === q.from) {
+                        s.style.boxShadow = 'inset 0 0 0 3px #2b70c9';
+                        s.title = 'Piece to move';
+                    }
 
-                        const isStarTarget = q.targetStyle === 'star' && captureSquares.has(sq);
-                        const pc = board[sq];
-                        if (isStarTarget) {
-                            const star = document.createElement('span');
-                            star.className = 'lesson-star-target';
-                            star.textContent = '★';
-                            s.appendChild(star);
-                        } else if (pc && !hiddenPieces.has(sq) && window.SVG_PIECES?.[pc]) {
-                            const wrap = document.createElement('div');
-                            wrap.className = 'piece';
-                            wrap.style.cssText = 'position:absolute;inset:0;display:flex;justify-content:center;align-items:center;pointer-events:none;';
-                            wrap.innerHTML = window.SVG_PIECES[pc];
-                            const svg = wrap.querySelector('svg');
-                            if (svg) { svg.style.width = '85%'; svg.style.height = '85%'; svg.style.display = 'block'; }
-                            s.appendChild(wrap);
-                        } else if (pc && !hiddenPieces.has(sq)) {
-                            const pieceGlyphs = { wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙', bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟' };
-                            const fallbackPiece = document.createElement('span');
-                            fallbackPiece.className = `lesson-piece-fallback ${pc[0] === 'w' ? 'white-piece' : 'black-piece'}`;
-                            fallbackPiece.textContent = pieceGlyphs[pc] || '?';
-                            s.appendChild(fallbackPiece);
+                    const isStarTarget = q.targetStyle === 'star' && captureSquares.has(sq);
+
+                    if (kingsHidden) {
+                        // Skip piece rendering entirely — the square looks empty
+                    } else if (isStarTarget) {
+                        const star = document.createElement('span');
+                        star.className = 'lesson-star-target';
+                        star.textContent = '★';
+                        s.appendChild(star);
+                    } else if (piece && window.SVG_PIECES?.[`${piece.color}${piece.type.toUpperCase()}`]) {
+                        const wrap = document.createElement('div');
+                        wrap.className = 'piece';
+                        wrap.style.cssText = 'position:absolute;inset:0;display:flex;justify-content:center;align-items:center;pointer-events:none;';
+                        wrap.innerHTML = window.SVG_PIECES[`${piece.color}${piece.type.toUpperCase()}`];
+                        const svg = wrap.querySelector('svg');
+                        if (svg) { svg.style.width = '85%'; svg.style.height = '85%'; svg.style.display = 'block'; }
+                        s.appendChild(wrap);
+                    } else if (piece) {
+                        const glyphs = { wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙', bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟' };
+                        const fallback = document.createElement('span');
+                        fallback.className = `lesson-piece-fallback ${piece.color === 'w' ? 'white-piece' : 'black-piece'}`;
+                        fallback.textContent = glyphs[`${piece.color}${piece.type.toUpperCase()}`] || '?';
+                        s.appendChild(fallback);
+                    }
+
+                    if (selectedSquare === sq) {
+                        s.style.boxShadow = 'inset 0 0 0 4px #facc15';
+                        s.style.filter = 'brightness(1.08)';
+                    }
+
+                    if (selectedSquare && !locked) {
+                        const legal = (() => { try { return chess.moves({ square: selectedSquare, verbose: true }); } catch { return []; } })();
+                        const dest = legal.find(m => m.to === sq);
+                        if (dest) {
+                            s.classList.add('legal');
+                            if (dest.captured) s.classList.add('capture');
                         }
+                    }
 
-                        s.addEventListener('click', () => {
-                            if (locked) return;
+                    s.addEventListener('click', () => onSquareClick(sq));
+                    return s;
+                }
 
-                            if (!selectedSquare) {
-                                if (sq !== q.from || !board[sq]) {
-                                    playSound('click');
-                                    bf.textContent = 'Tap the highlighted piece first.';
-                                    bf.style.color = '#b45309';
-                                    return;
-                                }
-                                selectedSquare = sq;
-                                s.style.boxShadow = 'inset 0 0 0 4px #facc15';
-                                s.style.filter = 'brightness(1.08)';
-                                legalMoves.forEach(destination => {
-                                    const legalSquare = boardEl.querySelector(`[data-square="${destination}"]`);
-                                    if (!legalSquare) return;
-                                    legalSquare.classList.add('legal');
-                                    if (captureSquares.has(destination)) legalSquare.classList.add('capture');
-                                });
-                                playSound('tap');
-                                bf.textContent = `Selected ${sq}. The highlighted squares are legal moves.`;
-                                bf.style.color = 'var(--muted)';
-                                return;
-                            }
-
-                            if (sq === selectedSquare) {
-                                const sel = boardEl.querySelector(`[data-square="${selectedSquare}"]`);
-                                if (sel) {
-                                    if (selectedSquare === q.from) sel.style.boxShadow = 'inset 0 0 0 3px #2b70c9';
-                                    else sel.style.boxShadow = '';
-                                    sel.style.filter = '';
-                                }
-                                boardEl.querySelectorAll('.legal').forEach(square => square.classList.remove('legal', 'capture'));
-                                selectedSquare = null;
-                                playSound('click');
-                                bf.textContent = 'Tap the highlighted piece to see its legal squares.';
-                                bf.style.color = 'var(--muted)';
-                                return;
-                            }
-
-                            if (!legalMoves.has(sq)) {
-                                playSound('click');
-                                bf.textContent = 'That square is not a legal move. Choose a highlighted square.';
-                                bf.style.color = '#b45309';
-                                return;
-                            }
-
-                            locked = true;
-                            const correct = q.type === 'capture'
-                                ? captureSquares.has(sq)
-                                : q.type === 'find-move'
-                                    ? legalMoves.has(sq)
-                                    : sq === q.answer;
-                            boardEl.querySelectorAll('.legal').forEach(square => square.classList.remove('legal', 'capture'));
-                            const selEl = boardEl.querySelector(`[data-square="${selectedSquare}"]`);
-                            if (selEl) selEl.style.filter = '';
-
-                            s.style.background = correct ? '#bbf7d0' : '#fecaca';
-                            s.style.boxShadow = correct ? 'inset 0 0 0 3px #22c55e' : 'inset 0 0 0 3px #ef4444';
-
-                            if (!correct) {
-                                boardEl.querySelectorAll('.square').forEach((cell) => {
-                                    if (q.type === 'capture' ? captureSquares.has(cell.dataset.square) : cell.dataset.square === q.answer) {
-                                        cell.style.background = '#bbf7d0';
-                                        cell.style.boxShadow = 'inset 0 0 0 3px #22c55e';
-                                    }
-                                });
-                            }
-
-                            bf.textContent = correct
-                                ? q.type === 'find-move'
-                                    ? `Correct! ${sq} is a legal move.`
-                                    : `Correct! You captured the target on ${sq}.`
-                                : q.type === 'capture'
-                                    ? 'Not quite — choose a highlighted capture square.'
-                                    : `Not quite — the answer is ${q.answer}.`;
-                            bf.style.color = correct ? '#278a44' : '#b91c1c';
-
-                            const capturedPiece = board[sq]?.[1];
-                            if (correct) {
-                                playSound('correct');
-                                if (!capturedPiece) setTimeout(() => playSound('move'), 200);
-                                else setTimeout(() => playSound('capture', capturedPiece), 200);
-                            } else playSound('wrong');
-
-                            recordAnswer(correct);
-                            nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
-                            refreshFinishState();
-                            if (currentIndex === questions.length - 1 && canEnableFinish()) finishBtn.click();
-                        });
-
-                        boardEl.appendChild(s);
+                function renderBoard() {
+                    boardEl.innerHTML = '';
+                    for (let r = 0; r < 8; r++) {
+                        for (let c = 0; c < 8; c++) {
+                            const sq = `${files[c]}${8 - r}`;
+                            boardEl.appendChild(renderSquare(sq));
+                        }
                     }
                 }
 
-                requestAnimationFrame(fitBoards);
-                setTimeout(fitBoards, 50);
-                setTimeout(fitBoards, 250);
+                function onSquareClick(sq) {
+                    if (locked) return;
+                    if (isMultiMove && currentStep < q.moves.length && q.moves[currentStep].color === 'black') return;
+
+                    // Kings are unclickable when hidden
+                    const clickedPiece = chess.get(sq);
+                    if (clickedPiece && clickedPiece.type === 'k' && q.hideKings) return;
+
+                    const piece = clickedPiece;
+
+                    if (!selectedSquare) {
+                        const selectableSquare = isMultiMove ? q.moves[currentStep]?.from : q.from;
+                        if (sq !== selectableSquare) {
+                            playSound('click');
+                            bf.textContent = isMultiMove
+                                ? `Play from ${selectableSquare} — that's the piece for this step.`
+                                : 'Tap the highlighted piece first.';
+                            bf.style.color = '#b45309';
+                            return;
+                        }
+                        if (!piece) {
+                            playSound('click');
+                            bf.textContent = 'No piece on that square.';
+                            bf.style.color = '#b45309';
+                            return;
+                        }
+                        selectedSquare = sq;
+                        playSound('tap');
+                        bf.textContent = isMultiMove
+                            ? `Step ${currentStep + 1}: pick a destination.`
+                            : `Selected ${sq}. The highlighted squares are legal moves.`;
+                        bf.style.color = 'var(--muted)';
+                        renderBoard();
+                        return;
+                    }
+
+                    if (sq === selectedSquare) {
+                        selectedSquare = null;
+                        playSound('click');
+                        bf.textContent = isMultiMove
+                            ? `Step ${currentStep + 1}: pick a destination.`
+                            : 'Tap the highlighted piece to see its legal squares.';
+                        bf.style.color = 'var(--muted)';
+                        renderBoard();
+                        return;
+                    }
+
+                    const legal = (() => { try { return chess.moves({ square: selectedSquare, verbose: true }); } catch { return []; } })();
+                    const legalMove = legal.find(m => m.to === sq);
+                    if (!legalMove) {
+                        playSound('click');
+                        bf.textContent = 'That square is not a legal move. Choose a highlighted square.';
+                        bf.style.color = '#b45309';
+                        return;
+                    }
+                    if (!isMultiMove && q.type === 'capture' && !legalMove.captured) {
+                        playSound('click');
+                        bf.textContent = 'That move is legal but captures nothing. Choose a capture square.';
+                        bf.style.color = '#b45309';
+                        return;
+                    }
+                    handleMovePlayed(legalMove);
+                }
+
+                function handleMovePlayed(move) {
+                    const to = move.to;
+                    selectedSquare = null;
+
+                    if (isMultiMove) {
+                        chess.move(move);
+                        playSound(move.captured ? 'capture' : 'move', move.captured || undefined);
+                        currentStep += 1;
+
+                        if (currentStep >= q.moves.length) { finishCorrect(); return; }
+
+                        renderBoard();
+
+                        if (q.moves[currentStep].color === 'white') {
+                            if (progressEl) progressEl.textContent = `Move ${currentStep + 1} of ${q.moves.length}`;
+                            bf.textContent = `Good. Now play from ${q.moves[currentStep].from}.`;
+                            bf.style.color = 'var(--muted)';
+                        } else {
+                            if (progressEl) progressEl.textContent = `Opponent's reply…`;
+                            bf.textContent = 'Opponent is replying…';
+                            bf.style.color = 'var(--muted)';
+                            const blackMove = q.moves[currentStep];
+                            scheduleTimeout(() => {
+                                if (locked) return;
+                                try {
+                                    chess.move({ from: blackMove.from, to: blackMove.to, promotion: blackMove.promo || 'q' });
+                                    playSound('moveOpponent');
+                                } catch (err) {
+                                    bf.textContent = 'Sequence error. Skipping question.';
+                                    bf.style.color = '#b91c1c';
+                                    results[currentIndex] = false;
+                                    refreshFinishState();
+                                    nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
+                                    return;
+                                }
+                                currentStep += 1;
+                                renderBoard();
+                                if (currentStep >= q.moves.length) { finishCorrect(); return; }
+                                if (progressEl) progressEl.textContent = `Move ${currentStep + 1} of ${q.moves.length}`;
+                                bf.textContent = `Good. Now play from ${q.moves[currentStep].from}.`;
+                                bf.style.color = 'var(--muted)';
+                            }, 600);
+                        }
+                        return;
+                    }
+
+                    const isCorrect = (() => {
+                        if (q.type === 'capture') return captureSquares.has(to);
+                        if (q.type === 'find-move') return legalFirstMoves.has(to);
+                        if (q.type === 'mate-in-one') {
+                            try {
+                                const test = new Chess(chess.fen());
+                                test.move(move);
+                                return test.isCheckmate();
+                            } catch { return false; }
+                        }
+                        return to === q.answer;
+                    })();
+
+                    if (isCorrect) {
+                        chess.move(move);
+                        renderBoard();
+                        if (move.captured) { playSound('correct'); scheduleTimeout(() => playSound('capture', move.captured), 200); }
+                        else { playSound('correct'); scheduleTimeout(() => playSound('move'), 200); }
+                        finishCorrect();
+                    } else {
+                        locked = true;
+                        const correctSquares = q.type === 'capture' ? captureSquares : legalFirstMoves;
+                        correctSquares.forEach(sq => {
+                            const cell = boardEl.querySelector(`[data-square="${sq}"]`);
+                            if (cell) { cell.style.background = '#bbf7d0'; cell.style.boxShadow = 'inset 0 0 0 3px #22c55e'; }
+                        });
+                        const clickedCell = boardEl.querySelector(`[data-square="${to}"]`);
+                        if (clickedCell) { clickedCell.style.background = '#fecaca'; clickedCell.style.boxShadow = 'inset 0 0 0 3px #ef4444'; }
+                        playSound('wrong');
+                        bf.textContent = q.type === 'capture'
+                            ? 'Not quite — choose a highlighted capture square.'
+                            : `Not quite — the answer is ${q.answer}.`;
+                        bf.style.color = '#b91c1c';
+
+                        recordAnswer(false);
+                        nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
+                        refreshFinishState();
+                    }
+                }
+
+                function finishCorrect() {
+                    locked = true;
+                    bf.textContent = isMultiMove
+                        ? `Excellent! You played the full sequence of ${q.moves.length} moves.`
+                        : 'Correct!';
+                    bf.style.color = '#278a44';
+                    recordAnswer(true);
+                    nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
+                    refreshFinishState();
+                    if (currentIndex === questions.length - 1 && canEnableFinish()) finishBtn.click();
+                }
+
+                if (typeof window.__chessLessonCleanup === 'function') {
+                    try { window.__chessLessonCleanup(); } catch { }
+                }
+                window.__chessLessonCleanup = () => { timeoutIds.forEach(id => clearTimeout(id)); timeoutIds = []; };
+
+                renderBoard();
+                if (isMultiMove && progressEl) progressEl.textContent = `Move 1 of ${q.moves.length}`;
+                requestAnimationFrame(() => window.fitBoards?.());
+                scheduleTimeout(() => window.fitBoards?.(), 50);
+                scheduleTimeout(() => window.fitBoards?.(), 250);
             }
 
             function renderQuestion() {
                 if (activeRecognition) { try { activeRecognition.abort(); } catch (e) { } activeRecognition = null; }
                 if (matchPairsState && matchPairsState.shakeTimer) { clearTimeout(matchPairsState.shakeTimer); matchPairsState = null; }
 
+                // Mark lesson as in-progress for exit confirmation
+                window.__musalingoLessonState?.setInProgress();
+
                 const q = questions[currentIndex];
-                updateLessonProgress();
                 questionPhrase = q.phrase || q.sentence || q.pronunciation || (isMath ? q.question : '');
                 questionSpeechLanguage = q.phrase || q.sentence || q.pronunciation
                     ? practice.language
@@ -1409,10 +1624,7 @@ if (!course || !lesson) {
 
                 if (isChess) return renderChessQuestion(q);
 
-                if (q.type === 'speak' && skipSpeakingQuestions) {
-                    skipCurrentSpeakQuestion();
-                    return;
-                }
+                if (q.type === 'speak' && skipSpeakingQuestions) { skipCurrentSpeakQuestion(); return; }
 
                 switch (q.type) {
                     case 'fill-blank': return renderFillBlank(q);
@@ -1478,15 +1690,14 @@ if (!course || !lesson) {
                 if (answeredCount() < questions.length) { feedback.textContent = lessonText('finishQuestions'); feedback.style.color = '#b91c1c'; return; }
                 if (!canEnableFinish()) {
                     results.fill(null);
-                    skippedQuestionIndices.clear();
                     currentIndex = 0;
-                    updateLessonProgress();
                     refreshFinishState();
                     renderQuestion();
                     feedback.textContent = lessonText('retryQuestions');
                     return;
                 }
                 isFinished = true;
+                window.__musalingoLessonState?.setFinished();
 
                 if (!isReview) {
                     lesson.completed = true;
@@ -1495,7 +1706,7 @@ if (!course || !lesson) {
                 }
 
                 const rewardXp = isReview ? 5 : 20;
-                const today = getLocalDateKey();
+                const today = new Date().toISOString().slice(0, 10);
                 const attemptedCount = results.filter((result) => typeof result === 'boolean').length;
                 const accuracy = attemptedCount
                     ? Math.round((results.filter((result) => result === true).length / attemptedCount) * 100)
@@ -1508,32 +1719,27 @@ if (!course || !lesson) {
                     profile.practiceMinutes = (Number(profile.practiceMinutes) || 0) + 10;
 
                     if (!savedTheme.noStreaks && profile.streakStatus !== 'paused') {
-                        const todayTime = Date.parse(`${today}T00:00:00Z`);
-                        const lastLessonTime = /^\d{4}-\d{2}-\d{2}$/.test(profile.lastLessonDate || '')
-                            ? Date.parse(`${profile.lastLessonDate}T00:00:00Z`)
-                            : NaN;
+                        if (!profile.lastLessonDate) { profile.streak = 1; }
+                        else {
+                            const lastLesson = new Date(profile.lastLessonDate);
+                            const todayDate = new Date(today);
+                            const gap = Math.round((todayDate - lastLesson) / 86400000);
 
-                        if (!Number.isFinite(lastLessonTime)) {
-                            profile.streak = 1;
-                        } else if (Number.isFinite(todayTime) && todayTime > lastLessonTime) {
-                            const gap = Math.floor((todayTime - lastLessonTime) / 86400000);
-
-                            if (gap === 1) {
-                                profile.streak += 1;
-                            } else if (gap > 1) {
+                            if (gap === 1) { profile.streak += 1; }
+                            else if (gap >= 2) {
                                 const missedDays = gap - 1;
-                                const freezesAvailable = profile.streakFreezes;
+                                const freezesAvailable = Number(profile.streakFreezes) || 0;
                                 if (freezesAvailable >= missedDays) {
                                     profile.streakFreezes = freezesAvailable - missedDays;
+                                    profile.streakFreezeDates = Array.isArray(profile.streakFreezeDates) ? profile.streakFreezeDates : [];
                                     for (let i = 1; i <= missedDays; i++) {
-                                        const missed = new Date(lastLessonTime + i * 86400000);
+                                        const missed = new Date(lastLesson);
+                                        missed.setDate(missed.getDate() + i);
                                         const key = missed.toISOString().slice(0, 10);
                                         if (!profile.streakFreezeDates.includes(key)) profile.streakFreezeDates.push(key);
                                     }
                                     profile.streak += missedDays + 1;
-                                } else {
-                                    profile.streak = 1;
-                                }
+                                } else { profile.streak = 1; }
                             }
                         }
                         profile.lastLessonDate = today;
@@ -1608,6 +1814,9 @@ if (!course || !lesson) {
                 if (matchPairsState && matchPairsState.shakeTimer) { clearTimeout(matchPairsState.shakeTimer); matchPairsState = null; }
                 if (window.SFX?.cancelSpeech) window.SFX.cancelSpeech();
                 if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
+                if (typeof window.__chessLessonCleanup === 'function') {
+                    try { window.__chessLessonCleanup(); } catch { }
+                }
             });
 
             renderQuestion();

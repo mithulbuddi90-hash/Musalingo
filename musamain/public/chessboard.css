@@ -251,3 +251,44 @@ body.dark-mode .board-feedback {
         grid-template-columns: 1fr;
     }
 }
+
+.lesson-star-target {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    color: #facc15;
+    text-shadow: 0 1px 2px #422006, 0 0 6px #fff7ad;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.lesson-piece-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: clamp(24px, 7vw, 48px);
+    line-height: 1;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.lesson-piece-fallback.white-piece {
+    color: #fff;
+    text-shadow: -1px -1px 0 #111, 1px -1px 0 #111, -1px 1px 0 #111, 1px 1px 0 #111;
+}
+
+.lesson-piece-fallback.black-piece {
+    color: #111;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+
+.board-progress {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent-dark, #a83272);
+    text-align: center;
+}

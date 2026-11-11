@@ -9,50 +9,21 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '.env') });
 
 // ============================================================
-//  FIREBASE ADMIN INITIALIZATION — bulletproof private-key parser
+//  FIREBASE ADMIN
 // ============================================================
 let firebaseAdminApp = null;
 
-/**
- * Accepts the private key in any of these common shapes:
- *   1. "-----BEGIN PRIVATE KEY-----\nBASE64\n-----END PRIVATE KEY-----\n"
- *   2. -----BEGIN PRIVATE KEY-----\nBASE64\n-----END PRIVATE KEY-----\n   (unquoted, with literal \n)
- *   3. Same as 1 or 2 but with real newlines (multi-line .env value)
- *   4. Wrapped in extra surrounding quotes / whitespace
- *   5. Windows \r\n line endings
- * Returns a normalized PEM string, or null if unusable.
- */
 function parsePrivateKey(raw) {
     if (!raw) return null;
-
-    let key = String(raw);
-
-    // Trim surrounding whitespace
-    key = key.trim();
-
-    // Strip ONE layer of surrounding quotes if dotenv didn't already
+    let key = String(raw).trim();
     if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
         key = key.slice(1, -1);
     }
-
-    // Convert literal escape sequences to real characters.
-    // Order matters: do \r\n first, then \n, then \r.
     key = key.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '');
-
-    // Normalize any remaining CRLF / CR to LF
-    key = key.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-    // Collapse any whitespace inside the base64 body (some tools insert spaces)
-    // — but preserve the BEGIN/END markers' newlines.
-    key = key.trim();
-
-    // Validate structure
+    key = key.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
     if (!key.includes('-----BEGIN PRIVATE KEY-----')) return null;
     if (!key.includes('-----END PRIVATE KEY-----')) return null;
-
-    // Ensure the last newline is present (Google's PEM requires it)
     if (!key.endsWith('\n')) key += '\n';
-
     return key;
 }
 
@@ -105,13 +76,12 @@ if (process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY) {
     app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
 }
 
-// Belt-and-suspenders: never serve sensitive files even if static root is misconfigured.
 app.use((req, res, next) => {
     const p = req.path.toLowerCase();
     const blocked =
         p === '/.env' || p.startsWith('/.env.') ||
         p === '/server.js' || p === '/package.json' || p === '/package-lock.json' ||
-        p.endsWith('.ps1') || p.endsWith('.log') ||
+        p.endsWith('.ps1') || p.endsWith('.log') || p === '/push-musalingo.ps1' ||
         p === '/.git' || p.startsWith('/.git/');
     if (blocked) return res.status(404).send('Not found');
     next();
@@ -120,7 +90,7 @@ app.use((req, res, next) => {
 app.use(express.static(resolve(__dirname, 'public')));
 
 // ============================================================
-//  RATE LIMITING (in-memory, per IP, shared cleanup)
+//  RATE LIMITING
 // ============================================================
 const rateBuckets = new Map();
 
@@ -156,7 +126,25 @@ app.use('/api/generate-questions', rateLimit({ windowMs: 60 * 1000, max: 30, nam
 app.use('/api/send-form', rateLimit({ windowMs: 10 * 60 * 1000, max: 5, name: 'form' }));
 
 // ============================================================
-//  ROUTE — public Firebase web config (client-side keys only)
+//  HEALTH / SELF-PING
+// ============================================================
+const SERVER_STARTED_AT = Date.now();
+
+app.get('/api/health', (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.json({
+        status: 'ok',
+        uptime: Math.floor((Date.now() - SERVER_STARTED_AT) / 1000),
+        geminiKeys: GEMINI_KEYS.length,
+        models: GEMINI_MODELS,
+        emailConfigured: Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS),
+        firebaseConfigured: Boolean(firebaseAdminApp),
+        timestamp: new Date().toISOString()
+    });
+});
+
+// ============================================================
+//  FIREBASE CONFIG
 // ============================================================
 app.get('/api/firebase-config', (req, res) => {
     const cfg = {
@@ -200,9 +188,19 @@ function isValidPuzzlePosition(game) {
 }
 
 // ============================================================
-//  CHESS GENERATORS
+//  KING-HIDING LOGIC  ← NEW
 // ============================================================
-function genFindMove() {
+function shouldHideKings(topic, movingPiece) {
+    const t = String(topic || '').toLowerCase();
+    if (/check|mate|king/i.test(t)) return false;
+    if (movingPiece === 'k') return false;
+    return true;
+}
+
+// ============================================================
+//  CHESS — SINGLE-MOVE GENERATORS (updated for hideKings)
+// ============================================================
+function genFindMove(topic = '') {
     const whiteKing = 'a1';
     const blackKing = 'h8';
     const pieceSquares = SQUARES.filter(square => square !== whiteKing && square !== blackKing);
@@ -227,6 +225,7 @@ function genFindMove() {
             from: square,
             answer,
             legalMoves: moves.map(move => move.to),
+            hideKings: shouldHideKings(topic, piece),   // ← NEW
             prompt: `The ${pieceName(piece)} is highlighted. Tap a square where it can move.`,
             hint: `The ${pieceName(piece)} on ${square} has ${moves.length} legal moves.`
         };
@@ -234,7 +233,7 @@ function genFindMove() {
     return null;
 }
 
-function genCapture() {
+function genCapture(topic = '') {
     const whiteKing = 'a1';
     const blackKing = 'h8';
     const whiteSquares = SQUARES.filter(square => square !== whiteKing && square !== blackKing);
@@ -256,6 +255,7 @@ function genCapture() {
         const captures = legalMoves.filter(move => move.captured);
         if (!captures.length) continue;
 
+        const movingType = game.get(whiteSq).type;
         return {
             type: 'capture',
             fen: game.fen(),
@@ -263,8 +263,9 @@ function genCapture() {
             answer: captures[0].to,
             legalMoves: legalMoves.map(move => move.to),
             captureSquares: captures.map(move => move.to),
-            prompt: `The ${pieceName(game.get(whiteSq).type)} is highlighted. Tap the piece it can capture.`,
-            hint: `Look along the lines the ${pieceName(game.get(whiteSq).type)} attacks.`
+            hideKings: shouldHideKings(topic, movingType),   // ← NEW
+            prompt: `The ${pieceName(movingType)} is highlighted. Tap the piece it can capture.`,
+            hint: `Look along the lines the ${pieceName(movingType)} attacks.`
         };
     }
     return null;
@@ -295,6 +296,7 @@ function genMateInOne() {
                 fen: game.fen(),
                 from: mate.from,
                 answer: mate.to,
+                hideKings: false,   // Mate-in-one always shows kings
                 prompt: 'Find the move that delivers checkmate.',
                 hint: 'The mating move puts the black king in check with no escape.'
             };
@@ -303,49 +305,221 @@ function genMateInOne() {
     return null;
 }
 
+// ============================================================
+//  CHESS — MULTI-MOVE GENERATORS
+// ============================================================
+function genMoveSequence(steps = 2) {
+    for (let attempt = 0; attempt < 800; attempt++) {
+        const game = new Chess();
+        game.clear();
+        const occupied = [];
+        const place = (piece, color, prefer = null) => {
+            const candidates = prefer
+                ? prefer.filter(sq => !occupied.includes(sq))
+                : SQUARES.filter(sq => !occupied.includes(sq));
+            const square = pick(candidates);
+            if (!square || !game.put({ type: piece, color }, square)) return null;
+            occupied.push(square);
+            return square;
+        };
+
+        if (!place('k', 'w') || !place('k', 'b')) continue;
+        if (!place('q', 'w')) continue;
+        if (Math.random() > 0.5 && !place('p', 'b')) continue;
+        if (!isValidPuzzlePosition(game)) continue;
+
+        const moves = [];
+        const startFen = game.fen();
+        let ok = true;
+
+        for (let s = 0; s < steps; s++) {
+            const whiteMoves = game.moves({ verbose: true });
+            if (!whiteMoves.length) { ok = false; break; }
+
+            const scored = whiteMoves.map(m => {
+                let score = Math.random();
+                if (m.captured) score += 2;
+                const g = new Chess(game.fen());
+                try { g.move(m); if (g.isCheck()) score += 1.5; } catch { }
+                return { move: m, score };
+            }).sort((a, b) => b.score - a.score);
+
+            const whiteMove = scored[0].move;
+            moves.push({ from: whiteMove.from, to: whiteMove.to, promo: whiteMove.promotion || 'q', color: 'white' });
+            game.move(whiteMove);
+
+            if (s === steps - 1) break;
+
+            const blackMoves = game.moves({ verbose: true });
+            if (!blackMoves.length) { ok = false; break; }
+
+            const blackMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
+            moves.push({ from: blackMove.from, to: blackMove.to, promo: blackMove.promotion || 'q', color: 'black' });
+            game.move(blackMove);
+        }
+
+        if (!ok || moves.length < 2) continue;
+
+        const firstWhite = moves[0];
+        const legalFirst = new Chess(startFen).moves({ verbose: true })
+            .filter(m => m.from === firstWhite.from)
+            .map(m => m.to);
+
+        return {
+            type: 'move-sequence',
+            fen: startFen,
+            moves,
+            from: firstWhite.from,
+            legalFirstMoves: legalFirst,
+            hideKings: false,   // Multi-move always shows kings
+            prompt: `Play ${steps} move${steps > 1 ? 's' : ''}. Choose any legal continuation.`,
+            hint: `You have ${steps} move${steps > 1 ? 's' : ''}. Capture or check when you can.`
+        };
+    }
+    return null;
+}
+
+function genMateInN(n = 2) {
+    for (let attempt = 0; attempt < 2000; attempt++) {
+        const game = new Chess();
+        game.clear();
+        const occupied = [];
+        const place = (piece, color) => {
+            const square = pick(SQUARES.filter(sq => !occupied.includes(sq)));
+            if (!square || !game.put({ type: piece, color }, square)) return null;
+            occupied.push(square);
+            return square;
+        };
+
+        if (!place('k', 'w') || !place('k', 'b') || !place('q', 'w')) continue;
+        if (Math.random() > 0.5 && !place('r', 'w')) continue;
+        if (!isValidPuzzlePosition(game)) continue;
+
+        const firstWhiteMoves = game.moves({ verbose: true });
+        if (!firstWhiteMoves.length) continue;
+
+        for (const firstMove of firstWhiteMoves) {
+            const afterWhite = new Chess(game.fen());
+            afterWhite.move(firstMove);
+
+            if (afterWhite.isCheckmate()) continue;
+
+            const blackReplies = afterWhite.moves({ verbose: true });
+            if (!blackReplies.length) continue;
+
+            let allMate = true;
+            for (const blackReply of blackReplies) {
+                const afterBlack = new Chess(afterWhite.fen());
+                afterBlack.move(blackReply);
+
+                const whiteNextMoves = afterBlack.moves({ verbose: true });
+                const mateFound = whiteNextMoves.find(m => {
+                    const g = new Chess(afterBlack.fen());
+                    g.move(m);
+                    return g.isCheckmate();
+                });
+
+                if (!mateFound) { allMate = false; break; }
+            }
+
+            if (allMate) {
+                return {
+                    type: `mate-in-${n}`,
+                    fen: game.fen(),
+                    moves: [{ from: firstMove.from, to: firstMove.to, promo: firstMove.promotion || 'q', color: 'white' }],
+                    from: firstMove.from,
+                    answer: firstMove.to,
+                    legalMoves: firstWhiteMoves.map(m => m.to),
+                    hideKings: false,   // Mate-in-N always shows kings
+                    prompt: `Find the first move of a forced mate in ${n}.`,
+                    hint: `There's a move that forces mate no matter what black plays.`
+                };
+            }
+        }
+    }
+    return null;
+}
+
+// ============================================================
+//  CHESS — DISPATCHERS (pass topic to generators)
+// ============================================================
 function chessQuestionType(topic) {
-    const topicLower = String(topic || '').toLowerCase();
-    return /checkmate|mate in one|mating/i.test(topicLower)
-        ? 'mate-in-one'
-        : /captur|attack/i.test(topicLower)
-            ? 'capture'
-            : 'find-move';
+    const t = String(topic || '').toLowerCase();
+    if (/mate in 2|mate in two|mate-in-2/.test(t)) return 'mate-in-2';
+    if (/mate in 3|mate in three|mate-in-3/.test(t)) return 'mate-in-3';
+    if (/checkmate|mate in one|mating/.test(t)) return 'mate-in-one';
+    if (/sequence|combination|chain|multi.?move/.test(t)) return 'move-sequence';
+    if (/fork|pin|skewer|discovered|tactic|attack|captur/.test(t)) return 'capture';
+    return 'find-move';
 }
 
 function generateChessQuestions(count, level = 1, topic = '') {
-    const topicType = String(topic || '').trim() ? chessQuestionType(topic) : null;
-    const gens = topicType === 'capture' ? [genCapture]
-        : topicType === 'mate-in-one' ? [genMateInOne]
-            : topicType === 'find-move' ? [genFindMove]
-                : level === 1 ? [genFindMove]
-                    : level === 2 ? [genFindMove, genCapture]
-                        : [genFindMove, genCapture, genMateInOne];
+    const type = chessQuestionType(topic);
     const out = [];
     let attempts = 0;
-    while (out.length < count && attempts < count * 30) {
+    const maxAttempts = count * 40;
+
+    const tryGenerate = () => {
+        switch (type) {
+            case 'mate-in-2': return genMateInN(2);
+            case 'mate-in-3': return genMateInN(3);
+            case 'mate-in-one': return genMateInOne();
+            case 'move-sequence': return genMoveSequence(2);
+            case 'capture': return genCapture(topic);   // ← pass topic
+            case 'find-move':
+            default:
+                return level >= 3 ? (pick([() => genFindMove(topic), () => genCapture(topic), genMateInOne])())   // ← pass topic
+                    : level === 2 ? (pick([() => genFindMove(topic), () => genCapture(topic)])())   // ← pass topic
+                        : genFindMove(topic);   // ← pass topic
+        }
+    };
+
+    while (out.length < count && attempts < maxAttempts) {
         attempts++;
-        const q = pick(gens)();
+        const q = tryGenerate();
         if (q) out.push(q);
     }
+
+    while (out.length < count && attempts < maxAttempts * 2) {
+        attempts++;
+        const q = pick([() => genFindMove(topic), () => genCapture(topic), genMateInOne])();   // ← pass topic
+        if (q) out.push(q);
+    }
+
     return out;
 }
 
+// ============================================================
+//  CHESS — PROMPT + VALIDATOR
+// ============================================================
 function chessQuestionPrompt(topic, count, level) {
-    const requiredType = chessQuestionType(topic);
-    const task = requiredType === 'mate-in-one'
-        ? 'Create a position where the selected piece has a legal move that checkmates.'
-        : requiredType === 'capture'
-            ? 'Create a position where the selected piece has at least one legal capture of an opposing piece.'
-            : 'Create a position that teaches the legal movement of one selected chess piece.';
+    const type = chessQuestionType(topic);
+    const isMulti = type === 'mate-in-2' || type === 'mate-in-3' || type === 'move-sequence';
+
+    const schema = isMulti
+        ? `{"type":"${type}","fen":"valid FEN","moves":[{"from":"e2","to":"e4","color":"white"},{"from":"e7","to":"e5","color":"black"},{"from":"g1","to":"f3","color":"white"}],"prompt":"...","hint":"..."}`
+        : `{"type":"${type}","fen":"valid FEN","from":"e2","answer":"e4","prompt":"...","hint":"..."}`;
+
+    const task = type === 'mate-in-2'
+        ? 'Create a position where white can force checkmate in exactly 2 moves.'
+        : type === 'mate-in-3'
+            ? 'Create a position where white can force checkmate in exactly 3 moves.'
+            : type === 'move-sequence'
+                ? 'Create a position with a 2-4 move sequence of legal white moves with legal black replies.'
+                : type === 'mate-in-one'
+                    ? 'Create a position where the selected piece has a legal move that checkmates.'
+                    : type === 'capture'
+                        ? 'Create a position where the selected piece has at least one legal capture of an opposing piece.'
+                        : 'Create a position that teaches the legal movement of one selected chess piece.';
+
     return `Create exactly ${count} original chess lesson questions for the topic "${topic}" at difficulty level ${level} of 3.
 ${task}
 Return only a JSON array. Each item must have this shape:
-{"type":"${requiredType}","fen":"valid FEN","from":"e2","answer":"e4","prompt":"short learner-facing question","hint":"short helpful hint"}
+${schema}
 Rules:
-- Use a valid, playable FEN with both kings. The FEN side to move must be the color of the piece on "from".
-- "from" and "answer" must be algebraic squares. The answer must be a legal move by that exact piece according to the FEN.
-- For capture questions, answer must capture an opposing piece. For mate-in-one questions, answer must deliver checkmate in one.
-- Keep positions simple, unambiguous, and appropriate for a chess learner. Do not claim a move is legal unless it is legal in the supplied position.
+- Use a valid, playable FEN with both kings.
+- ${isMulti ? 'The moves array must be a legal sequence. Colors alternate starting with white. Last move of a mate-in-N must deliver checkmate.' : 'The move must be legal for the given side to move.'}
+- Keep positions simple, unambiguous, and appropriate for a chess learner.
 - Do not include markdown, extra keys, or explanations outside the JSON array.`;
 }
 
@@ -356,10 +530,60 @@ function normalizeChessQuestion(question, topic) {
     if (typeof question.fen !== 'string' || !validateFen(question.fen).ok) return null;
 
     let game;
-    try {
-        game = new Chess(question.fen);
-    } catch {
-        return null;
+    try { game = new Chess(question.fen); } catch { return null; }
+
+    if (Array.isArray(question.moves) && question.moves.length > 0) {
+        const testGame = new Chess(game.fen());
+        let lastMoveWasCheckmate = false;
+
+        for (const step of question.moves) {
+            if (!step || typeof step.from !== 'string' || typeof step.to !== 'string') return null;
+            const from = String(step.from).toLowerCase();
+            const to = String(step.to).toLowerCase();
+            if (!/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) return null;
+
+            const legal = testGame.moves({ verbose: true });
+            const match = legal.find(m => m.from === from && m.to === to);
+            if (!match) return null;
+
+            try {
+                testGame.move(match);
+            } catch { return null; }
+
+            if (testGame.isCheckmate()) {
+                lastMoveWasCheckmate = true;
+                break;
+            }
+        }
+
+        if (requiredType.startsWith('mate-in') && !lastMoveWasCheckmate) return null;
+
+        const firstWhite = question.moves.find(m => m.color !== 'black');
+        if (!firstWhite) return null;
+        const firstLegal = new Chess(game.fen()).moves({ verbose: true })
+            .filter(m => m.from === firstWhite.from)
+            .map(m => m.to);
+
+        return {
+            type: requiredType,
+            fen: game.fen(),
+            moves: question.moves.map(m => ({
+                from: String(m.from).toLowerCase(),
+                to: String(m.to).toLowerCase(),
+                promo: (m.promo || 'q').toLowerCase(),
+                color: m.color === 'black' ? 'black' : 'white'
+            })),
+            from: firstWhite.from,
+            answer: firstWhite.to,
+            legalMoves: firstLegal,
+            hideKings: false,   // Multi-move always shows kings
+            prompt: typeof question.prompt === 'string' && question.prompt.trim()
+                ? question.prompt.trim().slice(0, 240)
+                : `Play the sequence.`,
+            hint: typeof question.hint === 'string' && question.hint.trim()
+                ? question.hint.trim().slice(0, 240)
+                : `This is a ${requiredType.replace('-', ' ')} puzzle.`
+        };
     }
 
     const from = String(question.from || '').toLowerCase();
@@ -387,6 +611,9 @@ function normalizeChessQuestion(question, topic) {
         ? question.hint.trim().slice(0, 240)
         : `The ${piece.toLowerCase()} on ${from} has ${legalMoves.length} legal moves.`;
 
+    // ← NEW: hideKings for single-move questions
+    const hideKings = shouldHideKings(topic, movingPiece.type);
+
     return {
         type: requiredType,
         fen: game.fen(),
@@ -396,6 +623,7 @@ function normalizeChessQuestion(question, topic) {
         ...(requiredType === 'capture'
             ? { captureSquares: legalMoves.filter(move => move.captured).map(move => move.to) }
             : {}),
+        hideKings,   // ← NEW
         prompt,
         hint
     };
@@ -621,13 +849,14 @@ const englishTranslations = {
 
 function generateFallbackQuestions(language, topic, count) {
     if (language === 'Chess') {
-        const chessQuestions = generateChessQuestions(count, 1);
+        const chessQuestions = generateChessQuestions(count, 1, topic);
         return chessQuestions.length ? chessQuestions : [{
             type: 'find-move',
             fen: '7k/8/8/8/4K3/8/8/8 w - - 0 1',
             from: 'e4',
             answer: 'e5',
             legalMoves: new Chess('7k/8/8/8/4K3/8/8/8 w - - 0 1').moves({ square: 'e4', verbose: true }).map(move => move.to),
+            hideKings: false,
             prompt: 'The king is highlighted. Tap a square where it can move.',
             hint: 'The king moves one square in any direction.'
         }];
@@ -749,7 +978,7 @@ function parseStructuredResponse(text) {
 }
 
 // ============================================================
-//  AI CALL — GEMINI (key + model rotation)
+//  AI CALL — GEMINI
 // ============================================================
 const GEMINI_KEYS = (process.env.GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
 const GEMINI_MODELS = (process.env.GEMINI_MODELS || process.env.GEMINI_MODEL || 'gemini-2.5-flash')
@@ -819,9 +1048,9 @@ async function callAI(prompt, language, topic, count) {
 
             try {
                 const r = await requestGemini(model, keyEntry.key, {
-                        systemInstruction: { parts: [{ text: 'You generate structured quiz data. Always respond with a valid JSON array or JSON object with a questions/items array only, no prose, no markdown.' }] },
-                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.7, responseMimeType: 'application/json', maxOutputTokens: 8192 }
+                    systemInstruction: { parts: [{ text: 'You generate structured quiz data. Always respond with a valid JSON array or JSON object with a questions/items array only, no prose, no markdown.' }] },
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.7, responseMimeType: 'application/json', maxOutputTokens: 8192 }
                 });
 
                 if (r.status === 200) {
@@ -935,6 +1164,11 @@ function validateQuestion(q, language) {
             && q.english.trim().length > 0
             && typeof q.answer === 'string'
             && q.answer.trim().length > 0;
+        case 'move-sequence':
+        case 'mate-in-2':
+        case 'mate-in-3':
+            return Array.isArray(q.moves) && q.moves.length >= 2
+                && typeof q.fen === 'string' && validateFen(q.fen).ok;
         default: return false;
     }
 }
@@ -964,7 +1198,9 @@ app.post('/api/generate-questions', async (req, res) => {
                 for (const candidate of candidates) {
                     const question = normalizeChessQuestion(candidate, topic);
                     if (!question) continue;
-                    const key = `${question.type}|${question.fen}|${question.from}|${question.answer}`;
+                    const key = question.moves
+                        ? `multi|${question.type}|${question.fen}|${JSON.stringify(question.moves)}`
+                        : `${question.type}|${question.fen}|${question.from}|${question.answer}`;
                     if (seen.has(key)) continue;
                     seen.add(key);
                     questions.push(question);
@@ -1057,7 +1293,7 @@ app.post('/api/generate-questions', async (req, res) => {
 });
 
 // ============================================================
-//  ROUTE — chat proxy (AI Coach)
+//  ROUTE — chat proxy
 // ============================================================
 app.post('/api/chat', async (req, res) => {
     const prompt = String(req.body?.prompt || '').trim();
@@ -1076,8 +1312,8 @@ app.post('/api/chat', async (req, res) => {
 
             try {
                 const r = await requestGemini(model, keyEntry.key, {
-                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.4, maxOutputTokens: 1500 }
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.4, maxOutputTokens: 1500 }
                 });
 
                 if (r.ok) {
@@ -1122,7 +1358,7 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // ============================================================
-//  ROUTE — Send Form via Email
+//  ROUTE — Send Form
 // ============================================================
 app.post('/api/send-form', async (req, res) => {
     const title = String(req.body?.title ?? '').trim().slice(0, 200);
@@ -1170,12 +1406,64 @@ app.post('/api/send-form', async (req, res) => {
 });
 
 // ============================================================
+//  SELF-PING
+// ============================================================
+const SELF_PING_ENABLED = process.env.ENABLE_SELF_PING === 'true' || process.env.NODE_ENV === 'production';
+const SELF_PING_INTERVAL_MS = 10 * 60 * 1000;
+const SELF_PING_URL = process.env.SELF_PING_URL || (process.env.RENDER_EXTERNAL_URL
+    ? `${process.env.RENDER_EXTERNAL_URL}/api/health`
+    : null);
+
+let selfPingTimer = null;
+
+function startSelfPing() {
+    if (!SELF_PING_ENABLED) {
+        console.log('⏸️  Self-ping disabled (ENABLE_SELF_PING not set, not in production)');
+        return;
+    }
+    if (!SELF_PING_URL) {
+        console.log('⚠️  Self-ping enabled but SELF_PING_URL not set');
+        console.log('   Set SELF_PING_URL=https://your-service.onrender.com/api/health');
+        return;
+    }
+    console.log(`🔄 Self-ping active → ${SELF_PING_URL} every ${SELF_PING_INTERVAL_MS / 60000} min`);
+    selfPingTimer = setInterval(async () => {
+        try {
+            const r = await fetch(SELF_PING_URL, { method: 'GET', signal: AbortSignal.timeout(8000) });
+            console.log(`[self-ping] ${r.status} at ${new Date().toISOString()}`);
+        } catch (err) {
+            console.warn(`[self-ping] failed: ${err.message}`);
+        }
+    }, SELF_PING_INTERVAL_MS);
+    selfPingTimer.unref();
+}
+
+function stopSelfPing() {
+    if (selfPingTimer) clearInterval(selfPingTimer);
+}
+
+// ============================================================
 //  START
 // ============================================================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Musalingo running → http://localhost:${PORT}/dashboard.html`);
     console.log(`🔑 Loaded ${GEMINI_KEYS.length} Gemini API key(s).`);
     if (GEMINI_MODELS.length) console.log(`🤖 Models: ${GEMINI_MODELS.join(' → ')}`);
     if (process.env.EMAIL_USER) console.log(`📧 Email configured for: ${process.env.EMAIL_USER}`);
+    console.log(`🏥 Health endpoint: http://localhost:${PORT}/api/health`);
+    startSelfPing();
 });
+
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down…');
+    stopSelfPing();
+    server.close(() => process.exit(0));
+});
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down…');
+    stopSelfPing();
+    server.close(() => process.exit(0));
+});
+
+export default app;
