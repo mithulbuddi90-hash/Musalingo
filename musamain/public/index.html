@@ -167,6 +167,10 @@
             box-shadow: 0 6px 0 #3d8c01;
         }
 
+        .btn.install[hidden] {
+            display: none !important;
+        }
+
         .hero-card,
         .section-card {
             background: var(--card);
@@ -419,43 +423,7 @@
         </div>
     </footer>
 
-    <!-- Existing JavaScript for PWA and Install Prompt -->
-    <script>
-        // ---------- SERVICE WORKER ----------
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((reg) => console.log('[sw] registered:', reg.scope))
-                    .catch((err) => console.warn('[sw] registration failed:', err));
-            });
-        }
-
-        // ---------- PWA INSTALL PROMPT ----------
-        let deferredPrompt = null;
-        const installBtn = document.getElementById('installAppBtn');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            if (installBtn) installBtn.hidden = false;
-        });
-
-        if (installBtn) {
-            installBtn.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log('[pwa] install outcome:', outcome);
-                deferredPrompt = null;
-                installBtn.hidden = true;
-            });
-        }
-
-        window.addEventListener('appinstalled', () => {
-            console.log('[pwa] app installed');
-            if (installBtn) installBtn.hidden = true;
-        });
-    </script>
+    <script src="pwa.js" defer></script>
 </body>
 
 </html>

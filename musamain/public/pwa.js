@@ -17,39 +17,54 @@
     }
 
     // ---------- 2. INSTALL PROMPT ----------
-    // Any element with id="installAppBtn" becomes the install trigger.
     let deferredPrompt = null;
-    let installBtn = null;
 
-    function findInstallBtn() {
-        installBtn = document.getElementById('installAppBtn');
-        return installBtn;
+    function isInstalled() {
+        return window.matchMedia('(display-mode: standalone)').matches
+            || navigator.standalone === true;
+    }
+
+    function setInstallButtonsVisible(visible) {
+        document.querySelectorAll('#installAppBtn, [data-install-app]').forEach((button) => {
+            button.hidden = !visible;
+        });
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        const btn = findInstallBtn();
-        if (btn) btn.hidden = false;
+        setInstallButtonsVisible(!isInstalled());
     });
 
-    // Use event delegation so the button can appear at any time
     document.addEventListener('click', async (e) => {
-        const btn = e.target.closest('#installAppBtn');
+        const target = e.target;
+        const btn = target instanceof Element
+            ? target.closest('#installAppBtn, [data-install-app]')
+            : null;
         if (!btn) return;
         if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log('[pwa] install outcome:', outcome);
+        const promptEvent = deferredPrompt;
         deferredPrompt = null;
-        btn.hidden = true;
+        btn.disabled = true;
+        try {
+            await promptEvent.prompt();
+            const { outcome } = await promptEvent.userChoice;
+            console.log('[pwa] install outcome:', outcome);
+        } catch (err) {
+            console.warn('[pwa] install prompt failed:', err);
+        } finally {
+            setInstallButtonsVisible(false);
+            btn.disabled = false;
+        }
     });
 
     window.addEventListener('appinstalled', () => {
         console.log('[pwa] app installed');
-        const btn = findInstallBtn();
-        if (btn) btn.hidden = true;
+        deferredPrompt = null;
+        setInstallButtonsVisible(false);
     });
+
+    if (isInstalled()) setInstallButtonsVisible(false);
 
     // ---------- 3. ONLINE / OFFLINE INDICATOR ----------
     // Only rendered on pages that opt in via <body data-pwa-status="true">.

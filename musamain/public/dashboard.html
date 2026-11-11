@@ -46,8 +46,8 @@
             font-family: "Segoe UI", Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
         a {
@@ -58,14 +58,17 @@
         /* ===== APP LAYOUT ===== */
         .app-layout {
             display: flex;
-            height: 100vh;
-            width: 100vw;
+            min-height: 100vh;
+            width: 100%;
         }
 
         /* ===== LEFT SIDEBAR ===== */
         .sidebar-left {
+            position: sticky;
+            top: 0;
             width: 240px;
-            flex-shrink: 0;
+            height: 100vh;
+            flex: 0 0 240px;
             border-right: 2px solid var(--border);
             padding: 24px 16px;
             display: flex;
@@ -143,10 +146,10 @@
 
         /* ===== MAIN CONTENT AREA ===== */
         .main-content {
+            min-width: 0;
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
             position: relative;
         }
 
@@ -171,6 +174,17 @@
             font-size: 1rem;
             color: var(--muted);
             cursor: pointer;
+        }
+
+        button.stat-pill {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            font: inherit;
+        }
+
+        .stat-pill[hidden] {
+            display: none;
         }
 
         .stat-pill:hover {
@@ -789,19 +803,51 @@
             }
         }
 
-        @media (max-width: 768px) {
-            .app-layout {
-                flex-direction: column;
+        @media (max-width: 920px) {
+            .sidebar-left {
+                width: 76px;
+                flex-basis: 76px;
+                align-items: center;
+                padding: 18px 8px;
             }
 
+            .brand-name {
+                display: none;
+            }
+
+            .nav-item {
+                width: 54px;
+                justify-content: center;
+                padding: 10px 0;
+            }
+
+            .nav-label {
+                display: none;
+            }
+
+            .nav-icon {
+                width: auto;
+                font-size: 1.35rem;
+            }
+        }
+
+        @media (max-width: 650px) {
             .sidebar-left {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
                 width: 100%;
-                height: auto;
+                height: 64px;
                 flex-direction: row;
+                justify-content: space-around;
+                gap: 0;
+                padding: 5px 7px;
+                border-top: 1px solid var(--border);
+                border-right: 0;
+                background: var(--panel);
                 overflow-x: auto;
-                border-right: none;
-                border-bottom: 2px solid var(--border);
-                padding: 12px;
+                z-index: 100;
             }
 
             .brand-wrap {
@@ -809,25 +855,100 @@
             }
 
             .nav-item {
+                width: 46px;
+                height: 48px;
+                flex: 0 0 46px;
+                border-radius: 12px;
+            }
+
+            .nav-item:nth-of-type(n+6) {
+                display: none;
+            }
+
+            .main-content {
+                padding-bottom: 64px;
+            }
+
+            .top-stats {
+                justify-content: space-around;
+                gap: 8px;
                 padding: 8px 12px;
-                font-size: 0.8rem;
+                min-height: 58px;
+                flex-wrap: wrap;
+            }
+
+            .stat-pill {
+                gap: 4px;
+                font-size: 0.85rem;
+            }
+
+            .course-switcher-wrap {
+                margin-right: 0;
+            }
+
+            .course-trigger-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .dashboard-grid {
+                padding: 0 14px 28px;
+                gap: 20px;
             }
 
             .sidebar-right {
                 grid-template-columns: 1fr;
+                gap: 14px;
             }
 
-            .top-stats {
-                justify-content: space-between;
-                padding: 16px;
+            .section-header {
+                top: 66px;
+                padding: 14px 16px;
+                margin-bottom: 18px;
             }
 
-            .dashboard-grid {
-                padding: 0 16px 80px 16px;
+            .path-unit {
+                top: 80px;
+            }
+
+            .path-step {
+                height: 124px;
+            }
+
+            .lesson-node {
+                width: 66px;
+                height: 66px;
+                font-size: 1.75rem;
+            }
+
+            .lesson-node.trophy {
+                width: 74px;
+                height: 74px;
+                font-size: 1.9rem;
+            }
+
+            .lesson-copy {
+                top: 86px;
+                width: min(160px, 46%);
             }
 
             .invite-banner {
-                margin: 0 16px 16px 16px;
+                margin: 0 14px 14px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .dashboard-grid {
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+
+            .side-card {
+                padding: 16px;
+            }
+
+            .section-header-title {
+                font-size: 1.05rem;
             }
         }
     </style>
@@ -845,17 +966,16 @@
                 <div class="brand-name">Musalingo</div>
             </div>
 
-            <a class="nav-item active" href="dashboard.html"><span class="nav-icon">🏠</span> Learn</a>
-            <a class="nav-item" href="practice.html"><span class="nav-icon">🎯</span> Practice</a>
+            <a class="nav-item active" href="dashboard.html" aria-label="Learn"><span class="nav-icon">🏠</span><span class="nav-label">Learn</span></a>
+            <a class="nav-item" href="practice.html" aria-label="Practice"><span class="nav-icon">🎯</span><span class="nav-label">Practice</span></a>
             <a class="nav-item" href="matches.html" id="dynamicNavItem">
-                <span class="nav-icon" id="dynamicNavIcon">⚔️</span> <span id="dynamicNavText">Matches</span>
+                <span class="nav-icon" id="dynamicNavIcon">⚔️</span> <span class="nav-label" id="dynamicNavText">Matches</span>
             </a>
-            <a class="nav-item" href="coming-soon.html?feature=leaderboards"><span class="nav-icon">🛡️</span>
-                Leaderboards</a>
-            <a class="nav-item" href="quest.html"><span class="nav-icon">🎯</span> Quests</a>
-            <a class="nav-item" href="shop.html"><span class="nav-icon">🛍️</span> Shop</a>
-            <a class="nav-item" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
-            <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+            <a class="nav-item" href="coming-soon.html?feature=leaderboards" aria-label="Leaderboards"><span class="nav-icon">🛡️</span><span class="nav-label">Leaderboards</span></a>
+            <a class="nav-item" href="quest.html" aria-label="Quests"><span class="nav-icon">🎯</span><span class="nav-label">Quests</span></a>
+            <a class="nav-item" href="shop.html" aria-label="Shop"><span class="nav-icon">🛍️</span><span class="nav-label">Shop</span></a>
+            <a class="nav-item" href="profile.html" aria-label="Profile"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
+            <a class="nav-item" href="settings.html" aria-label="Settings"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a>
         </aside>
 
         <!-- MAIN CONTENT -->
@@ -877,6 +997,9 @@
                     </div>
                 </div>
 
+                <button class="stat-pill" id="installAppBtn" type="button" aria-label="Install Musalingo" hidden>
+                    <span class="icon">📲</span><span>Install</span>
+                </button>
                 <div class="stat-pill" onclick="window.location.href='streak.html'">
                     <span class="icon">🔥</span><span id="streakLink">0</span>
                 </div>

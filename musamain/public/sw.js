@@ -7,7 +7,7 @@
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v27';
+const CACHE_VERSION = 'musalingo-v28';
 
 const APP_SHELL = [
     '/',
@@ -53,7 +53,8 @@ const APP_SHELL = [
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/icons/icon-maskable-192.png',
-    '/icons/icon-maskable-512.png'
+    '/icons/icon-maskable-512.png',
+    '/icons/logo.png'
 ];
 
 // ---------- INSTALL ----------
