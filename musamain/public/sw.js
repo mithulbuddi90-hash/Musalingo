@@ -1,5 +1,5 @@
-/* ============================================================
-   Musalingo — Service Worker (v26)
+﻿/* ============================================================
+   Musalingo â€” Service Worker (v26)
    - Caches the app shell for offline use
    - Network-first for HTML (with 3s timeout)
    - Cache-first for static assets
@@ -7,7 +7,7 @@
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v26';
+const CACHE_VERSION = 'musalingo-v27';
 
 const APP_SHELL = [
     '/',
@@ -100,7 +100,7 @@ self.addEventListener('fetch', (event) => {
     // Only handle same-origin requests
     if (url.origin !== self.location.origin) return;
 
-    // Never cache API calls — always go to network
+    // Never cache API calls â€” always go to network
     if (url.pathname.toLowerCase().startsWith('/api/')) {
         return;
     }
