@@ -25,6 +25,8 @@
             --shadow: rgba(15, 23, 42, 0.08);
             --unit-main: #EC96C7;
             --unit-dark: #C46AA1;
+            --gold: #ffc800;
+            --gold-dark: #e5b200;
         }
 
         body.dark-mode {
@@ -53,6 +55,38 @@
         a {
             text-decoration: none;
             color: inherit;
+        }
+
+        /* ===== 3D PRESS EFFECT ===== */
+        .btn,
+        .btn-promo,
+        .nav-item,
+        .stat-pill,
+        .course-trigger-btn,
+        .course-item,
+        button {
+            transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease, background 0.15s ease;
+            will-change: transform;
+        }
+
+        .btn:active,
+        .btn-promo:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 currentColor;
+            filter: brightness(0.96);
+        }
+
+        .nav-item:active {
+            transform: translateY(1px) scale(0.99);
+        }
+
+        .stat-pill:active,
+        .course-item:active {
+            transform: scale(0.97);
+        }
+
+        .course-trigger-btn:active {
+            transform: scale(0.94);
         }
 
         /* ===== APP LAYOUT ===== */
@@ -87,22 +121,24 @@
         }
 
         .brand-logo {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
             object-fit: cover;
+            box-shadow: 0 4px 10px rgba(236, 150, 199, 0.3);
         }
 
         .brand-fallback {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
             background: linear-gradient(135deg, var(--accent), #8b5cf6);
             color: white;
             display: grid;
             place-items: center;
             font-size: 20px;
             font-weight: 900;
+            box-shadow: 0 4px 10px rgba(236, 150, 199, 0.3);
         }
 
         .brand-name {
@@ -124,9 +160,7 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             border: 2px solid transparent;
-            transition: all 0.15s ease;
             cursor: pointer;
-            text-decoration: none;
         }
 
         .nav-item:hover {
@@ -138,13 +172,14 @@
             background: color-mix(in srgb, var(--accent) 15%, var(--bg));
             color: var(--accent);
             border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+            box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 25%, transparent);
         }
 
         .nav-icon {
             font-size: 1.2rem;
         }
 
-        /* ===== MAIN CONTENT AREA ===== */
+        /* ===== MAIN CONTENT ===== */
         .main-content {
             min-width: 0;
             flex: 1;
@@ -164,6 +199,7 @@
             top: 0;
             background: var(--bg);
             z-index: 50;
+            border-bottom: 1px solid var(--border);
         }
 
         .stat-pill {
@@ -174,10 +210,12 @@
             font-size: 1rem;
             color: var(--muted);
             cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 10px;
         }
 
         button.stat-pill {
-            padding: 0;
+            padding: 6px 10px;
             border: 0;
             background: transparent;
             font: inherit;
@@ -189,13 +227,14 @@
 
         .stat-pill:hover {
             color: var(--text);
+            background: var(--panel-2);
         }
 
         .stat-pill .icon {
             font-size: 1.2rem;
         }
 
-        /* --- COURSE SWITCHER DROPDOWN --- */
+        /* ===== COURSE SWITCHER ===== */
         .course-switcher-wrap {
             position: relative;
             margin-right: 8px;
@@ -212,7 +251,7 @@
             border: 2px solid var(--border);
             font-size: 1.5rem;
             cursor: pointer;
-            transition: filter 0.15s ease;
+            box-shadow: 0 3px 0 var(--border);
         }
 
         .course-trigger-btn:hover {
@@ -221,6 +260,7 @@
 
         .course-trigger-btn.active {
             border-color: #1cb0f6;
+            box-shadow: 0 3px 0 #1cb0f6;
         }
 
         .course-dropdown {
@@ -286,7 +326,6 @@
             border-radius: 10px;
             cursor: pointer;
             font-weight: 700;
-            transition: background 0.15s;
         }
 
         .course-item:hover {
@@ -325,7 +364,6 @@
             border-radius: 10px;
             font-weight: 800;
             color: var(--text);
-            transition: background 0.15s;
         }
 
         .add-course-btn:hover {
@@ -349,7 +387,7 @@
             display: grid;
             grid-template-columns: 1fr 340px;
             gap: 40px;
-            padding: 0 32px 80px 32px;
+            padding: 24px 32px 80px 32px;
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
@@ -360,50 +398,11 @@
             position: relative;
         }
 
-        .section-header {
-            position: sticky;
-            top: 16px;
-            z-index: 20;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            background: linear-gradient(180deg, var(--header-main, var(--accent)), var(--header-dark, var(--accent-dark)));
-            color: #fff;
-            padding: 16px 20px;
-            border-radius: 18px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12), 0 4px 0 var(--header-dark, var(--accent-dark));
-            transition: background 0.3s ease;
-        }
+        /* ══════════════════════════════════════════════════════════
+           OLD .section-header is REMOVED. New unit card does the job.
+           ══════════════════════════════════════════════════════════ */
 
-        .section-header-left {
-            display: block;
-            color: #fff;
-            text-decoration: none;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .section-header-eyebrow {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.78rem;
-            font-weight: 800;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            opacity: 0.95;
-            margin-bottom: 4px;
-        }
-
-        .section-header-title {
-            font-size: 1.2rem;
-            font-weight: 800;
-            margin: 0;
-        }
-
-        /* Path Styles */
+        /* Course path */
         .course-path {
             position: relative;
             isolation: isolate;
@@ -421,34 +420,102 @@
             pointer-events: none;
         }
 
+        /* ══════════════════════════════════════════════════════════
+           UNIT HEADER — NOW CLICKABLE → sections.html
+           ══════════════════════════════════════════════════════════ */
         .path-unit {
             position: sticky;
-            top: 90px;
-            z-index: 4;
+            top: 16px;
+            z-index: 20;
             display: flex;
             justify-content: center;
-            padding: 12px 0 8px;
+            padding: 0 0 16px;
         }
 
-        .unit-banner {
-            display: inline-flex;
+        .unit-header-card {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            padding: 12px 24px;
-            border-radius: 16px;
-            background: linear-gradient(180deg, var(--unit-main), var(--unit-dark));
+            gap: 16px;
+            width: min(600px, 100%);
+            padding: 22px 26px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--unit-main), var(--unit-dark));
             color: #fff;
-            box-shadow: 0 5px 0 var(--unit-dark), 0 0 0 6px var(--bg);
-            font-size: 0.95rem;
-            font-weight: 900;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
+            box-shadow: 0 8px 0 var(--unit-dark), 0 12px 28px rgba(0, 0, 0, 0.15);
+            transition: transform 0.15s ease, filter 0.15s ease;
+            cursor: pointer;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
         }
 
+        .unit-header-card::after {
+            content: '→';
+            position: absolute;
+            right: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            opacity: 0.6;
+            font-weight: 900;
+            pointer-events: none;
+        }
+
+        .unit-header-card:hover {
+            filter: brightness(1.05);
+            transform: translateY(-2px);
+        }
+
+        .unit-header-card:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 var(--unit-dark), 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .unit-header-copy {
+            flex: 1;
+            min-width: 0;
+            padding-right: 30px;
+        }
+
+        .unit-header-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.9;
+            margin-bottom: 6px;
+        }
+
+        .unit-header-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0 0 4px;
+            line-height: 1.25;
+        }
+
+        .unit-header-subtitle {
+            font-size: 0.85rem;
+            opacity: 0.88;
+            font-weight: 600;
+        }
+
+        .unit-header-icon {
+            font-size: 2.4rem;
+            line-height: 1;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+        }
+
+        /* ===== LESSON NODES ===== */
         .path-step {
             position: relative;
             z-index: 1;
-            height: 138px;
+            height: 150px;
         }
 
         .lesson-node {
@@ -456,27 +523,27 @@
             top: 14px;
             display: grid;
             place-items: center;
-            width: 74px;
-            height: 74px;
+            width: 82px;
+            height: 82px;
             border-radius: 50%;
             background: linear-gradient(145deg, var(--unit-main), var(--unit-dark));
             color: white;
             text-decoration: none;
-            font-size: 2rem;
+            font-size: 2.1rem;
             line-height: 1;
-            box-shadow: 0 6px 0 var(--unit-dark), 0 0 0 6px var(--bg);
-            transition: transform 160ms ease, filter 160ms ease, opacity 160ms ease;
+            box-shadow: 0 8px 0 var(--unit-dark), 0 0 0 6px var(--bg);
             transform: translateX(-50%);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
         }
 
         .lesson-node.trophy {
-            width: 84px;
-            height: 84px;
+            width: 92px;
+            height: 92px;
             border-radius: 22% 22% 34% 34% / 24% 24% 42% 42%;
             background: linear-gradient(180deg, #ffd76a, #f6b43b);
             color: #704510;
             box-shadow: 0 8px 0 #d9911a, 0 0 0 6px var(--bg);
-            font-size: 2.2rem;
+            font-size: 2.3rem;
         }
 
         .path-step.side-left .lesson-node,
@@ -490,41 +557,67 @@
         }
 
         .lesson-node:hover {
-            filter: brightness(1.06);
+            filter: brightness(1.08);
             transform: translateX(-50%) translateY(-3px);
         }
 
+        .lesson-node:active {
+            transform: translateX(-50%) translateY(5px) scale(0.98) !important;
+            box-shadow: 0 1px 0 var(--unit-dark), 0 0 0 6px var(--bg) !important;
+        }
+
         .lesson-node.locked {
-            background: var(--panel-2);
-            box-shadow: 0 6px 0 var(--border), 0 0 0 6px var(--bg);
+            background: linear-gradient(145deg, #d1d5db, #9ca3af);
+            box-shadow: 0 8px 0 #6b7280, 0 0 0 6px var(--bg);
             opacity: 0.7;
+            color: #f3f4f6;
         }
 
         .lesson-node.locked:hover {
             opacity: 0.9;
         }
 
+        .lesson-node.starting {
+            animation: node-pulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes node-pulse {
+            0% {
+                box-shadow: 0 8px 0 var(--unit-dark), 0 0 0 0 color-mix(in srgb, var(--unit-main) 60%, transparent);
+            }
+
+            70% {
+                box-shadow: 0 8px 0 var(--unit-dark), 0 0 0 20px color-mix(in srgb, var(--unit-main) 0%, transparent);
+            }
+
+            100% {
+                box-shadow: 0 8px 0 var(--unit-dark), 0 0 0 0 color-mix(in srgb, var(--unit-main) 0%, transparent);
+            }
+        }
+
         .lesson-node.starting::before {
             content: 'START';
             position: absolute;
-            top: -45px;
+            top: -50px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 8px 18px;
+            padding: 9px 20px;
             border-radius: 12px;
             background: var(--unit-dark);
             color: #fff;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 900;
             letter-spacing: 0.08em;
             border: 2px solid var(--unit-main);
             animation: bob 2s ease-in-out infinite;
+            white-space: nowrap;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
         }
 
         .lesson-node.starting::after {
             content: '';
             position: absolute;
-            top: -10px;
+            top: -12px;
             left: 50%;
             transform: translateX(-50%);
             border: 9px solid transparent;
@@ -545,8 +638,8 @@
 
         .lesson-copy {
             position: absolute;
-            top: 94px;
-            width: min(180px, 45%);
+            top: 102px;
+            width: min(200px, 45%);
             transform: translateX(-50%);
             text-align: center;
         }
@@ -554,64 +647,68 @@
         .lesson-copy strong {
             display: block;
             margin-bottom: 4px;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             color: var(--text);
+            font-weight: 800;
         }
 
-        /* ===== RIGHT SIDEBAR (CARDS) ===== */
+        /* ===== RIGHT SIDEBAR ===== */
         .sidebar-right {
             display: flex;
             flex-direction: column;
             gap: 20px;
-            padding-top: 80px;
+            padding-top: 8px;
         }
 
         .side-card {
             background: var(--panel);
             border: 2px solid var(--border);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 20px;
-            box-shadow: 0 4px 12px var(--shadow);
+            box-shadow: 0 6px 16px var(--shadow);
         }
 
         .promo-card {
             position: relative;
             overflow: hidden;
-            border-color: var(--accent);
+            border-color: var(--gold);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 8%, var(--panel)), var(--panel));
         }
 
         .promo-title {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 900;
             color: #fff;
-            background: linear-gradient(90deg, #8b5cf6, #ec4899);
-            padding: 4px 8px;
-            border-radius: 4px;
+            background: linear-gradient(90deg, #ffb800, #ff8c00);
+            padding: 5px 10px;
+            border-radius: 6px;
             display: inline-block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
         }
 
         .promo-card h3 {
             margin: 0 0 8px;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
         }
 
         .promo-card p {
             margin: 0 0 16px;
             font-size: 0.9rem;
             color: var(--muted);
-            line-height: 1.4;
+            line-height: 1.45;
         }
 
         .btn-promo {
             display: block;
             width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            background: #2b70c9;
-            color: white;
-            font-weight: 800;
+            padding: 13px;
+            border-radius: 13px;
+            background: var(--gold);
+            color: #1f2937;
+            font-weight: 900;
             text-align: center;
             text-transform: uppercase;
             font-size: 0.85rem;
@@ -619,6 +716,11 @@
             border: none;
             cursor: pointer;
             text-decoration: none;
+            box-shadow: 0 4px 0 var(--gold-dark);
+        }
+
+        .btn-promo:hover {
+            filter: brightness(1.05);
         }
 
         .league-header {
@@ -630,11 +732,11 @@
 
         .league-header h3 {
             margin: 0;
-            font-size: 1.05rem;
+            font-size: 1.08rem;
         }
 
         .league-link {
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: 800;
             color: #1cb0f6;
             cursor: pointer;
@@ -648,14 +750,14 @@
         }
 
         .league-icon {
-            font-size: 2rem;
+            font-size: 2.2rem;
         }
 
         .league-rank p {
             margin: 0;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             color: var(--muted);
-            line-height: 1.4;
+            line-height: 1.45;
         }
 
         .quest-header {
@@ -667,7 +769,7 @@
 
         .quest-header h3 {
             margin: 0;
-            font-size: 1.05rem;
+            font-size: 1.08rem;
         }
 
         .quest-row {
@@ -682,7 +784,7 @@
         }
 
         .quest-icon {
-            font-size: 1.8rem;
+            font-size: 1.9rem;
         }
 
         .quest-info {
@@ -691,7 +793,7 @@
 
         .quest-info strong {
             display: block;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             margin-bottom: 6px;
         }
 
@@ -705,9 +807,9 @@
 
         .quest-fill {
             height: 100%;
-            background: #ffc800;
+            background: linear-gradient(90deg, var(--gold), #ffb800);
             border-radius: 999px;
-            transition: width 0.3s ease;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.1);
         }
 
         .quest-fill span {
@@ -746,7 +848,7 @@
             color: #60a5fa;
         }
 
-        /* ===== FLOATING FORM BUTTON ===== */
+        /* ===== FAB ===== */
         .fab-button {
             position: fixed;
             bottom: 24px;
@@ -757,36 +859,23 @@
             background: var(--accent);
             color: white;
             border: none;
-            box-shadow: 0 6px 0 var(--accent-dark, #C46AA1), 0 10px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 0 var(--accent-dark), 0 10px 20px rgba(0, 0, 0, 0.15);
             font-size: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 100;
-            transition: transform 0.15s ease, filter 0.15s ease;
         }
 
         .fab-button:hover {
-            transform: translateY(-2px);
             filter: brightness(1.05);
+            transform: translateY(-2px);
         }
 
         .fab-button:active {
             transform: translateY(2px);
-            box-shadow: 0 4px 0 var(--accent-dark, #C46AA1);
-        }
-
-        .fab-button::after {
-            content: 'Feedback';
-            position: absolute;
-            top: calc(100% + 6px);
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--muted);
-            font-size: 0.7rem;
-            font-weight: 700;
-            white-space: nowrap;
+            box-shadow: 0 4px 0 var(--accent-dark);
         }
 
         /* ===== RESPONSIVE ===== */
@@ -797,7 +886,6 @@
             }
 
             .sidebar-right {
-                padding-top: 0;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
             }
@@ -880,6 +968,7 @@
             .stat-pill {
                 gap: 4px;
                 font-size: 0.85rem;
+                padding: 4px 6px;
             }
 
             .course-switcher-wrap {
@@ -892,7 +981,7 @@
             }
 
             .dashboard-grid {
-                padding: 0 14px 28px;
+                padding: 14px 14px 28px;
                 gap: 20px;
             }
 
@@ -901,34 +990,46 @@
                 gap: 14px;
             }
 
-            .section-header {
-                top: 66px;
-                padding: 14px 16px;
-                margin-bottom: 18px;
+            .path-unit {
+                top: 8px;
             }
 
-            .path-unit {
-                top: 80px;
+            .unit-header-card {
+                padding: 16px 18px;
+                gap: 12px;
+            }
+
+            .unit-header-title {
+                font-size: 1.05rem;
+            }
+
+            .unit-header-icon {
+                font-size: 1.9rem;
+                padding: 11px;
+            }
+
+            .unit-header-subtitle {
+                font-size: 0.78rem;
             }
 
             .path-step {
-                height: 124px;
+                height: 128px;
             }
 
             .lesson-node {
-                width: 66px;
-                height: 66px;
-                font-size: 1.75rem;
+                width: 70px;
+                height: 70px;
+                font-size: 1.8rem;
             }
 
             .lesson-node.trophy {
-                width: 74px;
-                height: 74px;
-                font-size: 1.9rem;
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
             }
 
             .lesson-copy {
-                top: 86px;
+                top: 90px;
                 width: min(160px, 46%);
             }
 
@@ -947,8 +1048,8 @@
                 padding: 16px;
             }
 
-            .section-header-title {
-                font-size: 1.05rem;
+            .unit-header-title {
+                font-size: 1rem;
             }
         }
     </style>
@@ -957,7 +1058,6 @@
 
 <body data-pwa-status="true">
     <div class="app-layout">
-        <!-- LEFT SIDEBAR -->
         <aside class="sidebar-left">
             <div class="brand-wrap">
                 <img src="/icons/logo.png" alt="Logo" class="brand-logo"
@@ -966,21 +1066,27 @@
                 <div class="brand-name">Musalingo</div>
             </div>
 
-            <a class="nav-item active" href="dashboard.html" aria-label="Learn"><span class="nav-icon">🏠</span><span class="nav-label">Learn</span></a>
-            <a class="nav-item" href="practice.html" aria-label="Practice"><span class="nav-icon">🎯</span><span class="nav-label">Practice</span></a>
+            <a class="nav-item active" href="dashboard.html" aria-label="Learn"><span class="nav-icon">🏠</span><span
+                    class="nav-label">Learn</span></a>
+            <a class="nav-item" href="practice.html" aria-label="Practice"><span class="nav-icon">🎯</span><span
+                    class="nav-label">Practice</span></a>
             <a class="nav-item" href="matches.html" id="dynamicNavItem">
-                <span class="nav-icon" id="dynamicNavIcon">⚔️</span> <span class="nav-label" id="dynamicNavText">Matches</span>
+                <span class="nav-icon" id="dynamicNavIcon">⚔️</span> <span class="nav-label"
+                    id="dynamicNavText">Matches</span>
             </a>
-            <a class="nav-item" href="coming-soon.html?feature=leaderboards" aria-label="Leaderboards"><span class="nav-icon">🛡️</span><span class="nav-label">Leaderboards</span></a>
-            <a class="nav-item" href="quest.html" aria-label="Quests"><span class="nav-icon">🎯</span><span class="nav-label">Quests</span></a>
-            <a class="nav-item" href="shop.html" aria-label="Shop"><span class="nav-icon">🛍️</span><span class="nav-label">Shop</span></a>
-            <a class="nav-item" href="profile.html" aria-label="Profile"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
-            <a class="nav-item" href="settings.html" aria-label="Settings"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a>
+            <a class="nav-item" href="coming-soon.html?feature=leaderboards" aria-label="Leaderboards"><span
+                    class="nav-icon">🛡️</span><span class="nav-label">Leaderboards</span></a>
+            <a class="nav-item" href="quest.html" aria-label="Quests"><span class="nav-icon">🧭</span><span
+                    class="nav-label">Quests</span></a>
+            <a class="nav-item" href="shop.html" aria-label="Shop"><span class="nav-icon">🛍️</span><span
+                    class="nav-label">Shop</span></a>
+            <a class="nav-item" href="profile.html" aria-label="Profile"><span class="nav-icon">👤</span><span
+                    class="nav-label">Profile</span></a>
+            <a class="nav-item" href="settings.html" aria-label="Settings"><span class="nav-icon">⚙️</span><span
+                    class="nav-label">Settings</span></a>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main-content">
-            <!-- TOP STATS BAR -->
             <div class="top-stats">
                 <div class="course-switcher-wrap">
                     <div class="course-trigger-btn" id="courseTrigger" onclick="toggleCourseDropdown(event)">
@@ -1011,35 +1117,22 @@
                 </div>
             </div>
 
-            <!-- Friend invite banner -->
             <div id="friendInviteBanner" class="invite-banner">
                 ♞ A friend challenged you to a chess game. <a href="matches.html">Play now</a>
             </div>
 
-            <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
-                <!-- CENTER COLUMN: COURSE PATH -->
                 <section class="center-path">
-                    <div class="section-header" id="sectionHeader">
-                        <div class="section-header-left">
-                            <div class="section-header-eyebrow">
-                                <span id="sectionHeaderLabel">SECTION 1, UNIT 1</span>
-                            </div>
-                            <div class="section-header-title" id="sectionHeaderTitle">Loading...</div>
-                        </div>
-                    </div>
-
+                    <!-- OLD section-header REMOVED. The path now starts with the unit card. -->
                     <div class="course-path" id="dashboardPath"></div>
                 </section>
 
-                <!-- RIGHT SIDEBAR -->
                 <aside class="sidebar-right">
                     <div class="side-card promo-card">
                         <div class="promo-title">Super Musalingo</div>
                         <h3>Try Super for free</h3>
                         <p>No ads, personalized AI practice, and unlimited Legendary!</p>
-                        <a class="btn-promo" href="coming-soon.html?feature=subscriptions">Start My Free
-                            Month</a>
+                        <a class="btn-promo" href="coming-soon.html?feature=subscriptions">Start Free Month</a>
                     </div>
 
                     <div class="side-card">
@@ -1062,30 +1155,24 @@
                         <div id="dashboardQuestList"></div>
                     </div>
 
-                    <a href="course.html" class="btn-promo">Open full course view →</a>
+                    <!-- Full course view → sections.html (shows all sections) -->
+                    <a href="#" id="fullCourseViewBtn" class="btn-promo">Open full course view →</a>
                 </aside>
             </div>
         </main>
     </div>
 
-    <!-- Floating Action Button (Redirects to forms.html) -->
     <button class="fab-button" id="fabFormBtn" aria-label="Send feedback" title="Send feedback or report a bug">
         ✏️
     </button>
 
-    <!-- MANDATORY: Load quest.js BEFORE the inline script -->
     <script src="quest.js"></script>
     <script src="course-curriculum.js"></script>
     <script src="sounds.js"></script>
 
     <script>
-        /* ============================================================
-           Musalingo Dashboard — Fully Fixed & Connected to quest.js
-           ============================================================ */
-
         const HEART_CAP = 5;
 
-        // SAFE JSON PARSE (Fixes crash if localStorage is corrupted)
         function safeParse(key, fallback) {
             try {
                 const item = localStorage.getItem(key);
@@ -1112,7 +1199,6 @@
             profile.dailyQuestProgress = { xp: 0, lessons: 0, practice: 0, accuracy: 0, streak: 0 };
         }
 
-        // --- DETERMINE ACTIVE COURSE ---
         const urlParams = new URLSearchParams(window.location.search);
         const requestedCourseId = urlParams.get('courseId');
         let activeCourse = null;
@@ -1136,7 +1222,6 @@
             localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
         }
 
-        // --- REFRESH LESSONS FROM CURRICULUM ---
         function refreshActiveCourseLessons() {
             if (!activeCourse) return;
             const C = window.MUSALINGO_CURRICULUM;
@@ -1158,7 +1243,6 @@
             }
         }
 
-        // --- COURSE DROPDOWN LOGIC ---
         function toggleCourseDropdown(e) {
             e.stopPropagation();
             const dd = document.getElementById('courseDropdown');
@@ -1177,17 +1261,16 @@
         function renderCourseDropdown() {
             const list = document.getElementById('dropdownCourseList');
             const iconDisplay = document.getElementById('currentCourseIcon');
-            const dd = document.getElementById('courseDropdown'); // NEW
-            const btn = document.getElementById('courseTrigger'); // NEW
+            const dd = document.getElementById('courseDropdown');
+            const btn = document.getElementById('courseTrigger');
 
-            // Open the dropdown FIRST
-            dd.classList.add('open'); // NEW
-            btn.classList.add('active'); // NEW
+            dd.classList.add('open');
+            btn.classList.add('active');
 
             if (!activeCourse) {
                 iconDisplay.textContent = '❓';
                 list.innerHTML = `<div style="padding: 16px; color: var(--muted); font-size: 0.9rem; text-align: center;">No courses added.</div>`;
-                return; // Now it returns AFTER the dropdown is open
+                return;
             }
 
             const C = window.MUSALINGO_CURRICULUM;
@@ -1223,7 +1306,6 @@
             }
         });
 
-        // --- DYNAMIC SIDEBAR LOGIC (FIXED) ---
         function updateSidebarNav() {
             const navItem = document.getElementById('dynamicNavItem');
             const navIcon = document.getElementById('dynamicNavIcon');
@@ -1257,7 +1339,6 @@
             }
         }
 
-        // --- STATS LOGIC ---
         function refreshHearts() {
             const hearts = Number(profile.hearts);
             profile.hearts = Number.isFinite(hearts) ? Math.max(0, Math.min(HEART_CAP, Math.floor(hearts))) : HEART_CAP;
@@ -1270,11 +1351,9 @@
             document.getElementById('heartLink').textContent = profile.hearts;
         }
 
-        // --- DAILY QUESTS LOGIC (Connected to quest.js) ---
         function renderDashboardQuests() {
             const container = document.getElementById('dashboardQuestList');
 
-            // Check if quest.js loaded properly
             if (!window.MUSALINGO_QUESTS) {
                 container.innerHTML = '<div style="color:var(--muted); text-align:center; padding:10px;">Quest system loading...</div>';
                 return;
@@ -1285,7 +1364,6 @@
                 renderStats();
             }
 
-            // Use the shared logic from quest.js
             const quests = window.MUSALINGO_QUESTS.getDailyQuests(profile);
 
             container.innerHTML = quests.map(q => {
@@ -1311,15 +1389,15 @@
             }).join('');
         }
 
-        // --- PATH RENDER LOGIC ---
+        // ═══════════════════════════════════════════════════════════
+        //  PATH RENDERER — CLICKABLE UNIT CARD
+        // ═══════════════════════════════════════════════════════════
         function renderDashboardPath() {
             const pathContainer = document.getElementById('dashboardPath');
             const C = window.MUSALINGO_CURRICULUM;
 
             if (!activeCourse) {
-                document.getElementById('sectionHeaderTitle').textContent = "No Course Selected";
-                document.getElementById('sectionHeaderLabel').textContent = "";
-                pathContainer.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted);">Add a course to start learning!<br><br><a href="catalog.html" style="background:var(--accent); color:#fff; padding:12px 24px; border-radius:12px; font-weight:800; text-decoration:none;">Browse Courses</a></div>`;
+                pathContainer.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted);">Add a course to start learning!<br><br><a href="catalog.html" style="background:var(--accent); color:#fff; padding:12px 24px; border-radius:12px; font-weight:800; text-decoration:none; box-shadow:0 4px 0 var(--accent-dark);">Browse Courses</a></div>`;
                 return;
             }
 
@@ -1340,16 +1418,6 @@
             const courseTopics = C.getCourseUnitTopics(activeCourse.id, activeCourse.learningProfile?.experience);
             const unitName = courseTopics?.[0]?.[currentUnitIdx] || `Unit ${currentUnitIdx + 1}`;
 
-            // INTERVIEW LABEL
-            const experience = activeCourse.learningProfile?.experience;
-            let experienceLabel = '';
-            if (experience === 'comfortable') experienceLabel = ' (Intermediate)';
-            else if (experience === 'advanced') experienceLabel = ' (Advanced)';
-            else if (experience === 'some') experienceLabel = ' (Beginner+)';
-
-            document.getElementById('sectionHeaderLabel').textContent = `SECTION 1, UNIT ${currentUnitIdx + 1}${experienceLabel}`;
-            document.getElementById('sectionHeaderTitle').textContent = unitName;
-
             let startingLessonId = null;
             for (const l of displaySet.lessons) {
                 if (!l.completed && !l.isJump) { startingLessonId = l.id; break; }
@@ -1358,10 +1426,30 @@
             const unitLessons = displaySet.lessons.filter(l => l.displayUnitIndex === currentUnitIdx);
             const unitPalette = getUnitPalette(currentUnitIdx + 1);
 
+            const unitIcons = {
+                chess: '♟️', math: '➗', music: '🎵',
+                japanese: '🇯🇵', spanish: '🇪🇸', french: '🇫🇷', german: '🇩🇪',
+                italian: '🇮🇹', hindi: '🇮🇳', arabic: '🇸🇦', english: '🇬🇧',
+                korean: '🇰🇷', telugu: '🇮🇳'
+            };
+            const unitIcon = unitIcons[activeCourse.id] || '📚';
+
+            // ══════════════════════════════════════════════════════════
+            //  The unit card is now a clickable <a> that goes to sections.html
+            // ══════════════════════════════════════════════════════════
+            const sectionsUrl = `sections.html?courseId=${encodeURIComponent(activeCourse.id)}&section=1`;
+
             let html = '';
             html += `
                 <div class="path-unit" style="--unit-main:${unitPalette.main}; --unit-dark:${unitPalette.dark};">
-                    <span class="unit-banner">Unit ${currentUnitIdx + 1}</span>
+                    <a class="unit-header-card" href="${sectionsUrl}" title="Open all sections">
+                        <div class="unit-header-copy">
+                            <div class="unit-header-eyebrow">Unit ${currentUnitIdx + 1}</div>
+                            <div class="unit-header-title">${unitName}</div>
+                            <div class="unit-header-subtitle">Keep the streak alive! 🔥</div>
+                        </div>
+                        <div class="unit-header-icon">${unitIcon}</div>
+                    </a>
                 </div>
             `;
 
@@ -1442,7 +1530,6 @@
             return palette[(unitNumber - 1) % palette.length] || palette[0];
         }
 
-        // --- FRIEND INVITE BANNER ---
         async function initFriendInviteBanner() {
             const banner = document.getElementById('friendInviteBanner');
             if (!banner) return;
@@ -1456,11 +1543,19 @@
                     banner.style.display = invites.length ? 'block' : 'none';
                 });
             } catch (e) {
-                // Friend system not deployed yet — hide banner silently
+                // Silent
             }
         }
 
-        // --- CROSS-TAB SYNC ---
+        // Wire "Open full course view" button → sections.html
+        function wireFullCourseViewButton() {
+            const btn = document.getElementById('fullCourseViewBtn');
+            if (!btn) return;
+            btn.href = activeCourse
+                ? `course.html?courseId=${encodeURIComponent(activeCourse.id)}`
+                : 'catalog.html';
+        }
+
         window.addEventListener('storage', (e) => {
             if (e.key === 'MusalingoProfile' && e.newValue) {
                 try {
@@ -1480,12 +1575,12 @@
                         renderDashboardQuests();
                         renderDashboardPath();
                         renderCourseDropdown();
+                        wireFullCourseViewButton();
                     }
                 } catch (err) { /* ignore */ }
             }
         });
 
-        // --- FLOATING FORM BUTTON LOGIC ---
         const fabBtn = document.getElementById('fabFormBtn');
         if (fabBtn) {
             fabBtn.addEventListener('click', () => {
@@ -1494,7 +1589,6 @@
             });
         }
 
-        // --- BOOT ---
         const settings = safeParse('MusalingoSettings', { theme: 'light' });
         if (settings.theme === 'dark') {
             document.body.classList.add('dark-mode');
@@ -1507,10 +1601,10 @@
         renderDashboardPath();
         renderCourseDropdown();
         initFriendInviteBanner();
+        wireFullCourseViewButton();
 
         window.addEventListener('resize', renderDashboardPath);
 
-        // UI click feedback
         document.querySelectorAll('.stat-pill, .nav-item, .course-trigger-btn, .course-item').forEach(el => {
             el.addEventListener('click', () => { if (typeof SFX !== 'undefined') SFX.click(); });
         });

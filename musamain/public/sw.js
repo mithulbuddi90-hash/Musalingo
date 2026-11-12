@@ -7,7 +7,7 @@
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v28';
+const CACHE_VERSION = 'musalingo-v29';  // Update this to force a new cache
 
 const APP_SHELL = [
     '/',

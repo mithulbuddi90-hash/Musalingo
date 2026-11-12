@@ -192,3 +192,56 @@ body.dark-mode {
     background-color: #3b2027;
     color: #feb2b2;
 }
+
+/* ===== 3D BUTTON PRESS EFFECT ===== */
+.btn,
+.lesson-node,
+.btn-promo,
+.primary-btn,
+.secondary-btn,
+.nav-item,
+.stat-pill,
+.course-trigger-btn,
+.course-item,
+.action,
+.practice-card,
+button {
+    transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease, background 0.15s ease;
+    will-change: transform;
+}
+
+.btn:active,
+.btn-promo:active,
+.primary-btn:active,
+.secondary-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 currentColor;
+    filter: brightness(0.96);
+}
+
+.lesson-node:active {
+    transform: translateX(-50%) translateY(5px) scale(0.98) !important;
+    box-shadow: 0 1px 0 var(--unit-dark), 0 0 0 6px var(--bg) !important;
+}
+
+.nav-item:active {
+    transform: translateY(1px) scale(0.99);
+}
+
+.stat-pill:active,
+.course-item:active {
+    transform: scale(0.97);
+}
+
+.course-trigger-btn:active {
+    transform: scale(0.94);
+}
+
+.practice-card:active {
+    transform: translateY(2px) scale(0.99);
+    box-shadow: 0 1px 0 var(--border);
+}
+
+.action:active {
+    transform: translateY(2px);
+}
