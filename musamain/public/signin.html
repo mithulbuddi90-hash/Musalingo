@@ -222,7 +222,7 @@
             <input id="email" name="email" type="text" placeholder="Enter your email or phone number" required />
 
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" placeholder="Enter your password" required />
+            <input id="password" name="password" type="password" placeholder="Enter your password" />
 
             <button class="btn" type="submit">Sign In</button>
         </form>
@@ -302,20 +302,19 @@
             });
         })();
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script type="module">
-        import app, {
+        import {
+            auth,
             clearGuestMode,
             setGuestMode,
             upsertSignedInUserDocument,
             loadLocalProfile,
+            signInWithEmailAndPassword,
             signInWithGooglePopup,
             // signInWithMicrosoftPopup,
             createPhoneVerifier,
             startPhoneSignIn
         } from './firebase.js';
-        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
         const form = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -325,11 +324,11 @@
         const googleBtn = document.getElementById('googleBtn');
         // const microsoftBtn = document.getElementById('microsoftBtn');
         const phoneForm = document.getElementById('phoneForm');
+        const phoneBox = document.querySelector('.phone-box');
         const otpForm = document.getElementById('otpForm');
         const phoneInput = document.getElementById('phoneInput');
         const otpInput = document.getElementById('otpInput');
 
-        const auth = getAuth(app);
         let phoneConfirmationResult = null;
 
         function isPhoneNumber(value) {
@@ -411,6 +410,7 @@
             }
 
             try {
+                phoneBox.style.display = 'block';
                 const verifier = createPhoneVerifier('recaptcha-container');
                 phoneConfirmationResult = await startPhoneSignIn(phoneNumber, verifier);
                 otpForm.classList.remove('hidden');
@@ -440,7 +440,7 @@
             event.preventDefault();
 
             const enteredValue = emailInput.value.trim();
-            const password = passwordInput.value.trim();
+            const password = passwordInput.value;
 
             if (!enteredValue) {
                 showMessage('Please enter your email or phone number.', 'error');
@@ -449,6 +449,8 @@
 
             if (isPhoneNumber(enteredValue)) {
                 try {
+                    phoneBox.style.display = 'block';
+                    phoneInput.value = enteredValue;
                     const verifier = createPhoneVerifier('recaptcha-container');
                     phoneConfirmationResult = await startPhoneSignIn(enteredValue, verifier);
                     otpForm.classList.remove('hidden');
@@ -461,39 +463,25 @@
 
             const email = enteredValue.toLowerCase();
 
-            if (!password) {
+            if (!password.trim()) {
                 showMessage('Please enter your password.', 'error');
                 return;
             }
 
-            signInWithEmailAndPassword(auth, email, password)
-                .then(async (userCredential) => {
-                    const profile = loadLocalProfile();
-                    await upsertSignedInUserDocument(userCredential.user.uid, userCredential.user.email, {
-                        ...profile,
-                        name: userCredential.user.displayName || profile.name || 'Learner',
-                        email: userCredential.user.email,
-                        friends: Array.isArray(profile.friends) ? profile.friends : [],
-                        courses: Array.isArray(profile.courses) ? profile.courses : [],
-                        inventory: Array.isArray(profile.inventory) ? profile.inventory : []
-                    });
-                    clearGuestMode();
-                    showMessage(`Welcome back, ${userCredential.user.email}!`, 'success');
-                    localStorage.setItem('MusalingoLoggedIn', 'true');
-                    localStorage.setItem('MusalingoUser', userCredential.user.email);
-                    redirectAfterAuth();
-                })
-                .catch((error) => {
-                    const code = error?.code || '';
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                await finishAuthSession(userCredential.user);
+            } catch (error) {
+                const code = error?.code || '';
 
-                    if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
-                        showMessage('No account found for that email. <a href="started.html">Create one first</a>.', 'error', true);
-                    } else if (code === 'auth/wrong-password') {
-                        showMessage('Wrong password. Please try again or create a new account.', 'error');
-                    } else {
-                        showMessage(error.message || 'Unable to sign in right now.', 'error');
-                    }
-                });
+                if (code === 'auth/user-not-found') {
+                    showMessage('No account found for that email. <a href="started.html">Create one first</a>.', 'error', true);
+                } else if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+                    showMessage('Email or password is incorrect. Please try again.', 'error');
+                } else {
+                    showMessage(error.message || 'Unable to sign in right now.', 'error');
+                }
+            }
         });
         window.musalAuthReady = true;
     </script>

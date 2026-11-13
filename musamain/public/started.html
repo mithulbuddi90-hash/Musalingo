@@ -236,25 +236,23 @@
             });
         })();
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script type="module">
-        import app, {
+        import {
+            auth,
             clearGuestMode,
             setGuestMode,
             upsertSignedInUserDocument,
+            createUserWithEmailAndPassword,
+            updateProfile,
             signInWithGooglePopup,
             // signInWithMicrosoftPopup,
             loadLocalProfile
         } from './firebase.js';
-        import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
         const form = document.getElementById('signupForm');
         const messageBox = document.getElementById('message');
         const guestBtn = document.getElementById('guestBtn');
         const googleBtn = document.getElementById('googleBtn');
         // const microsoftBtn = document.getElementById('microsoftBtn');
-
-        const auth = getAuth(app);
 
         function showMessage(text, type) {
             messageBox.textContent = text;
@@ -313,7 +311,7 @@
 
             const name = document.getElementById('name').value.trim();
             const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value.trim();
+            const password = document.getElementById('password').value;
 
             if (!name || !email || !password) {
                 showMessage('Please fill in all fields.', 'error');
@@ -328,24 +326,18 @@
             createUserWithEmailAndPassword(auth, email, password)
                 .then(async (userCredential) => {
                     await updateProfile(userCredential.user, { displayName: name });
-                    const profile = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
-                    await upsertSignedInUserDocument(userCredential.user.uid, email, {
-                        ...profile,
-                        name,
-                        email,
-                        friends: Array.isArray(profile.friends) ? profile.friends : [],
-                        courses: Array.isArray(profile.courses) ? profile.courses : [],
-                        inventory: Array.isArray(profile.inventory) ? profile.inventory : []
-                    });
-                    clearGuestMode();
+                    await finishAuthCreate(userCredential.user, name);
                     showMessage(`Account created successfully for ${userCredential.user.email}!`, 'success');
-                    localStorage.setItem('MusalingoLoggedIn', 'true');
-                    localStorage.setItem('MusalingoUser', userCredential.user.email);
-                    redirectAfterAuth();
                     form.reset();
                 })
                 .catch((error) => {
-                    showMessage(error.message || 'Unable to create account right now.', 'error');
+                    const code = error?.code || '';
+                    const message = code === 'auth/email-already-in-use'
+                        ? 'An account already exists for that email. Sign in instead.'
+                        : code === 'auth/weak-password'
+                            ? 'Password must be at least 6 characters long.'
+                            : error.message || 'Unable to create account right now.';
+                    showMessage(message, 'error');
                 });
         });
         window.musalAuthReady = true;

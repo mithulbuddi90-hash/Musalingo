@@ -1,15 +1,16 @@
 /* ============================================================
-   Musalingo — firebase.js (v4)
+   Musalingo — firebase.js (v5)
 
-   Changes vs v3:
-   - No hardcoded credentials. Config fetched from /api/firebase-config.
-   - Loud guard if config is missing or incomplete.
-   - loadLocalProfile() sanitizes all numeric fields (no NaN leaks).
-   - upsertSignedInUserDocument() no longer double-writes localStorage.
-   - loadFriendProfile(uid) added — fixes matches.js friend-invite bug.
-   - loadFriendsProfiles() cache invalidated on friend add/remove.
-   - createFriendChessGame() notifies BOTH players.
-   - Live chess logic preserved verbatim otherwise.
+   Changes vs v4:
+   - loadLocalProfile() deduplicates courses by id
+   - saveLocalProfile() deduplicates courses before writing
+   - upsertSignedInUserDocument() deduplicates courses before Firestore sync
+   - Sign-in guards against null email (phone-only users)
+   - upsertSignedInUserDocument() retries once on transient Firestore errors
+   - _pendingProfileWrites guard prevents double-writes on rapid sign-in
+   - Errors from profile save now throw (surface in sign-in flow)
+   - streakFreezes capped at 3 (preserved from v4)
+   - getLocalDateKey() local-timezone-safe date (preserved from v4)
    ============================================================ */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
@@ -17,6 +18,9 @@ import {
     getAuth,
     onAuthStateChanged,
     signInWithPopup,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile,
     GoogleAuthProvider,
     OAuthProvider,
     RecaptchaVerifier,
@@ -45,8 +49,6 @@ import {
 
 /* ============================================================
    FIREBASE CONFIG — fetched from backend at runtime.
-   No keys in this file. server.js serves GET /api/firebase-config
-   from process.env.VITE_FIREBASE_*.
    ============================================================ */
 
 const configRes = await fetch('/api/firebase-config', { cache: 'no-store' });
@@ -84,7 +86,14 @@ export const MUSALINGO_KEYS = {
     profile: 'MusalingoProfile'
 };
 
-export { app, auth, db };
+export {
+    app,
+    auth,
+    db,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile
+};
 
 /* ============================================================
    AUTH / PROFILE CORE
@@ -124,13 +133,32 @@ export function clearGuestMode() {
     localStorage.setItem(MUSALINGO_KEYS.loggedIn, 'true');
 }
 
-/* Sanitizes every field that consumers rely on being numeric. */
+/* ---------- Courses dedupe helper ---------- */
+
+function dedupeCoursesById(courses) {
+    if (!Array.isArray(courses)) return [];
+    const seen = new Map();
+    for (const course of courses) {
+        if (course && typeof course === 'object' && course.id) {
+            seen.set(course.id, course);
+        }
+    }
+    return [...seen.values()];
+}
+
+/* Sanitizes every field that consumers rely on being numeric.
+   Also deduplicates the courses array by id. */
 export function loadLocalProfile() {
     let raw = {};
     try {
         raw = JSON.parse(localStorage.getItem(MUSALINGO_KEYS.profile) || 'null') || {};
     } catch {
         raw = {};
+    }
+
+    // Dedupe courses by id — keep last occurrence (most recent progress)
+    if (Array.isArray(raw.courses)) {
+        raw.courses = dedupeCoursesById(raw.courses);
     }
 
     return {
@@ -148,7 +176,17 @@ export function loadLocalProfile() {
         courses: Array.isArray(raw.courses) ? raw.courses : [],
         inventory: Array.isArray(raw.inventory) ? raw.inventory.filter(x => typeof x === 'string') : [],
         streakFreezeDates: Array.isArray(raw.streakFreezeDates) ? raw.streakFreezeDates.filter(x => typeof x === 'string') : [],
-        lessonDates: Array.isArray(raw.lessonDates) ? raw.lessonDates.filter(x => typeof x === 'string') : []
+        lessonDates: Array.isArray(raw.lessonDates) ? raw.lessonDates.filter(x => typeof x === 'string') : [],
+
+        // AI Teacher (Q1 2027) — placeholder for future feature
+        aiTeacherMinutesUsed: Math.max(0, Math.floor(safeNumber(raw.aiTeacherMinutesUsed, 0))),
+        aiTeacherMinutesCap: Math.max(0, Math.floor(safeNumber(raw.aiTeacherMinutesCap, 0))),
+        aiTeacherLastResetDate: raw.aiTeacherLastResetDate || null,
+
+        // Video Calls (Q2 2027) — placeholder for future feature
+        videoMinutesUsed: Math.max(0, Math.floor(safeNumber(raw.videoMinutesUsed, 0))),
+        videoMinutesCap: Math.max(0, Math.floor(safeNumber(raw.videoMinutesCap, 0))),
+        videoLastResetDate: raw.videoLastResetDate || null
     };
 }
 
@@ -164,6 +202,10 @@ export function saveLocalProfile(profile) {
             ? profile.streakFreezeDates.filter((date) => typeof date === 'string')
             : []
     };
+
+    // Dedupe courses by id — keep last occurrence (most recent progress)
+    merged.courses = dedupeCoursesById(merged.courses);
+
     localStorage.setItem(MUSALINGO_KEYS.profile, JSON.stringify(merged));
     if (merged.uid) localStorage.setItem(MUSALINGO_KEYS.uid, merged.uid);
     if (merged.email) localStorage.setItem(MUSALINGO_KEYS.user, merged.email);
@@ -345,63 +387,125 @@ export function getCurrentSignedInUser() {
    USER DOCUMENT — merge remote + local without data loss
    ============================================================ */
 
+/**
+ * In-flight write dedupe guard.
+ * Prevents two simultaneous calls for the same uid from both
+ * writing to Firestore (which can happen on rapid sign-in retries).
+ */
+const _pendingProfileWrites = new Map();
+
+/**
+ * Merges the local profile with the remote Firestore profile
+ * and writes the result back to Firestore. Retries once on
+ * transient network errors.
+ *
+ * @param {string} uid
+ * @param {string} email - may be empty for phone-auth users
+ * @param {object} extraProfile
+ */
 export async function upsertSignedInUserDocument(uid, email, extraProfile = {}) {
-    if (!uid || !email) return null;
+    if (!uid) throw new Error('[firebase] upsertSignedInUserDocument: uid is required');
 
-    const localProfile = loadLocalProfile();
-
-    let remote = null;
-    try {
-        const snap = await getDoc(doc(db, 'users', uid));
-        if (snap.exists()) remote = snap.data();
-    } catch (e) {
-        console.warn('[firebase] could not read remote profile:', e);
+    // If a write is already in flight for this uid, wait for it
+    if (_pendingProfileWrites.has(uid)) {
+        console.log('[firebase] Profile write already in flight, waiting…');
+        return _pendingProfileWrites.get(uid);
     }
 
-    const mergedFriends = [...new Set([
-        ...(remote?.friends || []),
-        ...(extraProfile.friends || []),
-        ...(localProfile.friends || [])
-    ])];
+    const writePromise = (async () => {
+        const localProfile = loadLocalProfile();
 
-    const mergedCourses = (Array.isArray(extraProfile.courses) && extraProfile.courses.length > 0)
-        ? extraProfile.courses
-        : (remote?.courses || localProfile.courses || []);
+        let remote = null;
+        try {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (snap.exists()) remote = snap.data();
+        } catch (e) {
+            console.warn('[firebase] could not read remote profile:', e);
+        }
 
-    const mergedInventory = (Array.isArray(extraProfile.inventory) && extraProfile.inventory.length > 0)
-        ? extraProfile.inventory
-        : (remote?.inventory || localProfile.inventory || []);
+        // Merge friends / courses / inventory without data loss
+        const mergedFriends = [...new Set([
+            ...(remote?.friends || []),
+            ...(extraProfile.friends || []),
+            ...(localProfile.friends || [])
+        ])];
 
-    const profile = {
-        ...localProfile,
-        ...(remote || {}),
-        ...extraProfile,
-        uid,
-        email: normalizeEmail(email),
-        name: extraProfile.name || remote?.name || localProfile.name || 'Learner',
-        streak: Math.max(0, Math.floor(safeNumber(
-            extraProfile.streak ?? remote?.streak ?? localProfile.streak, 0
-        ))),
-        diamonds: Math.max(0, Math.floor(safeNumber(
-            extraProfile.diamonds ?? remote?.diamonds ?? localProfile.diamonds, 0
-        ))),
-        hearts: Math.min(5, Math.max(0, Math.floor(safeNumber(
-            extraProfile.hearts ?? remote?.hearts ?? localProfile.hearts, 5
-        )))),
-        friends: mergedFriends,
-        courses: mergedCourses,
-        inventory: mergedInventory,
-        updatedAt: serverTimestamp()
-    };
+        const mergedCourses = dedupeCoursesById(
+            (Array.isArray(extraProfile.courses) && extraProfile.courses.length > 0)
+                ? extraProfile.courses
+                : (remote?.courses || localProfile.courses || [])
+        );
 
-    await setDoc(doc(db, 'users', uid), profile, { merge: true });
+        const mergedInventory = (Array.isArray(extraProfile.inventory) && extraProfile.inventory.length > 0)
+            ? extraProfile.inventory
+            : (remote?.inventory || localProfile.inventory || []);
 
-    // Single write to localStorage. saveLocalProfile handles uid/email keys.
-    saveLocalProfile(profile);
-    localStorage.setItem(MUSALINGO_KEYS.loggedIn, 'true');
-    localStorage.removeItem(MUSALINGO_KEYS.guest);
+        // Phone-only users have no email — fall back to a synthetic one
+        const safeEmail = normalizeEmail(email) || remote?.email || localProfile.email || `${uid}@phone.local`;
 
-    return profile;
+        const profile = {
+            ...localProfile,
+            ...(remote || {}),
+            ...extraProfile,
+            uid,
+            email: safeEmail,
+            name: extraProfile.name || remote?.name || localProfile.name || 'Learner',
+            streak: Math.max(0, Math.floor(safeNumber(
+                extraProfile.streak ?? remote?.streak ?? localProfile.streak, 0
+            ))),
+            diamonds: Math.max(0, Math.floor(safeNumber(
+                extraProfile.diamonds ?? remote?.diamonds ?? localProfile.diamonds, 0
+            ))),
+            hearts: Math.min(5, Math.max(0, Math.floor(safeNumber(
+                extraProfile.hearts ?? remote?.hearts ?? localProfile.hearts, 5
+            )))),
+            friends: mergedFriends,
+            courses: mergedCourses,
+            inventory: mergedInventory,
+            updatedAt: serverTimestamp()
+        };
+
+        // Write to Firestore with one retry on transient network errors
+        let lastError = null;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+                await setDoc(doc(db, 'users', uid), profile, { merge: true });
+                lastError = null;
+                break;
+            } catch (err) {
+                lastError = err;
+                const isTransient =
+                    err?.code === 'unavailable' ||
+                    err?.code === 'deadline-exceeded' ||
+                    err?.code === 'resource-exhausted' ||
+                    /network|timeout/i.test(err?.message || '');
+                if (attempt === 1 && isTransient) {
+                    console.warn('[firebase] Transient Firestore error, retrying in 1s…', err.code);
+                    await new Promise(r => setTimeout(r, 1000));
+                    continue;
+                }
+                break;
+            }
+        }
+
+        if (lastError) {
+            throw new Error(`[firebase] Could not save profile to Firestore: ${lastError.code || lastError.message}`);
+        }
+
+        // Single write to localStorage. saveLocalProfile handles uid/email keys.
+        saveLocalProfile(profile);
+        localStorage.setItem(MUSALINGO_KEYS.loggedIn, 'true');
+        localStorage.removeItem(MUSALINGO_KEYS.guest);
+
+        return profile;
+    })();
+
+    _pendingProfileWrites.set(uid, writePromise);
+    try {
+        return await writePromise;
+    } finally {
+        _pendingProfileWrites.delete(uid);
+    }
 }
 
 export async function loadUserDocument(uid) {
@@ -658,11 +762,6 @@ export async function loadFriendsProfiles(myUid) {
     return validProfiles;
 }
 
-/**
- * Fetches a single friend's full profile.
- * Use this from matches.js instead of reading profile.friends from
- * localStorage — that array is UIDs only.
- */
 export async function loadFriendProfile(friendUid) {
     if (!friendUid) return null;
     try {
@@ -718,7 +817,6 @@ export async function createFriendChessGame({
         drawOfferFrom: null
     });
 
-    // Notify BOTH players so either side can resume/reconnect.
     const batch = writeBatch(db);
     batch.update(doc(db, 'users', friendUid), { pendingChessGameId: ref.id });
     batch.update(doc(db, 'users', myUid), { pendingChessGameId: ref.id });
@@ -905,9 +1003,9 @@ export async function saveLearningProgress(courseId, lessonId, payload = {}) {
     if (courseIndex >= 0) courses[courseIndex] = courseData;
     else courses.push(courseData);
 
-    profile.courses = courses;
+    profile.courses = dedupeCoursesById(courses);
     await updateDoc(doc(db, 'users', user.uid), {
-        courses,
+        courses: profile.courses,
         updatedAt: serverTimestamp()
     });
     saveLocalProfile(profile);
