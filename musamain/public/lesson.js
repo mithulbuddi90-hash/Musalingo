@@ -1,3 +1,5 @@
+import { Chess } from '/vendor/chess/chess.js';
+
 /* ============================================================
    Musalingo — lesson.js (v3)
    Features:

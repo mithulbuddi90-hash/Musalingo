@@ -88,6 +88,10 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(resolve(__dirname, 'public')));
+app.use('/vendor/chess', express.static(
+    resolve(__dirname, 'node_modules/chess.js/dist/esm'),
+    { index: false }
+));
 
 // ============================================================
 //  RATE LIMITING
