@@ -1,4 +1,6 @@
 window.MUSALINGO_CURRICULUM = (() => {
+    if (!window.MusalingoAudience) throw new Error('Audience data did not load. Make sure audience.js is included before course-curriculum.js.');
+
     // ============================================================
     //  CONFIG
     // ============================================================
@@ -547,14 +549,7 @@ window.MUSALINGO_CURRICULUM = (() => {
     // ============================================================
     //  CATALOG GROUPS
     // ============================================================
-    const catalogGroups = [
-        { audience: 'For English speakers', courseIds: ['japanese', 'spanish', 'french', 'hindi', 'arabic', 'italian', 'german', 'english', 'korean', 'telugu'] },
-        { audience: 'For Spanish speakers', courseIds: ['english', 'german', 'italian', 'japanese'] },
-        { audience: 'For French speakers', courseIds: ['english', 'german', 'italian'] },
-        { audience: 'For Japanese speakers', courseIds: ['english', 'korean'] },
-        { audience: 'For Hindi speakers', courseIds: ['english', 'italian', 'arabic', 'telugu'] },
-        { audience: 'Special skill paths', courseIds: ['chess', 'math', 'music'] }
-    ];
+    const catalogGroups = window.MusalingoAudience.catalogGroups;
 
     // ============================================================
     //  SECTION DATA

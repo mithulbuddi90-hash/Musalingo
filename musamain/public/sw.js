@@ -7,7 +7,7 @@
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v33';  // Update this to force a new cache
+const CACHE_VERSION = 'musalingo-v34';  // Update this to force a new cache
 
 const APP_SHELL = [
     '/',
@@ -31,6 +31,7 @@ const APP_SHELL = [
     '/privacy-policy.html',
     '/terms-of-service.html',
     '/course.js',
+    '/audience.js',
     '/course-curriculum.js',
     '/sections.js',
     '/lesson.js?v=26',

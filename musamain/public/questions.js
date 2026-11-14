@@ -1,6 +1,9 @@
 (function bootstrapQuestions() {
 'use strict';
 
+const audienceData = globalThis.MusalingoAudience;
+if (!audienceData) throw new Error('Audience data did not load. Make sure lesson.html includes audience.js before questions.js.');
+
 const ENGLISH_TRANSLATIONS = {
     English: { Hello: 'hello', Goodbye: 'goodbye', Book: 'book', Happy: 'happy', 'Thank you': 'thank you', Friend: 'friend', Water: 'water', House: 'house', Please: 'please', School: 'school' },
     Japanese: { 'こんにちは': 'hello', 'ありがとう': 'thank you', '学校': 'school', '猫': 'cat', '水': 'water', '友達': 'friend', '本': 'book', '食べ物': 'food', '家': 'home', '朝': 'morning', '車': 'car', '音楽': 'music', '夜': 'night', '雨': 'rain', '元気': 'well' },
@@ -9,7 +12,9 @@ const ENGLISH_TRANSLATIONS = {
     German: { hallo: 'hello', danke: 'thank you', buch: 'book', freund: 'friend', wasser: 'water', schule: 'school', haus: 'house', tafel: 'table', musik: 'music', apfel: 'apple', laufen: 'run', sonne: 'sun', tur: 'door' },
     Italian: { ciao: 'hello', grazie: 'thank you', libro: 'book', amico: 'friend', acqua: 'water', scuola: 'school', casa: 'house', mela: 'apple', musica: 'music', porta: 'door', sole: 'sun', corre: 'run' },
     Arabic: { 'مرحبا': 'hello', 'شكرا': 'thank you', 'كتاب': 'book', 'بيت': 'house', 'ماء': 'water', 'صديق': 'friend', 'مدرسة': 'school', 'نافذة': 'window', 'قمر': 'moon', 'تفاحة': 'apple', 'أحب': 'love', 'سماء': 'sky', 'باب': 'door', 'شمس': 'sun' },
-    Hindi: { 'नमस्ते': 'hello', 'धन्यवाद': 'thank you', 'किताब': 'book', 'मित्र': 'friend', 'पानी': 'water', 'विद्यालय': 'school', 'घर': 'house', 'दरवाज़ा': 'door', 'सूरज': 'sun', 'सेब': 'apple', 'दोस्ती': 'friendship', 'आकाश': 'sky', 'चाँद': 'moon' }
+    Hindi: { 'नमस्ते': 'hello', 'धन्यवाद': 'thank you', 'किताब': 'book', 'मित्र': 'friend', 'पानी': 'water', 'विद्यालय': 'school', 'घर': 'house', 'दरवाज़ा': 'door', 'सूरज': 'sun', 'सेब': 'apple', 'दोस्ती': 'friendship', 'आकाश': 'sky', 'चाँद': 'moon' },
+    Korean: { '안녕하세요': 'hello', '고맙습니다': 'thank you', '책': 'book', '친구': 'friend', '물': 'water', '학교': 'school', '집': 'house', '문': 'door', '해': 'sun' },
+    Telugu: { 'నమస్కారం': 'hello', 'హలో': 'hello', 'ధన్యవాదాలు': 'thank you', 'పుస్తకం': 'book', 'స్నేహితుడు': 'friend', 'నీళ్ళు': 'water', 'పాఠశాల': 'school', 'ఇల్లు': 'house', 'తలుపు': 'door', 'సూర్యుడు': 'sun' }
 };
 
 const LANGUAGE_SAMPLES = {
@@ -68,21 +73,21 @@ const LANGUAGE_SAMPLES = {
         ['मित्र', 'मित्र', ['किताब', 'दरवाज़ा', 'सूरज'], 'mitra'],
         ['विद्यालय', 'विद्यालय', ['सेब', 'दोस्ती', 'आकाश'], 'vidyalaya'],
         ['किताब', 'किताब', ['दरवाज़ा', 'नमस्ते', 'चाँद'], 'kitab']
+    ],
+    Korean: [
+        ['안녕하세요', '안녕하세요', ['고맙습니다', '책', '친구'], 'annyeonghaseyo'],
+        ['고맙습니다', '고맙습니다', ['물', '학교', '집'], 'gomapseumnida'],
+        ['친구', '친구', ['책', '문', '해'], 'chingu'],
+        ['학교', '학교', ['집', '물', '안녕하세요'], 'hakgyo'],
+        ['책', '책', ['문', '해', '고맙습니다'], 'chaek']
+    ],
+    Telugu: [
+        ['నమస్కారం', 'నమస్కారం', ['ధన్యవాదాలు', 'పుస్తకం', 'స్నేహితుడు'], 'namaskaram'],
+        ['ధన్యవాదాలు', 'ధన్యవాదాలు', ['నీళ్ళు', 'పాఠశాల', 'ఇల్లు'], 'dhanyavaadaalu'],
+        ['స్నేహితుడు', 'స్నేహితుడు', ['పుస్తకం', 'తలుపు', 'సూర్యుడు'], 'snehitudu'],
+        ['పాఠశాల', 'పాఠశాల', ['ఇల్లు', 'నీళ్ళు', 'నమస్కారం'], 'paathashaala'],
+        ['పుస్తకం', 'పుస్తకం', ['తలుపు', 'సూర్యుడు', 'ధన్యవాదాలు'], 'pustakam']
     ]
-};
-
-const AUDIENCE_TRANSLATIONS = {
-    Spanish: { hello: 'hola', goodbye: 'adiós', 'thank you': 'gracias', please: 'por favor', friend: 'amigo', water: 'agua', house: 'casa', home: 'casa', book: 'libro', school: 'escuela', happy: 'feliz', food: 'comida', morning: 'mañana', night: 'noche', car: 'coche', music: 'música', rain: 'lluvia', well: 'bien', run: 'correr', door: 'puerta', table: 'mesa', apple: 'manzana', window: 'ventana', moon: 'luna', sun: 'sol' },
-    French: { hello: 'bonjour', goodbye: 'au revoir', 'thank you': 'merci', please: 's’il vous plaît', friend: 'ami', water: 'eau', house: 'maison', home: 'maison', book: 'livre', school: 'école', happy: 'heureux', food: 'nourriture', morning: 'matin', night: 'nuit', car: 'voiture', music: 'musique', rain: 'pluie', well: 'bien', run: 'courir', door: 'porte', table: 'table', apple: 'pomme', window: 'fenêtre', moon: 'lune', sun: 'soleil' },
-    Japanese: { hello: 'こんにちは', goodbye: 'さようなら', 'thank you': 'ありがとう', please: 'お願いします', friend: '友達', water: '水', house: '家', home: '家', book: '本', school: '学校', happy: 'うれしい', food: '食べ物', morning: '朝', night: '夜', car: '車', music: '音楽', rain: '雨', well: '元気', run: '走る', door: 'ドア', table: 'テーブル', apple: 'りんご', window: '窓', moon: '月', sun: '太陽' },
-    Hindi: { hello: 'नमस्ते', goodbye: 'अलविदा', 'thank you': 'धन्यवाद', please: 'कृपया', friend: 'मित्र', water: 'पानी', house: 'घर', home: 'घर', book: 'किताब', school: 'विद्यालय', happy: 'खुश', food: 'खाना', morning: 'सुबह', night: 'रात', car: 'गाड़ी', music: 'संगीत', rain: 'बारिश', well: 'अच्छा', run: 'दौड़ना', door: 'दरवाज़ा', table: 'मेज़', apple: 'सेब', window: 'खिड़की', moon: 'चाँद', sun: 'सूरज' }
-};
-
-const AUDIENCE_HINTS = {
-    Spanish: { default: 'Tómate tu tiempo.', 'multiple-choice': 'Practica el vocabulario del tema.', listen: 'Escucha y elige la palabra correcta.', spell: 'Escucha y escribe la palabra.', speak: 'Di la frase en voz alta.', 'match-pairs': 'Une cada palabra con su significado.' },
-    French: { default: 'Prenez votre temps.', 'multiple-choice': 'Entraînez-vous avec le vocabulaire du thème.', listen: 'Écoutez et choisissez le bon mot.', spell: 'Écoutez et écrivez le mot.', speak: 'Dites la phrase à voix haute.', 'match-pairs': 'Associez chaque mot à sa signification.' },
-    Japanese: { default: '落ち着いて考えてください。', 'multiple-choice': 'テーマの単語を練習しましょう。', listen: '聞こえた単語を選んでください。', spell: '聞こえた単語を書いてください。', speak: 'フレーズを声に出してください。', 'match-pairs': '単語と意味を組み合わせてください。' },
-    Hindi: { default: 'आराम से सोचें।', 'multiple-choice': 'इस विषय के शब्दों का अभ्यास करें।', listen: 'सुनकर सही शब्द चुनें।', spell: 'सुनकर शब्द लिखें।', speak: 'वाक्य को ज़ोर से बोलें।', 'match-pairs': 'शब्दों को उनके अर्थ से मिलाएँ।' }
 };
 
 const CHESS_SAMPLES = {
@@ -247,12 +252,27 @@ function generateMusicQuestions(count, level = 1) {
 function localizeMeaning(meaning, audienceLanguage, localize) {
     const text = String(meaning || '').trim();
     if (typeof localize === 'function') return localize(text);
-    return AUDIENCE_TRANSLATIONS[audienceLanguage]?.[text.toLowerCase()] || text;
+    return audienceData.translations[audienceLanguage]?.[text.toLowerCase()] || text;
+}
+
+function resolveFallbackLanguage(language) {
+    const raw = String(language || '').trim();
+    if (/hindi|हिंदी|हिन्दी/i.test(raw)) return 'Hindi';
+    if (/telugu|తెలుగు/i.test(raw)) return 'Telugu';
+    if (/korean|한국어/i.test(raw)) return 'Korean';
+    if (/japanese|日本語|nihongo/i.test(raw)) return 'Japanese';
+    if (/arabic|العربية/i.test(raw)) return 'Arabic';
+    if (/spanish|español|espanol/i.test(raw)) return 'Spanish';
+    if (/french|français|francais/i.test(raw)) return 'French';
+    if (/german|deutsch/i.test(raw)) return 'German';
+    if (/italian|italiano/i.test(raw)) return 'Italian';
+    if (/english/i.test(raw)) return 'English'; // also covers "Intermediate English"
+    return raw;
 }
 
 function generateFallbackQuestions(language, topic, count = 10, audienceLanguage = 'English', options = {}) {
     const normalizedLanguage = String(language || 'Spanish').trim();
-    const fallbackLanguage = /hindi|हिंदी|हिन्दी/i.test(normalizedLanguage) ? 'Hindi' : normalizedLanguage;
+    const fallbackLanguage = resolveFallbackLanguage(normalizedLanguage);
     const fallbackTopic = String(topic || 'daily practice');
     const numberOfQuestions = Math.max(0, Math.floor(Number(count)) || 0);
 
@@ -286,8 +306,10 @@ function generateFallbackQuestions(language, topic, count = 10, audienceLanguage
         });
     }
 
-    const selectedSet = LANGUAGE_SAMPLES[fallbackLanguage] || LANGUAGE_SAMPLES.Spanish;
-    const translations = ENGLISH_TRANSLATIONS[fallbackLanguage] || ENGLISH_TRANSLATIONS.Spanish;
+    const vocabLanguage = LANGUAGE_SAMPLES[fallbackLanguage] ? fallbackLanguage : 'Spanish';
+    if (vocabLanguage !== fallbackLanguage) console.warn(`[Musalingo] No fallback vocabulary for "${fallbackLanguage}"; showing Spanish instead.`);
+    const selectedSet = LANGUAGE_SAMPLES[vocabLanguage];
+    const translations = ENGLISH_TRANSLATIONS[vocabLanguage];
     const practiceQuestionTypes = {
         words: ['multiple-choice', 'match-pairs'],
         listening: ['listen'],
@@ -330,7 +352,7 @@ function generateFallbackQuestions(language, topic, count = 10, audienceLanguage
         return { type, pairs, hint: `Match each ${fallbackTopic} word to its meaning.` };
     });
 
-    const hints = AUDIENCE_HINTS[audienceLanguage];
+    const hints = audienceData.hints[audienceLanguage];
     return questions.map((question) => {
         if (hints) question.hint = hints[question.type] || hints.default;
         return question;
@@ -340,6 +362,8 @@ function generateFallbackQuestions(language, topic, count = 10, audienceLanguage
 globalThis.MusalingoQuestions = {
     englishTranslations: ENGLISH_TRANSLATIONS,
     generateFallbackQuestions,
-    generateMusicQuestions
+    generateMusicQuestions,
+    resolveFallbackLanguage,
+    supportedLanguages: Object.keys(LANGUAGE_SAMPLES)
 };
 })();

@@ -112,6 +112,16 @@
             box-shadow: 0 5px 0 #205ea5;
         }
 
+        .btn.danger {
+            background: #dc2626;
+            box-shadow: 0 5px 0 #991b1b;
+        }
+
+        [data-account-sign-in][hidden],
+        [data-account-sign-out][hidden] {
+            display: none !important;
+        }
+
         .content {
             padding: 24px 30px 30px;
         }
@@ -299,6 +309,8 @@
                     </div>
                 </div>
                 <div class="actions">
+                    <a class="btn secondary" href="signin.html" data-account-sign-in hidden>Sign in</a>
+                    <button class="btn danger" type="button" data-account-sign-out hidden>Sign out</button>
                     <a class="btn secondary" href="settings.html">Edit settings</a>
                     <a class="btn" href="dashboard.html">Dashboard</a>
 
@@ -399,6 +411,7 @@
     </script>
     <script src="theme.js"></script>
     <script src="bloat.js"></script>
+    <script type="module" src="account-actions.js"></script>
     <script src="pwa.js" defer></script>
 </body>
 

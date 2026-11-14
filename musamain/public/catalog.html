@@ -321,6 +321,7 @@
         </form>
     </div>
     
+    <script src="audience.js"></script>
     <script src="course-curriculum.js"></script>
     <script src="sounds.js"></script>
     <script>
@@ -534,7 +535,7 @@
             if (typeof SFX !== 'undefined') SFX.correct();
 
             // Go to the course node view
-            window.location.href = `course.html?courseId=${encodeURIComponent(pendingCourseId)}`;
+            window.location.href = `dashboard.html?courseId=${encodeURIComponent(pendingCourseId)}`;
         });
     </script>
     <script src="theme.js"></script>

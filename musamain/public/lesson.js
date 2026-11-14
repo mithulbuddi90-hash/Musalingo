@@ -1,5 +1,8 @@
 import { Chess } from '/vendor/chess/chess.js';
 
+const audienceData = window.MusalingoAudience;
+if (!audienceData) throw new Error('Audience data did not load. Make sure lesson.html includes audience.js before lesson.js.');
+
 /* ============================================================
    Musalingo — lesson.js (v3)
    Features:
@@ -97,6 +100,15 @@ function setSourceBadge(element, source, errorMessage) {
     element.style.marginLeft = '8px';
 }
 
+// ---------- FALLBACK QUESTIONS (questions.js) ----------
+function buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode) {
+    const bank = window.MusalingoQuestions;
+    if (!bank || typeof bank.generateFallbackQuestions !== 'function') {
+        throw new Error('Question bank did not load. Make sure lesson.html includes questions.js before lesson.js.');
+    }
+    return bank.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning });
+}
+
 // ---------- FETCH AI QUESTIONS ----------
 async function fetchAIQuestions(topic, language, count = 10, level = 1, learningProfile = null, unitIndex = null, audienceLanguage = 'English', practiceMode = '') {
     let errorMessage = null;
@@ -120,7 +132,7 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
             errorMessage = `HTTP ${res.status}`;
             console.warn('⚠️ AI failed, using FALLBACK questions. Status:', res.status);
             return {
-                questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }),
+                questions: buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode),
                 source: 'fallback',
                 error: errorMessage
             };
@@ -128,6 +140,15 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
 
         const data = await res.json();
         if (Array.isArray(data) && data.length) {
+            // Server-built fallback only knows English meanings. For language courses, the client bank
+            // (questions.js) covers every language and translates meanings for the learner's own language.
+            if (sourceHeader === 'fallback' && !/^(chess|math|music)$/i.test(String(language).trim())) {
+                try {
+                    return { questions: buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode), source: 'fallback', error: null };
+                } catch (bankError) {
+                    console.warn('Client question bank unavailable, using server fallback:', bankError);
+                }
+            }
             return { questions: data, source: sourceHeader === 'ai' ? 'ai' : sourceHeader, error: null };
         }
         if (Array.isArray(data?.questions) && data.questions.length) {
@@ -136,7 +157,7 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
 
         errorMessage = 'Empty response';
         return {
-            questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }),
+            questions: buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode),
             source: 'fallback',
             error: errorMessage
         };
@@ -144,7 +165,7 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
         errorMessage = error?.message || 'Unknown network error';
         console.warn('AI fetch failed:', error);
         return {
-            questions: window.MusalingoQuestions.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning }),
+            questions: buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode),
             source: 'fallback',
             error: errorMessage
         };
@@ -400,14 +421,7 @@ const LESSON_COPY = {
 
 const audienceLanguage = normalizeLanguageName(course?.speakerLanguage || 'English');
 const lessonCopy = LESSON_COPY[audienceLanguage] || LESSON_COPY.English;
-document.documentElement.lang = { English: 'en', Spanish: 'es', French: 'fr', Japanese: 'ja', Hindi: 'hi' }[audienceLanguage] || 'en';
-
-const AUDIENCE_LANGUAGE_NAMES = {
-    Spanish: { English: 'inglés', Japanese: 'japonés', Spanish: 'español', French: 'francés', German: 'alemán', Italian: 'italiano', Hindi: 'hindi', Arabic: 'árabe', Korean: 'coreano', Telugu: 'telugu' },
-    French: { English: 'anglais', Japanese: 'japonais', Spanish: 'espagnol', French: 'français', German: 'allemand', Italian: 'italien', Hindi: 'hindi', Arabic: 'arabe', Korean: 'coréen', Telugu: 'télougou' },
-    Japanese: { English: '英語', Japanese: '日本語', Spanish: 'スペイン語', French: 'フランス語', German: 'ドイツ語', Italian: 'イタリア語', Hindi: 'ヒンディー語', Arabic: 'アラビア語', Korean: '韓国語', Telugu: 'テルグ語' },
-    Hindi: { English: 'अंग्रेज़ी', Japanese: 'जापानी', Spanish: 'स्पैनिश', French: 'फ़्रेंच', German: 'जर्मन', Italian: 'इतालवी', Hindi: 'हिंदी', Arabic: 'अरबी', Korean: 'कोरियाई', Telugu: 'तेलुगु' }
-};
+document.documentElement.lang = audienceData.languageCodes[audienceLanguage] || 'en';
 
 function lessonText(key, values = {}) {
     let text = lessonCopy[key] || LESSON_COPY.English[key] || key;
@@ -513,19 +527,12 @@ window.__musalingoLessonState = {
 
 function getAudienceLanguageName(language) {
     const targetLanguage = normalizeLanguageName(language);
-    return AUDIENCE_LANGUAGE_NAMES[audienceLanguage]?.[targetLanguage] || targetLanguage;
+    return audienceData.languageNames[audienceLanguage]?.[targetLanguage] || targetLanguage;
 }
-
-const ENGLISH_MEANING_TRANSLATIONS = {
-    Spanish: { hello: 'hola', goodbye: 'adiós', 'thank you': 'gracias', please: 'por favor', friend: 'amigo', water: 'agua', house: 'casa', book: 'libro', school: 'escuela', happy: 'feliz', food: 'comida', morning: 'mañana', night: 'noche', car: 'coche', music: 'música', rain: 'lluvia', well: 'bien', run: 'correr', door: 'puerta', table: 'mesa', apple: 'manzana', window: 'ventana', moon: 'luna', sun: 'sol', 'see you later': 'hasta luego' },
-    French: { hello: 'bonjour', goodbye: 'au revoir', 'thank you': 'merci', please: 's’il vous plaît', friend: 'ami', water: 'eau', house: 'maison', book: 'livre', school: 'école', happy: 'heureux', food: 'nourriture', morning: 'matin', night: 'nuit', car: 'voiture', music: 'musique', rain: 'pluie', well: 'bien', run: 'courir', door: 'porte', table: 'table', apple: 'pomme', window: 'fenêtre', moon: 'lune', sun: 'soleil' },
-    Japanese: { hello: 'こんにちは', goodbye: 'さようなら', 'thank you': 'ありがとう', please: 'お願いします', friend: '友達', water: '水', house: '家', home: '家', book: '本', school: '学校', happy: 'うれしい', food: '食べ物', morning: '朝', night: '夜', car: '車', music: '音楽', rain: '雨', well: '元気', run: '走る', door: 'ドア', table: 'テーブル', apple: 'りんご', window: '窓', moon: '月', sun: '太陽' },
-    Hindi: { hello: 'नमस्ते', goodbye: 'अलविदा', 'thank you': 'धन्यवाद', please: 'कृपया', friend: 'मित्र', water: 'पानी', house: 'घर', home: 'घर', book: 'किताब', school: 'विद्यालय', happy: 'खुश', food: 'खाना', morning: 'सुबह', night: 'रात', car: 'गाड़ी', music: 'संगीत', rain: 'बारिश', well: 'अच्छा', run: 'दौड़ना', door: 'दरवाज़ा', table: 'मेज़', apple: 'सेब', window: 'खिड़की', moon: 'चाँद', sun: 'सूरज' }
-};
 
 function localizeEnglishMeaning(value) {
     const text = String(value ?? '').trim();
-    const localized = ENGLISH_MEANING_TRANSLATIONS[audienceLanguage];
+    const localized = audienceData.translations[audienceLanguage];
     if (!localized) return text;
     return localized[text.toLocaleLowerCase()] || text;
 }
@@ -992,7 +999,7 @@ if (!course || !lesson) {
                     if (activeRecognition) return;
                     let rec;
                     try { rec = new SR(); } catch (error) { speechResult.textContent = `Could not initialize microphone: ${error.message || error}`; speechResult.style.color = '#b91c1c'; return; }
-                    rec.lang = { Japanese: 'ja-JP', Spanish: 'es-ES', French: 'fr-FR', Hindi: 'hi-IN', German: 'de-DE', Italian: 'it-IT', Arabic: 'ar-SA' }[targetLanguage] || 'en-US';
+                    rec.lang = { Japanese: 'ja-JP', Spanish: 'es-ES', French: 'fr-FR', Hindi: 'hi-IN', German: 'de-DE', Italian: 'it-IT', Arabic: 'ar-SA', Korean: 'ko-KR', Telugu: 'te-IN', English: 'en-US' }[targetLanguage] || 'en-US';
                     rec.interimResults = false; rec.maxAlternatives = 1;
                     speechResult.textContent = lessonText('listening'); speechResult.style.color = 'var(--accent-dark)';
                     btn.disabled = true; activeRecognition = rec;

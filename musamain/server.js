@@ -784,6 +784,7 @@ function normalizeLanguageName(language) {
     const raw = String(language || '').trim();
     if (!raw) return 'Spanish';
     const map = {
+        'intermediate english': 'English',
         japanese: 'Japanese', nihongo: 'Japanese', '日本語': 'Japanese',
         hindi: 'Hindi', 'हिंदी': 'Hindi', 'हिन्दी': 'Hindi',
         spanish: 'Spanish', español: 'Spanish', espanol: 'Spanish',
@@ -848,7 +849,8 @@ const englishTranslations = {
     Arabic: { 'مرحبا': 'hello', 'شكرا': 'thank you', 'كتاب': 'book', 'بيت': 'house', 'ماء': 'water', 'صديق': 'friend', 'مدرسة': 'school', 'نافذة': 'window', 'قمر': 'moon', 'تفاحة': 'apple', 'أحب': 'love', 'سماء': 'sky', 'باب': 'door', 'شمس': 'sun' },
     Hindi: { 'नमस्ते': 'hello', 'धन्यवाद': 'thank you', 'किताब': 'book', 'मित्र': 'friend', 'पानी': 'water', 'विद्यालय': 'school', 'घर': 'house', 'दरवाज़ा': 'door', 'सूरज': 'sun', 'सेब': 'apple', 'दोस्ती': 'friendship', 'आकाश': 'sky', 'चाँद': 'moon' },
     Korean: { '안녕하세요': 'hello', '고맙습니다': 'thank you', '책': 'book', '친구': 'friend', '물': 'water', '학교': 'school', '집': 'house', '문': 'door', '해': 'sun' },
-    Telugu: { 'హలో': 'hello', 'ధన్యవాదాలు': 'thank you', 'పుస్తకం': 'book', 'స్నేహితుడు': 'friend', 'నీళ్ళు': 'water', 'పాఠశాల': 'school', 'ఇల్లు': 'house', 'తలుపు': 'door', 'సూర్యుడు': 'sun', 'యాపిల్': 'apple', 'పరుగు': 'run', 'ఆకాశం': 'sky', 'చంద్రుడు': 'moon' }
+    Telugu: { 'నమస్కారం': 'hello', 'హలో': 'hello', 'ధన్యవాదాలు': 'thank you', 'పుస్తకం': 'book', 'స్నేహితుడు': 'friend', 'నీళ్ళు': 'water', 'పాఠశాల': 'school', 'ఇల్లు': 'house', 'తలుపు': 'door', 'సూర్యుడు': 'sun', 'యాపిల్': 'apple', 'పరుగు': 'run', 'ఆకాశం': 'sky', 'చంద్రుడు': 'moon' },
+    English: { 'Hello': 'hello', 'Goodbye': 'goodbye', 'Book': 'book', 'Happy': 'happy', 'Thank you': 'thank you', 'Friend': 'friend', 'Water': 'water', 'House': 'house', 'Please': 'please', 'School': 'school' }
 };
 
 function generateFallbackQuestions(language, topic, count) {
@@ -892,11 +894,16 @@ function generateFallbackQuestions(language, topic, count) {
         German: [['hallo', 'hallo', ['danke', 'buch', 'freund'], 'hello'], ['danke', 'danke', ['wasser', 'schule', 'haus'], 'thank you'], ['freund', 'freund', ['buch', 'tafel', 'musik'], 'friend'], ['schule', 'schule', ['apfel', 'laufen', 'sonne'], 'school'], ['buch', 'buch', ['tur', 'hallo', 'musik'], 'book']],
         Italian: [['ciao', 'ciao', ['grazie', 'libro', 'amico'], 'hello'], ['grazie', 'grazie', ['acqua', 'scuola', 'casa'], 'thank you'], ['amico', 'amico', ['mela', 'musica', 'porta'], 'friend'], ['scuola', 'scuola', ['mela', 'corre', 'sole'], 'school'], ['libro', 'libro', ['porta', 'ciao', 'sole'], 'book']],
         Arabic: [['مرحبا', 'مرحبا', ['شكرا', 'كتاب', 'بيت'], 'hello'], ['شكرا', 'شكرا', ['ماء', 'صديق', 'مدرسة'], 'thank you'], ['صديق', 'صديق', ['كتاب', 'نافذة', 'قمر'], 'friend'], ['مدرسة', 'مدرسة', ['تفاحة', 'أحب', 'سماء'], 'school'], ['كتاب', 'كتاب', ['باب', 'مرحبا', 'شمس'], 'book']],
-        Hindi: [['नमस्ते', 'नमस्ते', ['धन्यवाद', 'किताब', 'मित्र'], 'namaste'], ['धन्यवाद', 'धन्यवाद', ['पानी', 'विद्यालय', 'घर'], 'dhanyavaad'], ['मित्र', 'मित्र', ['किताब', 'दरवाज़ा', 'सूरज'], 'mitra'], ['विद्यालय', 'विद्यालय', ['सेब', 'दोस्ती', 'आकाश'], 'vidyalaya'], ['किताब', 'किताब', ['दरवाज़ा', 'नमस्ते', 'चाँद'], 'kitab']]
+        Hindi: [['नमस्ते', 'नमस्ते', ['धन्यवाद', 'किताब', 'मित्र'], 'namaste'], ['धन्यवाद', 'धन्यवाद', ['पानी', 'विद्यालय', 'घर'], 'dhanyavaad'], ['मित्र', 'मित्र', ['किताब', 'दरवाज़ा', 'सूरज'], 'mitra'], ['विद्यालय', 'विद्यालय', ['सेब', 'दोस्ती', 'आकाश'], 'vidyalaya'], ['किताब', 'किताब', ['दरवाज़ा', 'नमस्ते', 'चाँद'], 'kitab']],
+        English: [['Hello', 'Hello', ['Goodbye', 'Book', 'Happy'], 'hello'], ['Thank you', 'Thank you', ['Friend', 'Water', 'House'], 'thank you'], ['Please', 'Please', ['Hello', 'School', 'Book'], 'please'], ['School', 'School', ['Happy', 'Friend', 'Goodbye'], 'school'], ['Book', 'Book', ['Water', 'Please', 'House'], 'book']],
+        Korean: [['안녕하세요', '안녕하세요', ['고맙습니다', '책', '친구'], 'annyeonghaseyo'], ['고맙습니다', '고맙습니다', ['물', '학교', '집'], 'gomapseumnida'], ['친구', '친구', ['책', '문', '해'], 'chingu'], ['학교', '학교', ['집', '물', '안녕하세요'], 'hakgyo'], ['책', '책', ['문', '해', '고맙습니다'], 'chaek']],
+        Telugu: [['నమస్కారం', 'నమస్కారం', ['ధన్యవాదాలు', 'పుస్తకం', 'స్నేహితుడు'], 'namaskaram'], ['ధన్యవాదాలు', 'ధన్యవాదాలు', ['నీళ్ళు', 'పాఠశాల', 'ఇల్లు'], 'dhanyavaadaalu'], ['స్నేహితుడు', 'స్నేహితుడు', ['పుస్తకం', 'తలుపు', 'సూర్యుడు'], 'snehitudu'], ['పాఠశాల', 'పాఠశాల', ['ఇల్లు', 'నీళ్ళు', 'నమస్కారం'], 'paathashaala'], ['పుస్తకం', 'పుస్తకం', ['తలుపు', 'సూర్యుడు', 'ధన్యవాదాలు'], 'pustakam']]
     };
 
-    const selectedSet = languageSets[language] || languageSets.Spanish;
-    const translationMap = englishTranslations[language] || englishTranslations.Spanish;
+    const vocabLanguage = languageSets[language] ? language : 'Spanish';
+    if (vocabLanguage !== language) console.warn(`[fallback] No vocabulary for "${language}"; using Spanish instead.`);
+    const selectedSet = languageSets[vocabLanguage];
+    const translationMap = englishTranslations[vocabLanguage];
 
     for (let i = 0; i < count; i++) {
         const pair = selectedSet[i % selectedSet.length];
@@ -925,7 +932,9 @@ const nativeWordBank = {
     Spanish: ['hola', 'gracias', 'amigo', 'escuela', 'libro', 'agua', 'casa', 'sol', 'puerta', 'feliz', 'adios'],
     French: ['bonjour', 'merci', 'ami', 'ecole', 'livre', 'maison', 'porte', 'soleil', 'eau', 'voiture', 'pomme'],
     German: ['hallo', 'danke', 'freund', 'schule', 'buch', 'wasser', 'haus', 'musik', 'apfel', 'sonne', 'tur'],
-    Italian: ['ciao', 'grazie', 'amico', 'scuola', 'libro', 'acqua', 'casa', 'porta', 'sole', 'musica', 'mela']
+    Italian: ['ciao', 'grazie', 'amico', 'scuola', 'libro', 'acqua', 'casa', 'porta', 'sole', 'musica', 'mela'],
+    Korean: ['안녕하세요', '고맙습니다', '친구', '학교', '책', '물', '집', '문', '해'],
+    Telugu: ['నమస్కారం', 'ధన్యవాదాలు', 'స్నేహితుడు', 'పాఠశాల', 'పుస్తకం', 'నీళ్ళు', 'ఇల్లు', 'తలుపు', 'సూర్యుడు']
 };
 
 function sanitizeQuestionForLanguage(question, language) {
