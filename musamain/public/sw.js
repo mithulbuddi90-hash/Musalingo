@@ -1,5 +1,5 @@
 ﻿/* ============================================================
-   Musalingo â€” Service Worker (v26)
+   Musalingo — Service Worker (v35)
    - Caches the app shell for offline use
    - Network-first for HTML (with 3s timeout)
    - Cache-first for static assets
@@ -7,7 +7,7 @@
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v34';  // Update this to force a new cache
+const CACHE_VERSION = 'musalingo-v35';  // Update this to force a new cache
 
 const APP_SHELL = [
     '/',
@@ -34,9 +34,9 @@ const APP_SHELL = [
     '/audience.js',
     '/course-curriculum.js',
     '/sections.js',
-    '/lesson.js?v=26',
+    '/lesson.js',              // ← REMOVED ?v=26
     '/questions.js',
-    '/matches.js?v=23',
+    '/matches.js',             // ← REMOVED ?v=23
     '/sounds.js',
     '/theme.js',
     '/styles.css',
@@ -55,15 +55,16 @@ const APP_SHELL = [
     '/icons/icon-512.png',
     '/icons/icon-maskable-192.png',
     '/icons/icon-maskable-512.png',
-    '/icons/logo.png'
+    '/icons/logo.png',
+    // NEW: missing files that lesson.js depends on
+    '/subscriptions.js',
+    '/vendor/chess/chess.js',
 ];
 
 // ---------- INSTALL ----------
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_VERSION).then((cache) => {
-            // Cache each file individually so a single 404 doesn't
-            // break the entire shell install.
             return Promise.all(
                 APP_SHELL.map((url) =>
                     cache.add(new Request(url, { cache: 'reload' })).catch((err) => {
@@ -96,13 +97,10 @@ self.addEventListener('fetch', (event) => {
     const request = event.request;
     const url = new URL(request.url);
 
-    // Only handle GET requests
     if (request.method !== 'GET') return;
-
-    // Only handle same-origin requests
     if (url.origin !== self.location.origin) return;
 
-    // Never cache API calls â€” always go to network
+    // Never cache API calls — always go to network
     if (url.pathname.toLowerCase().startsWith('/api/')) {
         return;
     }
@@ -112,8 +110,6 @@ self.addEventListener('fetch', (event) => {
         || (request.headers.get('accept') || '').includes('text/html');
 
     if (isHtml) {
-        // FIXED: Added a 3-second timeout. 
-        // If the network is too slow, fall back to cache.
         const networkPromise = fetch(request).then((response) => {
             if (response.ok) {
                 const clone = response.clone();
