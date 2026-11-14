@@ -1,7 +1,12 @@
 import { Chess } from '/vendor/chess/chess.js';
 
-const audienceData = window.MusalingoAudience;
-if (!audienceData) throw new Error('Audience data did not load. Make sure lesson.html includes audience.js before lesson.js.');
+const audienceData = window.MusalingoAudience || {
+    languageCodes: { English: 'en', Spanish: 'es', French: 'fr', Japanese: 'ja', Hindi: 'hi' },
+    languageNames: {},
+    translations: {},
+    hints: {},
+    catalogGroups: []
+};
 
 /* ============================================================
    Musalingo — lesson.js (v3)
@@ -652,7 +657,6 @@ if (!course || !lesson) {
     } else {
         (async () => {
             let practice;
-            let sourceError = null;
             promptText.textContent = lessonText('generatingQuestions');
             statusText.textContent = lessonText('askingAI');
 
@@ -718,7 +722,7 @@ if (!course || !lesson) {
                         source: aiResult.source,
                         error: aiResult.error
                     };
-                    sourceError = aiResult.error;
+                    
                 }
             } catch (err) {
                 console.error('AI generation failed:', err);

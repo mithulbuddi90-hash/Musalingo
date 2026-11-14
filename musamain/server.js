@@ -110,7 +110,8 @@ function rateLimit({ windowMs, max, name }) {
     const hits = rateBuckets.get(name);
     return (req, res, next) => {
         const now = Date.now();
-        const key = req.ip || 'unknown';
+        let key = req.ip || 'unknown';
+        if (key.startsWith('::ffff:')) key = key.slice(7);   // ← ADD
         let entry = hits.get(key);
         if (!entry || now > entry.reset) {
             entry = { count: 0, reset: now + windowMs };

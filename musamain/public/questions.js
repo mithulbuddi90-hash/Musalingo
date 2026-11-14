@@ -1,8 +1,13 @@
 (function bootstrapQuestions() {
 'use strict';
 
-const audienceData = globalThis.MusalingoAudience;
-if (!audienceData) throw new Error('Audience data did not load. Make sure lesson.html includes audience.js before questions.js.');
+const audienceData = globalThis.MusalingoAudience || {
+    languageCodes: { English: 'en', Spanish: 'es', French: 'fr', Japanese: 'ja', Hindi: 'hi' },
+    languageNames: {},
+    translations: {},
+    hints: {},
+    catalogGroups: []
+};
 
 const ENGLISH_TRANSLATIONS = {
     English: { Hello: 'hello', Goodbye: 'goodbye', Book: 'book', Happy: 'happy', 'Thank you': 'thank you', Friend: 'friend', Water: 'water', House: 'house', Please: 'please', School: 'school' },
