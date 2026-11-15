@@ -367,10 +367,27 @@
     </div>
 
     <script>
+        /* ============================================================
+           Musalingo — streak page
+           ============================================================ */
+
+        // ── SAFE PARSE ──
+        function safeParse(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : fallback;
+            } catch (err) {
+                console.warn(`[streak] Corrupted localStorage for ${key}; using defaults.`, err);
+                return fallback;
+            }
+        }
+
         // Load Data
-        const profile = JSON.parse(localStorage.getItem('MusalingoProfile')) || {};
-        const settings = JSON.parse(localStorage.getItem('MusalingoSettings')) || {};
-        const friends = Array.isArray(profile.friends) ? profile.friends : [];
+        const profile = safeParse('MusalingoProfile', {});
+        const settings = safeParse('MusalingoSettings', {});
+        const rawFriendUids = Array.isArray(profile.friends) ? profile.friends : [];
 
         // Remove Bloat Logic
         if (settings.noStreaks) {
@@ -380,7 +397,6 @@
         // Streak Logic
         const streakInfo = document.getElementById('streakInfo');
         const currentStreak = document.getElementById('currentStreak');
-        const streakStatus = document.getElementById('streakStatus');
         const pauseToggle = document.getElementById('pauseToggle');
         const calendarTitle = document.getElementById('calendarTitle');
         const calendarGrid = document.getElementById('calendarGrid');
@@ -438,12 +454,9 @@
             if (!profile.streak) {
                 streakInfo.textContent = 'No streak data yet';
                 currentStreak.textContent = '0 days';
-                if (streakStatus) streakStatus.textContent = 'Start a lesson to begin.';
             } else {
-                const status = profile.streakStatus === 'paused' ? 'Paused' : 'Active';
                 streakInfo.textContent = `Streak: ${profile.streak} days`;
                 currentStreak.textContent = `${profile.streak} days`;
-                if (streakStatus) streakStatus.textContent = status;
                 pauseToggle.checked = profile.streakStatus === 'paused';
             }
 
@@ -453,28 +466,62 @@
             if (freezeEl) freezeEl.textContent = `❄️ ${freezes}`;
         }
 
-        function renderFriendStreaks() {
+        // ── FRIENDS (async — reads real profiles from Firestore when signed in) ──
+        const isSignedIn = localStorage.getItem('MusalingoLoggedIn') === 'true'
+            && localStorage.getItem('MusalingoGuest') !== 'true';
+        const uid = localStorage.getItem('MusalingoUid') || '';
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[c]));
+        }
+
+        async function renderFriendStreaks() {
             const container = document.getElementById('friendStreaks');
-            if (!friends.length) {
-                container.innerHTML = '<div class="friends-empty">No friends are there yet.<br><a class="add-friends-link" href="profile.html#friends">Add new friends</a></div>';
+            if (!container) return;
+
+            if (!isSignedIn || !uid || rawFriendUids.length === 0) {
+                container.innerHTML = '<div class="friends-empty">No friends are there yet.<br><a class="add-friends-link" href="friends.html#friends">Add new friends</a></div>';
                 return;
             }
 
-            container.innerHTML = '<div class="friend-streak-list"></div>';
-            const list = container.querySelector('.friend-streak-list');
-            friends.forEach(friend => {
-                const row = document.createElement('div');
-                row.className = 'friend-streak-row';
-                row.innerHTML = '<span class="friend-streak-name"></span><span class="friend-streak-value"></span>';
-                row.querySelector('.friend-streak-name').textContent = friend.name || 'Friend';
-                row.querySelector('.friend-streak-value').textContent = `${Number(friend.streak) || 0} days`;
-                list.appendChild(row);
-            });
+            container.innerHTML = '<div class="friends-empty">Loading friend streaks…</div>';
+
+            try {
+                const fb = await import('./firebase.js');
+                const profiles = await fb.loadFriendsProfiles(uid);
+                if (!Array.isArray(profiles) || profiles.length === 0) {
+                    container.innerHTML = '<div class="friends-empty">No friends are there yet.<br><a class="add-friends-link" href="friends.html#friends">Add new friends</a></div>';
+                    return;
+                }
+                container.innerHTML = `
+                    <div class="friend-streak-list">
+                        ${profiles.map(friend => {
+                    const name = String(friend.name || friend.email || 'Friend');
+                    const streak = Number(friend.streak) || 0;
+                    return `
+                                <div class="friend-streak-row">
+                                    <span class="friend-streak-name">${escapeHtml(name)}</span>
+                                    <span class="friend-streak-value">${streak} day${streak === 1 ? '' : 's'}</span>
+                                </div>
+                            `;
+                }).join('')}
+                    </div>
+                `;
+            } catch (err) {
+                console.warn('[streak] Could not load friend profiles:', err);
+                container.innerHTML = '<div class="friends-empty">Could not load friend streaks right now.</div>';
+            }
         }
 
         pauseToggle.addEventListener('change', () => {
             profile.streakStatus = pauseToggle.checked ? 'paused' : 'active';
-            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+            try {
+                localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+            } catch (err) {
+                console.warn('[streak] Could not save streak status:', err);
+            }
             updateUI();
         });
 

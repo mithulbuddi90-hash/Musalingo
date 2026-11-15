@@ -377,7 +377,7 @@
     </style>
 </head>
 
-<body>
+<body data-pwa-status="true">
     <div class="page">
 
         <header class="hero">
@@ -597,17 +597,26 @@
             }[c]));
         }
 
+        // ── SAFE PARSE for settings reads ──
+        function safeParse(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : fallback;
+            } catch {
+                return fallback;
+            }
+        }
+
         function refreshStatus() {
             const hasSfx = typeof window.SFX !== 'undefined';
             statusSfx.textContent = `SFX: ${hasSfx ? 'loaded' : 'missing'}`;
             statusSfx.className = 'status-pill ' + (hasSfx ? 'on' : 'off');
 
-            let soundOn = true;
-            try {
-                const s = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
-                const a = JSON.parse(localStorage.getItem('MusalingoAppSettings') || '{}');
-                soundOn = s.sound !== false && a.sound !== false;
-            } catch { }
+            const s = safeParse('MusalingoSettings', {});
+            const a = safeParse('MusalingoAppSettings', {});
+            const soundOn = s.sound !== false && a.sound !== false;
             statusSound.textContent = `Sound: ${soundOn ? 'on' : 'muted'}`;
             statusSound.className = 'status-pill ' + (soundOn ? 'on' : 'off');
 
@@ -676,8 +685,8 @@
                 const prevSettings = localStorage.getItem('MusalingoSettings');
                 const prevApp = localStorage.getItem('MusalingoAppSettings');
                 try {
-                    const s = JSON.parse(prevSettings || '{}');
-                    const a = JSON.parse(prevApp || '{}');
+                    const s = safeParse('MusalingoSettings', {});
+                    const a = safeParse('MusalingoAppSettings', {});
                     s.sound = true;
                     a.sound = true;
                     localStorage.setItem('MusalingoSettings', JSON.stringify(s));
@@ -686,9 +695,16 @@
                     else window.SFX[name]();
                     log(`Played SFX.${name}() (forced while muted)`, 'ok');
                 } finally {
+                    // FIX: restore exactly — removeItem if the key didn't exist before
                     setTimeout(() => {
-                        if (prevSettings) localStorage.setItem('MusalingoSettings', prevSettings);
-                        if (prevApp) localStorage.setItem('MusalingoAppSettings', prevApp);
+                        try {
+                            if (prevSettings !== null) localStorage.setItem('MusalingoSettings', prevSettings);
+                            else localStorage.removeItem('MusalingoSettings');
+                        } catch { }
+                        try {
+                            if (prevApp !== null) localStorage.setItem('MusalingoAppSettings', prevApp);
+                            else localStorage.removeItem('MusalingoAppSettings');
+                        } catch { }
                     }, 300);
                 }
                 return;
@@ -784,10 +800,10 @@
         document.getElementById('toggleMuteBtn').addEventListener('click', () => {
             isMuted = !isMuted;
             try {
-                const s = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+                const s = safeParse('MusalingoSettings', {});
                 s.sound = !isMuted;
                 localStorage.setItem('MusalingoSettings', JSON.stringify(s));
-                const a = JSON.parse(localStorage.getItem('MusalingoAppSettings') || '{}');
+                const a = safeParse('MusalingoAppSettings', {});
                 a.sound = !isMuted;
                 localStorage.setItem('MusalingoAppSettings', JSON.stringify(a));
             } catch { }

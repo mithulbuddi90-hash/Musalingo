@@ -1,6 +1,11 @@
 /* ============================================================
-   Musalingo — quest.js (Shared Quest Logic)
-   Used by both dashboard.html and quest.html
+   Musalingo — quest.js (v2)
+   Shared Quest Logic — used by both dashboard.html and quest.html
+
+   Fixes vs v1:
+     • saveLocalProfile: writes unconditionally after mutation
+       (prevents in-memory / localStorage divergence)
+     • try/catch around localStorage.setItem (quota protection)
    ============================================================ */
 
 window.MUSALINGO_QUESTS = {
@@ -97,8 +102,13 @@ window.MUSALINGO_QUESTS = {
             window.SFX?.win();
         }
 
+        // FIX: always save — profile has been mutated above even if `changed` is false.
         profile.dailyQuestRewards = rewards;
-        if (changed) localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+        try {
+            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+        } catch (err) {
+            console.warn('[quest] Could not save profile after granting rewards:', err);
+        }
         return { rewards, changed };
     }
 };

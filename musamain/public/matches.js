@@ -1,22 +1,55 @@
 /* ============================================================
-   Musalingo — matches.js (Stockfish Integrated + Bug Fixes)
+   Musalingo — matches.js (v4)
+   Stockfish + AI Coach + Friend games
+
+   Fixes vs v3:
+     • firebase.js loaded via dynamic import — page survives if it fails
+     • Stockfish Worker load wrapped in try/catch — falls back to Expert bot
+     • awardChessMatchReward guarded — no crash when FB unavailable
+     • AI Coach time budget reduced 1900ms → 650ms (no UI freeze)
+     • askCoach fetch timeout 15s
+     • applyRemoteGameState sets lastMove (opponent move now highlights)
+     • Analysis disabled for friend games (prevents garbage results)
    ============================================================ */
 
-import {
-    createFriendChessGame,
-    acceptFriendChessGame,
-    abortFriendChessGame,
-    pushChessMove,
-    finishChessGame,
-    offerChessDraw,
-    clearChessDrawOffer,
-    listenToChessGame,
-    listenToMyChessInvites,
-    loadFriendsProfiles,
-    loadLocalProfile,
-    loadFriendProfile,
-    awardChessMatchReward
-} from './firebase.js';
+/* ============ FIREBASE (dynamic, resilient) ============ */
+let FB = null;
+try {
+    FB = await import('./firebase.js');
+} catch (err) {
+    console.error('[matches] firebase.js failed to load; friend games unavailable:', err);
+}
+
+// Destructure with no-op fallbacks so nothing below throws if FB is null
+const {
+    createFriendChessGame = () => Promise.reject(new Error('Firebase unavailable')),
+    acceptFriendChessGame = () => Promise.reject(new Error('Firebase unavailable')),
+    abortFriendChessGame = () => Promise.resolve(),
+    pushChessMove = () => Promise.resolve(),
+    finishChessGame = () => Promise.resolve(),
+    offerChessDraw = () => Promise.resolve(),
+    clearChessDrawOffer = () => Promise.resolve(),
+    listenToChessGame = () => () => { },
+    listenToMyChessInvites = () => () => { },
+    loadFriendsProfiles = () => Promise.resolve([]),
+    loadFriendProfile = () => Promise.resolve(null),
+    awardChessMatchReward = () => Promise.resolve({ alreadyRewarded: true, profile: {}, xpEarned: 0 }),
+    loadLocalProfile = () => {
+        try {
+            return {
+                uid: localStorage.getItem('MusalingoUid') || '',
+                email: localStorage.getItem('MusalingoUser') || '',
+                name: 'Player',
+                courses: [],
+                inventory: []
+            };
+        } catch {
+            return { uid: '', email: '', name: 'Player', courses: [], inventory: [] };
+        }
+    }
+} = FB || {};
+
+const FIREBASE_READY = Boolean(FB && typeof FB.createFriendChessGame === 'function');
 
 /* ============ BRIDGE FOR INLINE HANDLERS ============ */
 const p = loadLocalProfile();
@@ -30,7 +63,7 @@ window.MF = {
     listenToMyChessInvites, loadFriendsProfiles, loadLocalProfile, loadFriendProfile
 };
 
-/* ============ SMALL HELPERS (were missing) ============ */
+/* ============ SMALL HELPERS ============ */
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -65,6 +98,11 @@ async function showMatchReward(outcome) {
         return;
     }
 
+    if (!FIREBASE_READY && gameMode === 'friend') {
+        rewardMessage.textContent = 'Rewards unavailable (Firebase offline).';
+        return;
+    }
+
     const gameId = gameMode === 'friend' ? liveGameId : currentGameRewardId;
     if (!gameId) {
         rewardMessage.textContent = 'Match rewards could not be saved because this game has no ID.';
@@ -86,7 +124,7 @@ async function showMatchReward(outcome) {
             return;
         }
 
-        Object.assign(p, result.profile);
+        Object.assign(p, result.profile || {});
         const earned = result.xpEarned > 0 ? `+${result.xpEarned} XP` : 'XP disabled';
         const streak = !result.streakEnabled
             ? 'streaks disabled'
@@ -96,31 +134,42 @@ async function showMatchReward(outcome) {
                     ? `${result.streak}-day streak`
                     : `${result.streak}-day streak maintained`;
         rewardMessage.textContent = `${earned} · ${streak}`;
-        if (result.xpEarned > 0) SFX.gemEarned();
+        if (result.xpEarned > 0 && window.SFX?.gemEarned) SFX.gemEarned();
     } catch (error) {
         console.error('[matches] Could not save chess match rewards.', error);
         rewardMessage.textContent = 'Could not save match rewards. Check your connection and try again later.';
     }
 }
 
-/* ============ STOCKFISH ENGINE ============ */
-const stockfish = new Worker('/engine/stockfish-19-lite-single.js');
-stockfish.postMessage('uci');
-stockfish.postMessage('isready');
-
-stockfish.onmessage = function (event) {
-    const line = event.data;
-    if (typeof line !== 'string') return;
-    if (line.startsWith('bestmove')) {
-        const bestMove = line.split(' ')[1]; // e.g., "e2e4" or "(none)"
-        // Always hand it off — applyStockfishMove knows how to un-stick on "(none)".
-        applyStockfishMove(bestMove);
-    }
-};
+/* ============ STOCKFISH ENGINE (guarded) ============ */
+let stockfish = null;
+try {
+    stockfish = new Worker('/engine/stockfish-19-lite-single.js');
+    stockfish.onmessage = function (event) {
+        const line = event.data;
+        if (typeof line !== 'string') return;
+        if (line.startsWith('bestmove')) {
+            const bestMove = line.split(' ')[1];
+            applyStockfishMove(bestMove);
+        }
+    };
+    stockfish.postMessage('uci');
+    stockfish.postMessage('isready');
+} catch (err) {
+    console.warn('[matches] Stockfish Worker unavailable; will fall back to Expert bot:', err);
+    stockfish = null;
+}
 
 function askStockfish(fen, depth = 5) {
-    stockfish.postMessage('position fen ' + fen);
-    stockfish.postMessage('go depth ' + depth);
+    if (!stockfish) return false;
+    try {
+        stockfish.postMessage('position fen ' + fen);
+        stockfish.postMessage('go depth ' + depth);
+        return true;
+    } catch (err) {
+        console.warn('[matches] askStockfish failed:', err);
+        return false;
+    }
 }
 
 /* ============ ENGINE CONSTANTS ============ */
@@ -418,7 +467,6 @@ function quiescenceSearchTimed(b, castling, ep, alpha, beta, color, depth, deadl
 
 /* ============ STOCKFISH INTEGRATION ============ */
 function applyStockfishMove(moveStr) {
-    // "(none)" or any short/invalid string → unstick the board.
     if (gameOver || !moveStr || moveStr.length < 4 || moveStr === '(none)') {
         botThinking = false;
         updateStatus();
@@ -433,7 +481,8 @@ function applyStockfishMove(moveStr) {
     const tr = 8 - parseInt(to[1]);
     const tc = "abcdefgh".indexOf(to[0]);
 
-    if (fr < 0 || fr > 7 || fc < 0 || fc > 7 || tr < 0 || tr > 7 || tc < 0 || tc > 7) {
+    if (!Number.isFinite(fr) || !Number.isFinite(fc) || !Number.isFinite(tr) || !Number.isFinite(tc)
+        || fr < 0 || fr > 7 || fc < 0 || fc > 7 || tr < 0 || tr > 7 || tc < 0 || tc > 7) {
         console.warn('[matches] Stockfish returned an unparseable move:', moveStr);
         botThinking = false;
         updateStatus();
@@ -453,8 +502,8 @@ function applyStockfishMove(moveStr) {
         botThinking = false;
         renderBoard();
 
-        if (move.captured) SFX.captureOpponent(move.captured);
-        else SFX.moveOpponent();
+        if (move.captured && window.SFX) SFX.captureOpponent(move.captured);
+        else if (window.SFX) SFX.moveOpponent();
 
         if (aiCoachMode) {
             aiCoachLastMove = { move: { ...move }, boardBefore, san };
@@ -472,14 +521,19 @@ function applyStockfishMove(moveStr) {
 
 /* ============ BOT MOVE ============ */
 function chooseBotMove(moves, botKey) {
+    if (!moves || !moves.length) return null;
+
     if (botKey === 'stockfish') {
+        if (!stockfish) {
+            console.warn('[matches] Stockfish unavailable; falling back to Expert bot');
+            return chooseBotMove(moves, 'expert');
+        }
         const fen = serializeBoardToFen();
         askStockfish(fen, BOT_CONFIGS.stockfish.depth);
         return null;
     }
 
-    const cfg = BOT_CONFIGS[botKey];
-    if (!moves.length) return null;
+    const cfg = BOT_CONFIGS[botKey] || BOT_CONFIGS.beginner;
     if (cfg.useRandom || cfg.depth === 0) {
         const captures = moves.filter(m => m.captured);
         if (captures.length > 0 && Math.random() < 0.7) return captures[Math.floor(Math.random() * captures.length)];
@@ -543,7 +597,8 @@ function chooseAICoachMove(legalMoves) {
     if (!legalMoves || !legalMoves.length) return null;
     initAIEngineTables();
     aiNodesSearched = 0;
-    const TIME_BUDGET_MS = 1900;
+    // FIX: reduced from 1900ms to 650ms — no more UI freeze
+    const TIME_BUDGET_MS = 650;
     const deadline = Date.now() + TIME_BUDGET_MS;
     for (let i = 0; i < 128; i++) aiKillers[i] = [null, null];
     let bestMoveOverall = legalMoves[0];
@@ -716,22 +771,20 @@ function backToPlayMenu() {
     hideAllPlaySubviews();
     document.querySelector('.orb-container')?.classList.remove('game-active');
     const pm = document.getElementById("playMenu");
-    pm.style.display = "block";
-    pm.scrollTop = 0;
+    if (pm) { pm.style.display = "block"; pm.scrollTop = 0; }
     const cbt = document.getElementById("clockBarTop");
     const cbb = document.getElementById("clockBarBottom");
     if (cbt) cbt.style.display = "none";
     if (cbb) cbb.style.display = "none";
     gameOver = true;
 }
-window.backToPlayMenu = backToPlayMenu;
 
 function showBotMenu() {
     hideAllPlaySubviews();
     document.querySelector('.orb-container')?.classList.remove('game-active');
-    document.getElementById("botMenu").style.display = "block";
+    const el = document.getElementById("botMenu");
+    if (el) el.style.display = "block";
 }
-window.showBotMenu = showBotMenu;
 
 function setActionButtonsVisibility(mode) {
     const btnUndo = document.getElementById("btnUndo");
@@ -746,8 +799,15 @@ function startBotGame(botKey) {
     setActionButtonsVisibility("local");
     aiCoachMode = false;
     clearCoachHighlights();
+
+    // FIX: if user selected Stockfish but worker is unavailable, fall back to expert
+    if (botKey === 'stockfish' && !stockfish) {
+        console.warn('[matches] Stockfish unavailable; starting Expert bot instead');
+        botKey = 'expert';
+    }
+
     currentBot = botKey;
-    const cfg = BOT_CONFIGS[botKey];
+    const cfg = BOT_CONFIGS[botKey] || BOT_CONFIGS.beginner;
     gameMode = "bot";
     playerColor = "w";
     flipped = false;
@@ -766,7 +826,6 @@ function startBotGame(botKey) {
     newGame();
     for (let i = 0; i < 20; i++) setTimeout(fitBoards, i * 100);
 }
-window.startBotGame = startBotGame;
 
 function start1v1() {
     hideAllPlaySubviews();
@@ -790,7 +849,6 @@ function start1v1() {
     newGame();
     for (let i = 0; i < 20; i++) setTimeout(fitBoards, i * 100);
 }
-window.start1v1 = start1v1;
 
 function startAICoachGame() {
     hideAllPlaySubviews();
@@ -823,12 +881,10 @@ function startAICoachGame() {
     }
     for (let i = 0; i < 20; i++) setTimeout(fitBoards, i * 100);
 }
-window.startAICoachGame = startAICoachGame;
 
 function setOpponent() {
     currentBot = document.getElementById("opponent").value;
 }
-window.setOpponent = setOpponent;
 
 /* ============ BOARD RENDER ============ */
 function renderBoard() {
@@ -869,7 +925,7 @@ function renderBoard() {
         const lm = legal.find(m => m.tr === r && m.tc === c);
         if (lm) { s.classList.add("legal"); if (boardState[r][c] || lm.enPassant) s.classList.add("capture"); }
         const p = boardState[r][c];
-        if (p) { const wrap = document.createElement("div"); wrap.className = "piece"; wrap.innerHTML = SVG_PIECES[p]; s.appendChild(wrap); }
+        if (p && window.SVG_PIECES?.[p]) { const wrap = document.createElement("div"); wrap.className = "piece"; wrap.innerHTML = SVG_PIECES[p]; s.appendChild(wrap); }
         s.onclick = () => clickSquare(r, c);
         el.appendChild(s);
     }
@@ -884,7 +940,7 @@ function renderBoard() {
         });
     }
     updateStatus();
-    setTimeout(fitBoards, 20);
+    setTimeout(() => window.fitBoards?.(), 20);
 }
 
 function canMoveColor(color) {
@@ -912,7 +968,7 @@ function clickSquare(r, c) {
     if (p && p[0] === turn) {
         selected = { r, c };
         renderBoard();
-        SFX.tap();
+        if (window.SFX) SFX.tap();
     }
 }
 
@@ -928,12 +984,14 @@ function afterMove() {
         else if (gameMode === 'friend') isMyMove = moverColor === myLiveColor;
         else isMyMove = moverColor === 'w';
 
-        if (lastMove.captured) {
-            if (isMyMove) SFX.capture(lastMove.captured);
-            else SFX.captureOpponent(lastMove.captured);
-        } else {
-            if (isMyMove) SFX.move();
-            else SFX.moveOpponent();
+        if (window.SFX) {
+            if (lastMove.captured) {
+                if (isMyMove) SFX.capture(lastMove.captured);
+                else SFX.captureOpponent(lastMove.captured);
+            } else {
+                if (isMyMove) SFX.move();
+                else SFX.moveOpponent();
+            }
         }
     }
 
@@ -959,10 +1017,11 @@ function afterMove() {
 function showPromotionDialog(color, callback) {
     const overlay = document.getElementById("promoOverlay");
     const piecesEl = document.getElementById("promoPieces");
+    if (!overlay || !piecesEl) return;
     piecesEl.innerHTML = "";
     for (const t2 of ["Q", "R", "B", "N"]) {
         const b = document.createElement("button");
-        b.innerHTML = SVG_PIECES[color + t2];
+        if (window.SVG_PIECES?.[color + t2]) b.innerHTML = SVG_PIECES[color + t2];
         b.onclick = () => { overlay.classList.remove("active"); callback(t2); };
         piecesEl.appendChild(b);
     }
@@ -1081,13 +1140,16 @@ function checkGameEnd() {
         }
     } else if (isInCheck(turn, boardState)) {
         setStatus("Check!", "bad");
-        SFX.check();
+        if (window.SFX) SFX.check();
     }
 }
 
 function buildResultButtons() {
     let html = '';
-    if (gameMoves.length > 0) html += `<button class="result-btn analyze" onclick="startGameAnalysis()">📊 Analyze Game</button>`;
+    // FIX: analysis disabled for friend games — boardBefore is null for remote moves
+    if (gameMoves.length > 0 && gameMode !== 'friend') {
+        html += `<button class="result-btn analyze" onclick="startGameAnalysis()">📊 Analyze Game</button>`;
+    }
     html += `<button class="result-btn play" onclick="newGame();closeResultModal()">Play Again</button>`;
     html += `<button class="result-btn close" onclick="closeResultModal();backToPlayMenu()">Close</button>`;
     return html;
@@ -1110,14 +1172,15 @@ function showResultModal(isCheckmate, winner) {
         let humanWon = false;
         if (gameMode === "1v1") humanWon = true;
         else if (gameMode === "bot") humanWon = winner === "White";
-        if (humanWon) SFX.win(); else SFX.lose();
+        if (window.SFX) {
+            if (humanWon) SFX.win(); else SFX.lose();
+        }
     }
 }
 
 function closeResultModal() {
     document.getElementById("resultModal").classList.remove("active");
 }
-window.closeResultModal = closeResultModal;
 
 function updateStatus() {
     if (gameOver) return;
@@ -1142,13 +1205,20 @@ function scheduleBotMove() {
         if (!moves.length) { botThinking = false; checkGameEnd(); return; }
 
         let mv;
-        if (aiCoachMode) mv = chooseAICoachMove(moves);
-        else if (currentBot === 'stockfish') {
-            const fen = serializeBoardToFen();
-            askStockfish(fen, BOT_CONFIGS.stockfish.depth);
-            return;
+        if (aiCoachMode) {
+            mv = chooseAICoachMove(moves);
+        } else if (currentBot === 'stockfish') {
+            if (!stockfish) {
+                console.warn('[matches] Stockfish unavailable in scheduleBotMove; using Expert');
+                mv = chooseBotMove(moves, 'expert');
+            } else {
+                const fen = serializeBoardToFen();
+                askStockfish(fen, BOT_CONFIGS.stockfish.depth);
+                return;
+            }
+        } else {
+            mv = chooseBotMove(moves, currentBot);
         }
-        else mv = chooseBotMove(moves, currentBot);
 
         if (!mv) { botThinking = false; return; }
 
@@ -1160,8 +1230,10 @@ function scheduleBotMove() {
         botThinking = false;
         renderBoard();
 
-        if (mv.captured) SFX.captureOpponent(mv.captured);
-        else SFX.moveOpponent();
+        if (window.SFX) {
+            if (mv.captured) SFX.captureOpponent(mv.captured);
+            else SFX.moveOpponent();
+        }
 
         if (aiCoachMode) {
             aiCoachLastMove = { move: { ...mv }, boardBefore, san };
@@ -1199,7 +1271,6 @@ function undoMove() {
     positionHistory = [positionKey(boardState, turn, castlingRights, enPassant)];
     renderBoard();
 }
-window.undoMove = undoMove;
 
 function newGame() {
     currentGameRewardId = gameMode === 'friend' ? (liveGameId || '') : createLocalGameRewardId();
@@ -1227,11 +1298,9 @@ function newGame() {
     document.getElementById("promoOverlay").classList.remove("active");
     document.getElementById("resultModal").classList.remove("active");
     positionHistory = [positionKey(boardState, turn, castlingRights, enPassant)];
-    // Reset Stockfish's internal position so stale bestmoves don't leak in.
-    try { stockfish.postMessage('ucinewgame'); } catch (e) { /* worker may not be ready */ }
+    if (stockfish) { try { stockfish.postMessage('ucinewgame'); } catch (e) { /* ignore */ } }
     renderBoard();
 }
-window.newGame = newGame;
 
 function hintMove() {
     if (gameOver || botThinking) return;
@@ -1248,19 +1317,18 @@ function hintMove() {
     }
     if (best) setStatus(`💡 Hint: ${squareName(best.fr, best.fc)} → ${squareName(best.tr, best.tc)}`, "good");
 }
-window.hintMove = hintMove;
 
 function resignGame() {
     if (gameOver) return;
     if (gameMode === "friend" && liveGameId && window.MF) {
         if (!confirm("Resign this game?")) return;
-        SFX.lose();
+        if (window.SFX) SFX.lose();
         const winner = myLiveColor === "w" ? "black" : "white";
         window.MF.finishChessGame(liveGameId, { result: winner, reason: "resignation" });
         return;
     }
     if (!confirm("Are you sure you want to resign?")) return;
-    SFX.lose();
+    if (window.SFX) SFX.lose();
     gameOver = true;
     const winner = gameMode === "bot" ? "Black" : (turn === "w" ? "Black" : "White");
     setStatus(`You resigned. ${winner} wins.`, "bad");
@@ -1271,7 +1339,6 @@ function resignGame() {
     document.getElementById("resultModal").classList.add("active");
     showMatchReward('lost');
 }
-window.resignGame = resignGame;
 
 function offerDraw() {
     if (gameOver) return;
@@ -1308,7 +1375,6 @@ function offerDraw() {
         }
     }
 }
-window.offerDraw = offerDraw;
 
 /* ============ SAN ============ */
 function moveToSan(move, board, castling, ep, promo) {
@@ -1358,6 +1424,7 @@ function classifyMove(cpl) {
 let analysisResult = null;
 
 function startGameAnalysis() {
+    if (gameMode === 'friend') { alert('Analysis is not available for friend games yet.'); return; }
     if (gameMoves.length === 0) { alert("No moves to analyze."); return; }
     closeResultModal();
     document.getElementById("analysisModal").classList.add("active");
@@ -1369,7 +1436,6 @@ function startGameAnalysis() {
     document.getElementById("analysisProgressText").textContent = "Analyzing…";
     setTimeout(runAnalysis, 120);
 }
-window.startGameAnalysis = startGameAnalysis;
 
 async function runAnalysis() {
     const total = gameMoves.length;
@@ -1463,7 +1529,6 @@ function renderAnalysisMoveList() {
 function closeAnalysis() {
     document.getElementById("analysisModal").classList.remove("active");
 }
-window.closeAnalysis = closeAnalysis;
 
 /* ============ VOICE / COACH CHAT ============ */
 function addChat(who, text) {
@@ -1506,12 +1571,15 @@ async function askCoach() {
             setTimeout(() => {
                 const reply = "🎯 I'd recommend " + squareName(best.fr, best.fc) + " → " + squareName(best.tr, best.tc) + ".";
                 pending.textContent = reply;
-                SFX.pronounce(reply, { lang: 'English', rate: 0.95 });
+                if (window.SFX?.pronounce) SFX.pronounce(reply, { lang: 'English', rate: 0.95 });
             }, 400);
             return;
         }
     }
 
+    // FIX: added 15s timeout so the spinner never hangs forever
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
         let boardString = "";
         for (let r = 0; r < 8; r++) {
@@ -1536,19 +1604,25 @@ User question: ${q}`;
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: fullPrompt })
+            body: JSON.stringify({ prompt: fullPrompt }),
+            signal: controller.signal
         });
 
-        if (!res.ok) throw new Error('Network error');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const reply = data.text || 'I could not generate a reply.';
         pending.textContent = reply;
-        SFX.pronounce(reply, { lang: 'English', rate: 0.95 });
+        if (window.SFX?.pronounce) SFX.pronounce(reply, { lang: 'English', rate: 0.95 });
     } catch (err) {
-        pending.textContent = '⚠️ AI is currently offline. Make sure your local server.js is running.';
+        if (err.name === 'AbortError') {
+            pending.textContent = '⚠️ Coach took too long to respond. Please try again.';
+        } else {
+            pending.textContent = '⚠️ AI is currently offline. Make sure your local server.js is running.';
+        }
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
-window.askCoach = askCoach;
 
 function startVoice() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1568,7 +1642,6 @@ function startVoice() {
     rec.onend = () => { if (st) st.textContent = "Ready"; };
     rec.start();
 }
-window.startVoice = startVoice;
 
 let orbState = "idle", orbRecognition = null;
 
@@ -1577,7 +1650,6 @@ function orbClick() {
     if (orbState === "thinking") return;
     startOrbListening();
 }
-window.orbClick = orbClick;
 
 function startOrbListening() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1676,11 +1748,13 @@ function parseFen(fen) {
 function showFriendMenu() {
     hideAllPlaySubviews();
     document.querySelector('.orb-container')?.classList.remove('game-active');
-    document.getElementById("friendMenu").style.display = "block";
+    const friendMenu = document.getElementById("friendMenu");
+    if (friendMenu) friendMenu.style.display = "block";
 
     const me = window.__musalingoUid;
     const friendList = document.getElementById("friendPickerList");
     const incomingEl = document.getElementById("incomingInvites");
+    if (!friendList) return;
 
     if (!me) {
         friendList.innerHTML = `<div class="play-mode-card disabled" style="grid-column: 1 / -1;">
@@ -1692,10 +1766,10 @@ function showFriendMenu() {
         return;
     }
 
-    if (!window.MF) {
+    if (!FIREBASE_READY) {
         friendList.innerHTML = `<div class="play-mode-card disabled" style="grid-column: 1 / -1;">
-            <div class="play-mode-title">Friend system loading…</div>
-            <div class="play-mode-desc">Wait a moment and try again, or check the console for errors.</div>
+            <div class="play-mode-title">Friend system unavailable</div>
+            <div class="play-mode-desc">Could not connect to the server. Check your connection and reload the page.</div>
         </div>`;
         return;
     }
@@ -1751,37 +1825,39 @@ function showFriendMenu() {
         </div>`;
     });
 
-    if (invitesUnsub) invitesUnsub();
-    invitesUnsub = window.MF.listenToMyChessInvites(me, (invites) => {
-        if (!invites.length) { incomingEl.innerHTML = ''; return; }
-        incomingEl.innerHTML = invites.map(inv => {
-            const opponent = inv.white.uid === me ? inv.black : inv.white;
-            return `<div class="play-mode-card ai-coach" style="margin-bottom:10px;text-align:left;">
-                <div class="play-mode-icon">♞</div>
-                <div class="play-mode-title">${escapeHtml(opponent.name || opponent.email)} invited you</div>
-                <div class="play-mode-desc">Live chess • accept or decline.</div>
-                <div style="display:flex;gap:8px;margin-top:10px;">
-                    <button class="bot-play-btn" data-accept="${inv.id}">Accept</button>
-                    <button class="back-btn" data-decline="${inv.id}">Decline</button>
-                </div>
-            </div>`;
-        }).join('');
+    if (incomingEl) {
+        if (invitesUnsub) invitesUnsub();
+        invitesUnsub = window.MF.listenToMyChessInvites(me, (invites) => {
+            if (!invites.length) { incomingEl.innerHTML = ''; return; }
+            incomingEl.innerHTML = invites.map(inv => {
+                const opponent = inv.white.uid === me ? inv.black : inv.white;
+                return `<div class="play-mode-card ai-coach" style="margin-bottom:10px;text-align:left;">
+                    <div class="play-mode-icon">♞</div>
+                    <div class="play-mode-title">${escapeHtml(opponent.name || opponent.email)} invited you</div>
+                    <div class="play-mode-desc">Live chess • accept or decline.</div>
+                    <div style="display:flex;gap:8px;margin-top:10px;">
+                        <button class="bot-play-btn" data-accept="${inv.id}">Accept</button>
+                        <button class="back-btn" data-decline="${inv.id}">Decline</button>
+                    </div>
+                </div>`;
+            }).join('');
 
-        incomingEl.querySelectorAll('[data-accept]').forEach(b => {
-            b.addEventListener('click', () => joinLiveGame(b.dataset.accept));
-        });
-        incomingEl.querySelectorAll('[data-decline]').forEach(b => {
-            b.addEventListener('click', () => {
-                window.MF.abortFriendChessGame(b.dataset.decline, me);
+            incomingEl.querySelectorAll('[data-accept]').forEach(b => {
+                b.addEventListener('click', () => joinLiveGame(b.dataset.accept));
+            });
+            incomingEl.querySelectorAll('[data-decline]').forEach(b => {
+                b.addEventListener('click', () => {
+                    window.MF.abortFriendChessGame(b.dataset.decline, me);
+                });
             });
         });
-    });
+    }
 }
-window.showFriendMenu = showFriendMenu;
 
 async function inviteFriendToChess(friendUid) {
     const me = window.__musalingoUid;
     if (!me || !friendUid) { alert('Could not invite.'); return; }
+    if (!FIREBASE_READY) { alert('Friend games are unavailable — could not reach server.'); return; }
 
     let friend = null;
     try {
@@ -1815,6 +1891,7 @@ async function inviteFriendToChess(friendUid) {
 function joinLiveGame(gameId) {
     const me = window.__musalingoUid;
     if (!me) return;
+    if (!FIREBASE_READY) { alert('Friend games are unavailable — could not reach server.'); return; }
     window.MF.acceptFriendChessGame(gameId, me).then(() => {
         liveGameId = gameId;
         lastSeenRemoteMoveCount = 0;
@@ -1822,7 +1899,6 @@ function joinLiveGame(gameId) {
         subscribeToLiveGame();
     });
 }
-window.joinLiveGame = joinLiveGame;
 
 function startLiveGameView() {
     hideAllPlaySubviews();
@@ -1841,6 +1917,7 @@ function startLiveGameView() {
 }
 
 function subscribeToLiveGame() {
+    if (!FIREBASE_READY) return;
     if (liveUnsub) liveUnsub();
     liveUnsub = window.MF.listenToChessGame(liveGameId, (remote) => {
         if (!remote) return;
@@ -1870,17 +1947,36 @@ function applyRemoteGameState(remote) {
             if (toSq) capturedPiece = boardState[toSq.r][toSq.c]?.[1] || null;
         }
 
-        const parsed = parseFen(remote.fen);
+        // FIX: guard parseFen against malformed remote FEN
+        let parsed;
+        try {
+            parsed = parseFen(remote.fen);
+        } catch (err) {
+            console.warn('[matches] Could not parse remote FEN:', remote.fen, err);
+            return;
+        }
+
         boardState = parsed.board;
         turn = parsed.turn;
         castlingRights = parsed.castling;
         enPassant = parsed.ep;
         halfmoveClock = parsed.halfmoveClock;
         fullmoveNumber = parsed.fullmoveNumber;
-        lastMove = null;
 
-        // Keep local gameMoves in sync with the remote history so
-        // post-game analysis reflects what actually happened.
+        // FIX: set lastMove from remote so opponent's last move highlights
+        if (lastRemoteMove) {
+            const fromSq = squareFromName(lastRemoteMove.from);
+            const toSq = squareFromName(lastRemoteMove.to);
+            if (fromSq && toSq) {
+                lastMove = { fr: fromSq.r, fc: fromSq.c, tr: toSq.r, tc: toSq.c };
+            } else {
+                lastMove = null;
+            }
+        } else {
+            lastMove = null;
+        }
+
+        // Keep local gameMoves in sync (analysis is disabled for friend games anyway)
         if (lastRemoteMove && hasUnseenMove) {
             const fromSq = squareFromName(lastRemoteMove.from);
             const toSq = squareFromName(lastRemoteMove.to);
@@ -1906,7 +2002,7 @@ function applyRemoteGameState(remote) {
         renderBoard();
         updateLiveStatus();
 
-        if (lastRemoteMove && !wasMyMove) {
+        if (lastRemoteMove && !wasMyMove && window.SFX) {
             if (capturedPiece) SFX.captureOpponent(capturedPiece);
             else SFX.moveOpponent();
         }
@@ -1948,17 +2044,19 @@ function showLiveResult(remote) {
     document.getElementById("resultModal").classList.add("active");
     showMatchReward(isDraw ? 'drawn' : iWon ? 'won' : 'lost');
 
-    if (isDraw) { /* no sound */ }
-    else if (iWon) SFX.win();
-    else SFX.lose();
+    if (window.SFX) {
+        if (isDraw) { /* no sound */ }
+        else if (iWon) SFX.win();
+        else SFX.lose();
+    }
 }
 
 /* ============ BOOT ============ */
 document.addEventListener('DOMContentLoaded', () => {
     positionHistory = [positionKey(boardState, turn, castlingRights, enPassant)];
     renderBoard();
-    setTimeout(fitBoards, 300);
-    setTimeout(fitBoards, 800);
+    setTimeout(() => window.fitBoards?.(), 300);
+    setTimeout(() => window.fitBoards?.(), 800);
 
     const params = new URLSearchParams(window.location.search);
     const challengeUid = params.get('challenge');
@@ -1972,10 +2070,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => joinLiveGame(gameId), 100);
     }
 });
+
 /* ============ GLOBAL HANDLERS FOR INLINE onclick ============ */
-/* ES modules do not share scope with the HTML file.  Every function */
-/* referenced from an onclick="..." attribute in matches.html must   */
-/* be explicitly attached to window, or the click silently fails.    */
 window.start1v1 = start1v1;
 window.showBotMenu = showBotMenu;
 window.startAICoachGame = startAICoachGame;
@@ -1995,14 +2091,13 @@ window.hintMove = hintMove;
 window.resignGame = resignGame;
 window.offerDraw = offerDraw;
 window.setOpponent = setOpponent;
-/* ============ EXTRA GLOBAL HANDLERS ============ */
+
 window.toggleBoardFocus = function () {
     const layout = document.querySelector('.play-layout');
     const btn = document.getElementById('focusBtn');
     if (!layout) return;
     const hidden = layout.classList.toggle('panel-hidden');
     if (btn) btn.textContent = hidden ? '⛶ Show panel' : '⛶ Focus';
-    // Layout animates over .18s; refit the board after it settles
-    setTimeout(window.fitBoards, 50);
-    setTimeout(window.fitBoards, 250);
+    setTimeout(() => window.fitBoards?.(), 50);
+    setTimeout(() => window.fitBoards?.(), 250);
 };

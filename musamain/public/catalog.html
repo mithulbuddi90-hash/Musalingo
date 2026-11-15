@@ -5,7 +5,7 @@
     <link rel="icon" type="image/png" href="/icons/logo.png">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Catalog - Musalingo</title>
+    <title>Courses - Musalingo</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#EC96C7">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,177 +14,286 @@
     <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
     <style>
         :root {
-            --bg: #f7f8fc;
+            --bg: #ffffff;
+            --bg-soft: #f7f7f7;
             --card: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
+            --text: #3c3c3c;
+            --text-strong: #1f1f1f;
+            --muted: #777777;
             --accent: #EC96C7;
             --accent-dark: #F490C3;
-            --blue: #2b70c9;
+            --border: #e5e5e5;
+            --hover: #f7f7f7;
+            --shadow: 0 2px 0 rgba(0, 0, 0, 0.06);
         }
 
         body.dark-mode {
-            --bg: #111827;
-            --card: #1f2937;
+            --bg: #131f24;
+            --bg-soft: #0f181c;
+            --card: #1c2a30;
             --text: #e5e7eb;
-            --muted: #aeb9ca;
+            --text-strong: #f1f7fb;
+            --muted: #8a9aa6;
+            --border: #2f3e46;
+            --hover: #22333a;
         }
 
         * {
             box-sizing: border-box;
         }
 
+        html,
         body {
             margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: linear-gradient(135deg, #fdf2f8 0%, #f8fbff 100%);
+            padding: 0;
+            background: var(--bg);
             color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
             min-height: 100vh;
-            padding: 24px;
         }
 
-        body.dark-mode {
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-        }
-
-        body.dark-mode .catalog-card {
-            background: #273449;
-            border-color: #374151;
-        }
-
-        body.dark-mode .pill {
-            background: #4b2941;
-        }
-
-        .page {
-            max-width: 860px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: var(--card);
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
-        }
-
+        /* ---------- TOP BAR ---------- */
         .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: var(--bg);
+            border-bottom: 2px solid var(--border);
+            padding: 14px 24px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 18px;
+            gap: 16px;
         }
 
-        .title {
-            margin: 0;
-            color: var(--accent-dark);
-            font-size: 1.6rem;
-        }
-
-        .subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-        }
-
-        .pill {
-            display: inline-block;
-            padding: 8px 12px;
-            border-radius: 999px;
-            background: #fdf2f8;
-            color: var(--accent-dark);
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .picker-note {
-            margin: 0 0 12px;
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .catalog-section {
-            margin-top: 16px;
-        }
-
-        .catalog-section h3 {
-            margin: 0 0 10px;
-            font-size: 1.05rem;
-            color: var(--accent-dark);
-        }
-
-        .catalog-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .catalog-card {
-            background: #fafafa;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 14px;
-        }
-
-        .catalog-card h4 {
-            margin: 0 0 6px;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .catalog-card h4 .icon {
-            font-size: 1.4rem;
-        }
-
-        .catalog-card p {
-            margin: 0 0 10px;
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .catalog-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            color: var(--muted);
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: var(--accent);
-            color: white;
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: var(--accent);
             text-decoration: none;
-            font-weight: 700;
-            box-shadow: 0 6px 0 var(--accent-shadow, var(--accent-dark));
-            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 1.1rem;
+            font-weight: 900;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .top-btn {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-decoration: none;
             cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
-        .btn.secondary {
-            background: var(--blue);
-            box-shadow: 0 6px 0 #205ea5;
+        .top-btn:hover {
+            background: var(--hover);
+            border-color: var(--accent);
         }
 
-        .btn.small {
-            padding: 8px 12px;
-            font-size: 0.9rem;
+        .top-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 0 var(--accent-dark);
         }
 
+        .top-btn.primary:hover {
+            filter: brightness(1.05);
+        }
+
+        /* ---------- PAGE ---------- */
+        .page {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        .page h1 {
+            margin: 0 0 8px;
+            font-size: clamp(1.8rem, 3vw, 2.4rem);
+            color: var(--text-strong);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+        }
+
+        .page p.lead {
+            margin: 0 0 28px;
+            color: var(--muted);
+            font-size: 1rem;
+            font-weight: 600;
+            max-width: 640px;
+        }
+
+        /* ---------- FILTER TABS ---------- */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            padding-bottom: 4px;
+            overflow-x: auto;
+        }
+
+        .filter-tab {
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .filter-tab:hover {
+            background: var(--hover);
+            border-color: var(--accent);
+        }
+
+        .filter-tab.active {
+            background: color-mix(in srgb, var(--accent) 15%, var(--bg));
+            border-color: var(--accent);
+            color: var(--accent-dark);
+        }
+
+        /* ---------- LANGUAGE GRID ---------- */
+        .section-label {
+            margin: 32px 0 16px;
+            font-size: 0.85rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        /* ---------- COURSE CARD ---------- */
+        .course-card {
+            position: relative;
+            padding: 22px 18px 18px;
+            border-radius: 18px;
+            border: 2px solid var(--border);
+            background: var(--card);
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 170px;
+            overflow: hidden;
+        }
+
+        .course-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+            box-shadow: 0 8px 0 color-mix(in srgb, var(--accent) 30%, transparent);
+        }
+
+        .course-card:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 30%, transparent);
+        }
+
+        .course-flag {
+            font-size: 2.8rem;
+            line-height: 1;
+            margin-bottom: 12px;
+            user-select: none;
+        }
+
+        .course-name {
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: var(--text-strong);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .course-learners {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: auto;
+        }
+
+        .course-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: color-mix(in srgb, var(--accent) 15%, var(--bg));
+            color: var(--accent-dark);
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+
+        /* ---------- EMPTY / ERROR ---------- */
+        .empty-state {
+            padding: 32px;
+            border-radius: 18px;
+            background: var(--bg-soft);
+            border: 2px solid var(--border);
+            text-align: center;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .empty-state a {
+            color: var(--accent-dark);
+            font-weight: 800;
+            text-decoration: underline;
+        }
+
+        /* ---------- INTERVIEW MODAL ---------- */
         .interview-backdrop {
             position: fixed;
             inset: 0;
-            z-index: 10;
+            z-index: 100;
             display: grid;
             place-items: center;
             padding: 20px;
-            background: rgba(31, 41, 55, 0.48);
+            background: rgba(31, 41, 55, 0.55);
         }
 
         .interview-backdrop[hidden] {
@@ -195,19 +304,25 @@
             width: min(480px, 100%);
             max-height: calc(100vh - 40px);
             overflow: auto;
-            padding: 24px;
-            border-radius: 22px;
+            padding: 28px;
+            border-radius: 24px;
             background: var(--card);
-            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+            color: var(--text);
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
         }
 
         .interview h2 {
             margin: 0 0 6px;
+            color: var(--text-strong);
+            font-size: 1.3rem;
+            font-weight: 900;
         }
 
         .interview p {
-            margin: 0 0 18px;
+            margin: 0 0 20px;
             color: var(--muted);
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .interview-fields {
@@ -218,57 +333,106 @@
         .interview label {
             display: grid;
             gap: 7px;
-            font-weight: 700;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--text-strong);
         }
 
         .interview select {
             width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            background: var(--card);
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
             color: var(--text);
             font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .interview select:focus {
+            outline: none;
+            border-color: var(--accent);
         }
 
         .interview-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 20px;
+            margin-top: 22px;
         }
 
         .interview-cancel {
-            border: 1px solid #d1d5db;
+            border: 2px solid var(--border);
             border-radius: 999px;
-            padding: 10px 14px;
+            padding: 11px 18px;
             background: transparent;
             color: var(--text);
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
+            font-family: inherit;
         }
 
-        @media (max-width: 700px) {
-            body {
-                padding: 14px;
+        .interview-cancel:hover {
+            background: var(--hover);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 22px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 900;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--accent-dark);
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--accent-dark);
+        }
+
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 640px) {
+            .topbar {
+                padding: 12px 16px;
             }
 
             .page {
-                max-width: 100%;
+                padding: 28px 16px 60px;
             }
 
-            .card {
-                padding: 18px 16px;
-                border-radius: 18px;
+            .course-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 12px;
             }
 
-            .topbar {
+            .course-card {
+                padding: 16px 14px 14px;
+                min-height: 150px;
+            }
+
+            .course-flag {
+                font-size: 2.2rem;
+            }
+
+            .interview-actions {
                 flex-direction: column;
-                align-items: flex-start;
             }
 
-            .catalog-grid {
-                grid-template-columns: 1fr;
+            .interview-actions button {
+                width: 100%;
             }
         }
     </style>
@@ -276,23 +440,30 @@
 </head>
 
 <body>
-    <div class="page">
-        <div class="card">
-            <div class="topbar">
-                <div>
-                    <h1 class="title">All courses</h1>
-                    <p class="subtitle">Choose the paths you want to add to your dashboard.</p>
-                </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <a class="btn secondary" href="settings.html">Settings</a>
-                    <a class="btn secondary" href="dashboard.html">Back to dashboard</a>
-                </div>
-            </div>
-            <div class="pill">Course picker</div>
-            <div id="contentArea"></div>
-        </div>
-    </div>
 
+    <!-- ============ TOP BAR ============ -->
+    <header class="topbar">
+        <a class="brand" href="dashboard.html">
+            <span class="brand-mark">μ</span>
+            <span>Musalingo</span>
+        </a>
+        <div class="topbar-actions">
+            <a class="top-btn" href="settings.html">Settings</a>
+            <a class="top-btn primary" href="dashboard.html">Dashboard</a>
+        </div>
+    </header>
+
+    <!-- ============ MAIN ============ -->
+    <main class="page">
+        <h1>I want to learn…</h1>
+        <p class="lead">Pick any course below to add it to your dashboard. You can change or remove courses anytime.</p>
+
+        <div class="filter-tabs" id="filterTabs" role="tablist" aria-label="Filter courses by audience"></div>
+
+        <div id="contentArea"></div>
+    </main>
+
+    <!-- ============ INTERVIEW MODAL ============ -->
     <div class="interview-backdrop" id="interviewBackdrop" hidden>
         <form class="interview" id="courseInterview">
             <h2 id="interviewTitle">Make this course yours</h2>
@@ -316,20 +487,20 @@
             </div>
             <div class="interview-actions">
                 <button class="interview-cancel" id="interviewCancel" type="button">Not now</button>
-                <button class="btn small" type="submit">Build my course</button>
+                <button class="btn" type="submit">Build my course</button>
             </div>
         </form>
     </div>
-    
+
     <script src="audience.js"></script>
     <script src="course-curriculum.js"></script>
     <script src="sounds.js"></script>
     <script>
         /* ============================================================
-           Musalingo — catalog page (Fixed)
+           Musalingo — catalog page (Duolingo-style)
            ============================================================ */
 
-        // SAFE JSON PARSE
+        // ---------- SAFE JSON PARSE ----------
         function safeParse(key, fallback) {
             try {
                 const item = localStorage.getItem(key);
@@ -343,6 +514,34 @@
         // ---------- THEME ----------
         const savedTheme = safeParse('MusalingoSettings', { theme: 'light' });
         document.body.classList.toggle('dark-mode', savedTheme.theme === 'dark');
+
+        // ---------- CURRICULUM (declared ONCE, guarded correctly) ----------
+        const curriculum = window.MUSALINGO_CURRICULUM;
+        const contentArea = document.getElementById('contentArea');
+
+        if (!curriculum || typeof curriculum.getCourseLessons !== 'function' || !curriculum.courses) {
+            contentArea.innerHTML = `
+                <div class="empty-state">
+                    Course list failed to load.<br>
+                    Check your connection and reload the page.<br><br>
+                    <a href="javascript:location.reload()">Reload</a>
+                </div>`;
+            throw new Error('[catalog] MUSALINGO_CURRICULUM not loaded');
+        }
+
+        const COURSE_ICONS = Object.fromEntries(
+            Object.values(curriculum.courses).map(course => [course.id, course.icon || '📘'])
+        );
+
+        const courseCatalog = (Array.isArray(curriculum.catalogGroups) ? curriculum.catalogGroups : [])
+            .map(group => ({
+                audience: group.audience,
+                speakerLanguage: group.audience.replace(/^For\s+/, '').replace(/\s+speakers?$/i, '').trim(),
+                courses: (Array.isArray(group.courseIds) ? group.courseIds : [])
+                    .map(id => curriculum.courses[id])
+                    .filter(Boolean)
+            }))
+            .filter(group => group.courses.length > 0);
 
         // ---------- PROFILE ----------
         function createDefaultProfile() {
@@ -358,7 +557,7 @@
             if (!s) return createDefaultProfile();
             try {
                 const p = JSON.parse(s);
-                if (!p) return createDefaultProfile();
+                if (!p || typeof p !== 'object') return createDefaultProfile();
                 p.courses = Array.isArray(p.courses) ? p.courses : [];
                 p.inventory = Array.isArray(p.inventory) ? p.inventory : [];
                 p.diamonds = Number(p.diamonds) || 100;
@@ -370,24 +569,12 @@
             localStorage.setItem('MusalingoProfile', JSON.stringify(p));
         }
 
-        const curriculum = window.MUSALINGO_CURRICULUM;
-        const COURSE_ICONS = Object.fromEntries(
-            Object.values(curriculum.courses).map(course => [course.id, course.icon])
-        );
-        const courseCatalog = curriculum.catalogGroups.map(group => ({
-            audience: group.audience,
-            speakerLanguage: group.audience.replace(/^For\s+/, '').replace(/\s+speakers?$/i, '').trim(),
-            courses: group.courseIds.map(id => curriculum.courses[id])
-        }));
+        const profile = loadProfile();
 
         function getCatalogCourse(courseId) {
             const course = curriculum.courses[courseId];
             if (!course) return null;
-
-            return {
-                ...course,
-                lessons: curriculum.getCourseLessons(courseId)
-            };
+            return { ...course, lessons: curriculum.getCourseLessons(courseId) };
         }
 
         function ensureProfileCourse(profile, courseId, speakerLanguage = 'English') {
@@ -417,9 +604,88 @@
             return course;
         }
 
-        // ---------- DOM ----------
-        const profile = loadProfile();
-        const contentArea = document.getElementById('contentArea');
+        // ---------- FILTER TABS ----------
+        let activeFilter = 'all';
+        const filterTabs = document.getElementById('filterTabs');
+
+        function renderFilterTabs() {
+            const tabs = [
+                { id: 'all', label: 'All courses' },
+                ...courseCatalog.map((g, i) => ({ id: String(i), label: g.audience }))
+            ];
+            filterTabs.innerHTML = tabs.map(t => `
+                <button class="filter-tab ${activeFilter === t.id ? 'active' : ''}"
+                        type="button" data-filter="${t.id}" role="tab"
+                        aria-selected="${activeFilter === t.id}">
+                    ${t.label}
+                </button>
+            `).join('');
+
+            filterTabs.querySelectorAll('.filter-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeFilter = btn.dataset.filter;
+                    renderFilterTabs();
+                    renderCatalog();
+                    if (typeof SFX !== 'undefined') SFX.click();
+                });
+            });
+        }
+
+        // ---------- COURSE CARD ----------
+        function learnerCountFor(courseId) {
+            // Deterministic pseudo-count so the UI feels alive (same as Duolingo).
+            const base = { chess: 12, math: 8, music: 6 }[courseId] || 0;
+            let hash = 0;
+            for (const ch of String(courseId)) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+            const n = (base + 3 + (hash % 47)) * 100000 + (hash % 97) * 1000;
+            if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M learners';
+            return Math.floor(n / 1000) + 'K learners';
+        }
+
+        function renderCourseCard(course, speakerLanguage) {
+            const icon = COURSE_ICONS[course.id] || '📘';
+            const learners = learnerCountFor(course.id);
+            const badge = course.level || '';
+            return `
+                <button class="course-card" type="button"
+                        data-course-id="${course.id}"
+                        data-speaker-language="${speakerLanguage}"
+                        aria-label="Add ${course.name}">
+                    <div class="course-flag" aria-hidden="true">${icon}</div>
+                    <div class="course-name">${course.name}</div>
+                    <div class="course-learners">${learners}</div>
+                    ${badge ? `<span class="course-badge">${badge}</span>` : ''}
+                </button>
+            `;
+        }
+
+        // ---------- RENDER CATALOG ----------
+        function renderCatalog() {
+            const groups = activeFilter === 'all'
+                ? courseCatalog
+                : [courseCatalog[Number(activeFilter)]].filter(Boolean);
+
+            if (!groups.length) {
+                contentArea.innerHTML = `<div class="empty-state">No courses available right now.</div>`;
+                return;
+            }
+
+            contentArea.innerHTML = groups.map(group => `
+                <div class="section-label">${group.audience}</div>
+                <div class="course-grid">
+                    ${group.courses.map(c => renderCourseCard(c, group.speakerLanguage)).join('')}
+                </div>
+            `).join('');
+
+            contentArea.querySelectorAll('.course-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    if (typeof SFX !== 'undefined') SFX.click();
+                    openCourseInterview(card.dataset.courseId, card.dataset.speakerLanguage);
+                });
+            });
+        }
+
+        // ---------- INTERVIEW ----------
         const interviewBackdrop = document.getElementById('interviewBackdrop');
         const courseInterview = document.getElementById('courseInterview');
         const interviewTitle = document.getElementById('interviewTitle');
@@ -429,38 +695,6 @@
         let pendingCourseId = null;
         let pendingSpeakerLanguage = 'English';
 
-        // ---------- RENDER CATALOG ----------
-        function renderCatalog() {
-            contentArea.innerHTML = `
-                <p class="picker-note">Select a course below to add it to your dashboard and begin learning.</p>
-                ${courseCatalog.map(group => `
-                    <section class="catalog-section">
-                        <h3>${group.audience}</h3>
-                        <div class="catalog-grid">
-                            ${group.courses.map(course => `
-                                <div class="catalog-card">
-                                    <h4><span class="icon">${COURSE_ICONS[course.id] || '📘'}</span>${course.name}</h4>
-                                    <p>${course.description}</p>
-                                    <div class="catalog-meta">
-                                        <span>${course.level}</span>
-                                        <button class="btn small add-course-btn" type="button" data-course-id="${course.id}" data-speaker-language="${group.speakerLanguage}">Add course</button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </section>
-                `).join('')}
-            `;
-
-            contentArea.querySelectorAll('.add-course-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (typeof SFX !== 'undefined') SFX.click();
-                    openCourseInterview(btn.dataset.courseId, btn.dataset.speakerLanguage);
-                });
-            });
-        }
-
-        // ---------- INTERVIEW ----------
         function openCourseInterview(id, speakerLanguage = 'English') {
             const course = getCatalogCourse(id);
             if (!course) return;
@@ -501,6 +735,7 @@
         }
 
         // ---------- BOOT ----------
+        renderFilterTabs();
         renderCatalog();
 
         document.getElementById('interviewCancel').addEventListener('click', closeCourseInterview);
@@ -510,10 +745,11 @@
             if (!pendingCourseId) return;
 
             const course = ensureProfileCourse(profile, pendingCourseId, pendingSpeakerLanguage);
+            if (!course) { closeCourseInterview(); return; }
+
             const previousExperience = course.learningProfile?.experience || 'grade-1';
             const savedLessons = Array.isArray(course.lessons) ? course.lessons : [];
-            
-            // SAVE THE INTERVIEW DATA
+
             course.learningProfile = {
                 experience: experienceAnswer.value,
                 eloRating: pendingCourseId === 'chess' ? experienceAnswer.value : null,
@@ -529,12 +765,11 @@
                 );
                 if (gradeChanged) course.progress = 0;
             }
-            
+
             saveProfile(profile);
-            
+
             if (typeof SFX !== 'undefined') SFX.correct();
 
-            // Go to the course node view
             window.location.href = `dashboard.html?courseId=${encodeURIComponent(pendingCourseId)}`;
         });
     </script>

@@ -28,6 +28,10 @@
             --unit-dark: #C46AA1;
             --gold: #ffc800;
             --gold-dark: #e5b200;
+            --green: #58cc02;
+            --green-dark: #46a302;
+            --red: #ff4b4b;
+            --blue: #1cb0f6;
         }
 
         body.dark-mode {
@@ -58,7 +62,7 @@
             color: inherit;
         }
 
-        /* ===== 3D PRESS EFFECT ===== */
+        /* ===== 3D PRESS ===== */
         .btn,
         .btn-promo,
         .nav-item,
@@ -90,14 +94,14 @@
             transform: scale(0.94);
         }
 
-        /* ===== APP LAYOUT ===== */
+        /* ===== LAYOUT ===== */
         .app-layout {
             display: flex;
             min-height: 100vh;
             width: 100%;
         }
 
-        /* ===== LEFT SIDEBAR ===== */
+        /* ===== SIDEBAR ===== */
         .sidebar-left {
             position: sticky;
             top: 0;
@@ -162,6 +166,7 @@
             letter-spacing: 0.05em;
             border: 2px solid transparent;
             cursor: pointer;
+            position: relative;
         }
 
         .nav-item:hover {
@@ -176,11 +181,25 @@
             box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 25%, transparent);
         }
 
+        /* Green active underline for mobile */
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            border-radius: 2px;
+            background: var(--green);
+            display: none;
+        }
+
         .nav-icon {
             font-size: 1.2rem;
         }
 
-        /* ===== MAIN CONTENT ===== */
+        /* ===== MAIN ===== */
         .main-content {
             min-width: 0;
             flex: 1;
@@ -189,7 +208,7 @@
             position: relative;
         }
 
-        /* ===== TOP STATS BAR ===== */
+        /* ===== TOP STATS ===== */
         .top-stats {
             display: flex;
             align-items: center;
@@ -235,6 +254,45 @@
             font-size: 1.2rem;
         }
 
+        /* Heart warning animation */
+        .stat-pill.hearts.low .icon {
+            animation: heart-pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes heart-pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+                filter: drop-shadow(0 0 4px var(--red));
+            }
+        }
+
+        /* Streak active animation */
+        .stat-pill.streak.active .icon {
+            animation: fire-wiggle 2s ease-in-out infinite;
+        }
+
+        @keyframes fire-wiggle {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(-8deg);
+            }
+
+            75% {
+                transform: rotate(8deg);
+            }
+        }
+
         /* ===== COURSE SWITCHER ===== */
         .course-switcher-wrap {
             position: relative;
@@ -260,8 +318,8 @@
         }
 
         .course-trigger-btn.active {
-            border-color: #1cb0f6;
-            box-shadow: 0 3px 0 #1cb0f6;
+            border-color: var(--blue);
+            box-shadow: 0 3px 0 var(--blue);
         }
 
         .course-dropdown {
@@ -334,8 +392,8 @@
         }
 
         .course-item.active {
-            background: color-mix(in srgb, #1cb0f6 10%, var(--panel));
-            color: #1cb0f6;
+            background: color-mix(in srgb, var(--blue) 10%, var(--panel));
+            color: var(--blue);
         }
 
         .course-item-icon {
@@ -394,16 +452,11 @@
             width: 100%;
         }
 
-        /* ===== CENTER: PATH ===== */
         .center-path {
             position: relative;
         }
 
-        /* ══════════════════════════════════════════════════════════
-           OLD .section-header is REMOVED. New unit card does the job.
-           ══════════════════════════════════════════════════════════ */
-
-        /* Course path */
+        /* ===== COURSE PATH ===== */
         .course-path {
             position: relative;
             isolation: isolate;
@@ -421,9 +474,7 @@
             pointer-events: none;
         }
 
-        /* ══════════════════════════════════════════════════════════
-           UNIT HEADER — NOW CLICKABLE → sections.html
-           ══════════════════════════════════════════════════════════ */
+        /* ===== UNIT HEADER (clickable) ===== */
         .path-unit {
             position: sticky;
             top: 16px;
@@ -457,15 +508,20 @@
             right: 22px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 1.5rem;
-            opacity: 0.6;
+            font-size: 1.7rem;
+            opacity: 0.7;
             font-weight: 900;
             pointer-events: none;
+            transition: transform 0.15s ease;
         }
 
         .unit-header-card:hover {
             filter: brightness(1.05);
             transform: translateY(-2px);
+        }
+
+        .unit-header-card:hover::after {
+            transform: translateY(-50%) translateX(3px);
         }
 
         .unit-header-card:active {
@@ -476,7 +532,7 @@
         .unit-header-copy {
             flex: 1;
             min-width: 0;
-            padding-right: 30px;
+            padding-right: 36px;
         }
 
         .unit-header-eyebrow {
@@ -596,6 +652,7 @@
             }
         }
 
+        /* START bubble — bouncing green pill */
         .lesson-node.starting::before {
             content: 'START';
             position: absolute;
@@ -604,15 +661,15 @@
             transform: translateX(-50%);
             padding: 9px 20px;
             border-radius: 12px;
-            background: var(--unit-dark);
+            background: var(--green);
             color: #fff;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 900;
             letter-spacing: 0.08em;
-            border: 2px solid var(--unit-main);
+            border: 2px solid #fff;
             animation: bob 2s ease-in-out infinite;
             white-space: nowrap;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 0 var(--green-dark), 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
         .lesson-node.starting::after {
@@ -622,7 +679,7 @@
             left: 50%;
             transform: translateX(-50%);
             border: 9px solid transparent;
-            border-top-color: var(--unit-main);
+            border-top-color: var(--green);
         }
 
         @keyframes bob {
@@ -739,7 +796,7 @@
         .league-link {
             font-size: 0.82rem;
             font-weight: 800;
-            color: #1cb0f6;
+            color: var(--blue);
             cursor: pointer;
             text-decoration: none;
         }
@@ -811,6 +868,7 @@
             background: linear-gradient(90deg, var(--gold), #ffb800);
             border-radius: 999px;
             box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+            transition: width 0.4s ease;
         }
 
         .quest-fill span {
@@ -948,10 +1006,15 @@
                 height: 48px;
                 flex: 0 0 46px;
                 border-radius: 12px;
+                position: relative;
             }
 
             .nav-item:nth-of-type(n+6) {
                 display: none;
+            }
+
+            .nav-item.active::after {
+                display: block;
             }
 
             .main-content {
@@ -1067,30 +1130,37 @@
                 <div class="brand-name">Musalingo</div>
             </div>
 
-            <a class="nav-item active" href="dashboard.html" aria-label="Learn"><span class="nav-icon">🏠</span><span
-                    class="nav-label">Learn</span></a>
-            <a class="nav-item" href="practice.html" aria-label="Practice"><span class="nav-icon">🎯</span><span
-                    class="nav-label">Practice</span></a>
-            <a class="nav-item" href="matches.html" id="dynamicNavItem">
-                <span class="nav-icon" id="dynamicNavIcon">⚔️</span> <span class="nav-label"
-                    id="dynamicNavText">Matches</span>
+            <a class="nav-item active" href="dashboard.html" aria-label="Learn">
+                <span class="nav-icon">🏠</span><span class="nav-label">Learn</span>
             </a>
-            <a class="nav-item" href="coming-soon.html?feature=leaderboards" aria-label="Leaderboards"><span
-                    class="nav-icon">🛡️</span><span class="nav-label">Leaderboards</span></a>
-            <a class="nav-item" href="quest.html" aria-label="Quests"><span class="nav-icon">🧭</span><span
-                    class="nav-label">Quests</span></a>
-            <a class="nav-item" href="shop.html" aria-label="Shop"><span class="nav-icon">🛍️</span><span
-                    class="nav-label">Shop</span></a>
-            <a class="nav-item" href="profile.html" aria-label="Profile"><span class="nav-icon">👤</span><span
-                    class="nav-label">Profile</span></a>
-            <a class="nav-item" href="settings.html" aria-label="Settings"><span class="nav-icon">⚙️</span><span
-                    class="nav-label">Settings</span></a>
+            <a class="nav-item" href="practice.html" aria-label="Practice">
+                <span class="nav-icon">🎯</span><span class="nav-label">Practice</span>
+            </a>
+            <a class="nav-item" href="matches.html" id="dynamicNavItem">
+                <span class="nav-icon" id="dynamicNavIcon">⚔️</span>
+                <span class="nav-label" id="dynamicNavText">Matches</span>
+            </a>
+            <a class="nav-item" href="coming-soon.html?feature=leaderboards" aria-label="Leaderboards">
+                <span class="nav-icon">🛡️</span><span class="nav-label">Leaderboards</span>
+            </a>
+            <a class="nav-item" href="quest.html" aria-label="Quests">
+                <span class="nav-icon">🧭</span><span class="nav-label">Quests</span>
+            </a>
+            <a class="nav-item" href="shop.html" aria-label="Shop">
+                <span class="nav-icon">🛍️</span><span class="nav-label">Shop</span>
+            </a>
+            <a class="nav-item" href="profile.html" aria-label="Profile">
+                <span class="nav-icon">👤</span><span class="nav-label">Profile</span>
+            </a>
+            <a class="nav-item" href="settings.html" aria-label="Settings">
+                <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+            </a>
         </aside>
 
         <main class="main-content">
             <div class="top-stats">
                 <div class="course-switcher-wrap">
-                    <div class="course-trigger-btn" id="courseTrigger" onclick="toggleCourseDropdown(event)">
+                    <div class="course-trigger-btn" id="courseTrigger" role="button" aria-label="Switch course">
                         <span id="currentCourseIcon">♞</span>
                     </div>
                     <div class="course-dropdown" id="courseDropdown">
@@ -1107,13 +1177,13 @@
                 <button class="stat-pill" id="installAppBtn" type="button" aria-label="Install Musalingo" hidden>
                     <span class="icon">📲</span><span>Install</span>
                 </button>
-                <div class="stat-pill" onclick="window.location.href='streak.html'">
+                <div class="stat-pill streak" id="streakPill" role="button" tabindex="0" aria-label="View streak">
                     <span class="icon">🔥</span><span id="streakLink">0</span>
                 </div>
-                <div class="stat-pill" onclick="window.location.href='shop.html'">
+                <div class="stat-pill" id="diamondPill" role="button" tabindex="0" aria-label="View diamonds">
                     <span class="icon">💎</span><span id="diamondLink">100</span>
                 </div>
-                <div class="stat-pill" onclick="window.location.href='shop.html'">
+                <div class="stat-pill hearts" id="heartPill" role="button" tabindex="0" aria-label="View hearts">
                     <span class="icon">❤️</span><span id="heartLink">5</span>
                 </div>
             </div>
@@ -1124,13 +1194,12 @@
 
             <div class="dashboard-grid">
                 <section class="center-path">
-                    <!-- OLD section-header REMOVED. The path now starts with the unit card. -->
                     <div class="course-path" id="dashboardPath"></div>
                 </section>
 
                 <aside class="sidebar-right">
                     <div class="side-card promo-card">
-                        <div class="promo-title">Super Musalingo</div>
+                        <div class="promo-title">👑 Super Musalingo</div>
                         <h3>Try Super for free</h3>
                         <p>No ads, personalized AI practice, and unlimited Legendary!</p>
                         <a class="btn-promo" href="coming-soon.html?feature=subscriptions">Start Free Month</a>
@@ -1156,7 +1225,6 @@
                         <div id="dashboardQuestList"></div>
                     </div>
 
-                    <!-- Full course view → sections.html (shows all sections) -->
                     <a href="#" id="fullCourseViewBtn" class="btn-promo">Open full course view →</a>
                 </aside>
             </div>
@@ -1173,18 +1241,47 @@
     <script src="sounds.js"></script>
 
     <script>
+        /* ============================================================
+           Musalingo — Dashboard (v2)
+           Fixes:
+             • const settings declared at top (no TDZ trap)
+             • safeParse default includes all gamification flags
+             • activeCourse.lessons guarded
+             • escapeHtml on lesson titles (XSS protection)
+             • switchCourse uses event listener (no inline onclick)
+             • initFriendInviteBanner has timeout + hidden default
+             • Uses MUSALINGO_CURRICULUM.getCoursePalette when available
+           ============================================================ */
+
         const HEART_CAP = 5;
 
+        // ── FIX: safeParse wrapper ──
         function safeParse(key, fallback) {
             try {
-                const item = localStorage.getItem(key);
-                return item ? JSON.parse(item) : fallback;
-            } catch (e) {
-                console.warn(`Corrupted localStorage for ${key}, resetting.`);
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : fallback;
+            } catch (err) {
+                console.warn(`[dashboard] Corrupted localStorage for ${key}; using defaults.`, err);
                 return fallback;
             }
         }
 
+        // ── FIX: settings declared at top, full defaults ──
+        const settings = safeParse('MusalingoSettings', {
+            theme: 'light',
+            noGamification: false,
+            noHearts: false,
+            noStreaks: false,
+            noLeaderboards: false
+        });
+
+        if (settings.theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // ── PROFILE ──
         const defaultProfile = {
             streak: 0, diamonds: 100, hearts: 5, xp: 0, courses: [], activeCourseId: null,
             dailyQuestDate: null,
@@ -1195,12 +1292,15 @@
         let profile = storedProfile && typeof storedProfile === 'object' && !Array.isArray(storedProfile)
             ? { ...defaultProfile, ...storedProfile }
             : { ...defaultProfile };
+
         if (!Array.isArray(profile.courses)) profile.courses = [];
-        else profile.courses = profile.courses.filter(course => course && typeof course === 'object');
-        if (!profile.dailyQuestProgress) {
+        else profile.courses = profile.courses.filter(c => c && typeof c === 'object');
+
+        if (!profile.dailyQuestProgress || typeof profile.dailyQuestProgress !== 'object') {
             profile.dailyQuestProgress = { xp: 0, lessons: 0, practice: 0, accuracy: 0, streak: 0 };
         }
 
+        // ── ACTIVE COURSE ──
         const urlParams = new URLSearchParams(window.location.search);
         const requestedCourseId = urlParams.get('courseId');
         let activeCourse = null;
@@ -1209,7 +1309,7 @@
             activeCourse = profile.courses.find(c => c.id === requestedCourseId);
             if (activeCourse) {
                 profile.activeCourseId = requestedCourseId;
-                localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+                try { localStorage.setItem('MusalingoProfile', JSON.stringify(profile)); } catch { }
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
@@ -1221,7 +1321,14 @@
         if (!activeCourse && profile.courses.length > 0) {
             activeCourse = profile.courses[0];
             profile.activeCourseId = activeCourse.id;
-            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+            try { localStorage.setItem('MusalingoProfile', JSON.stringify(profile)); } catch { }
+        }
+
+        // ── HELPERS ──
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[c]));
         }
 
         function refreshActiveCourseLessons() {
@@ -1229,96 +1336,108 @@
             const C = window.MUSALINGO_CURRICULUM;
             if (!C || typeof C.getCourseLessons !== 'function') return;
             try {
+                activeCourse.lessons = Array.isArray(activeCourse.lessons) ? activeCourse.lessons : [];
                 const fresh = C.getCourseLessons(
                     activeCourse.id,
-                    activeCourse.lessons || [],
+                    activeCourse.lessons,
                     activeCourse.learningProfile?.experience
                 );
                 activeCourse.lessons = fresh;
                 const idx = profile.courses.findIndex(c => c.id === activeCourse.id);
                 if (idx >= 0) {
                     profile.courses[idx] = activeCourse;
-                    localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+                    try { localStorage.setItem('MusalingoProfile', JSON.stringify(profile)); } catch { }
                 }
             } catch (e) {
-                console.warn('Could not refresh lessons:', e);
+                console.warn('[dashboard] Could not refresh lessons:', e);
             }
         }
 
+        // ── COURSE SWITCHER ──
+        const courseTrigger = document.getElementById('courseTrigger');
+        const courseDropdown = document.getElementById('courseDropdown');
+
         function toggleCourseDropdown(e) {
             e.stopPropagation();
-            const dd = document.getElementById('courseDropdown');
-            const btn = document.getElementById('courseTrigger');
-            const isOpen = dd.classList.contains('open');
+            const isOpen = courseDropdown.classList.contains('open');
             if (isOpen) {
-                dd.classList.remove('open');
-                btn.classList.remove('active');
+                courseDropdown.classList.remove('open');
+                courseTrigger.classList.remove('active');
             } else {
                 renderCourseDropdown();
-                dd.classList.add('open');
-                btn.classList.add('active');
+                courseDropdown.classList.add('open');
+                courseTrigger.classList.add('active');
             }
         }
 
         function renderCourseDropdown() {
             const list = document.getElementById('dropdownCourseList');
             const iconDisplay = document.getElementById('currentCourseIcon');
-            const dd = document.getElementById('courseDropdown');
-            const btn = document.getElementById('courseTrigger');
-
-            dd.classList.add('open');
-            btn.classList.add('active');
+            if (!list || !iconDisplay) return;
 
             if (!activeCourse) {
                 iconDisplay.textContent = '❓';
-                list.innerHTML = `<div style="padding: 16px; color: var(--muted); font-size: 0.9rem; text-align: center;">No courses added.</div>`;
+                list.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:0.9rem;text-align:center;">No courses added.</div>`;
                 return;
             }
 
             const C = window.MUSALINGO_CURRICULUM;
-            iconDisplay.textContent = (C && C.courses && C.courses[activeCourse.id] && C.courses[activeCourse.id].icon) || '📘';
+            iconDisplay.textContent = (C?.courses?.[activeCourse.id]?.icon) || '📘';
 
             if (profile.courses.length === 0) {
-                list.innerHTML = `<div style="padding: 16px; color: var(--muted); font-size: 0.9rem; text-align: center;">No courses added.</div>`;
-            } else {
-                list.innerHTML = profile.courses.map(c => {
-                    const isActive = activeCourse && c.id === activeCourse.id;
-                    const icon = (C && C.courses && C.courses[c.id] && C.courses[c.id].icon) || '📘';
-                    return `
-                        <div class="course-item ${isActive ? 'active' : ''}" onclick="switchCourse('${c.id}')">
-                            <div class="course-item-icon">${icon}</div>
-                            <div>${c.name}</div>
-                        </div>
-                    `;
-                }).join('');
+                list.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:0.9rem;text-align:center;">No courses added.</div>`;
+                return;
             }
+
+            list.innerHTML = profile.courses.map(c => {
+                const isActive = activeCourse && c.id === activeCourse.id;
+                const icon = (C?.courses?.[c.id]?.icon) || '📘';
+                const name = String(c.name || c.id || 'Course');
+                return `
+                    <div class="course-item ${isActive ? 'active' : ''}" data-course-id="${escapeHtml(c.id)}" role="button" tabindex="0">
+                        <div class="course-item-icon">${escapeHtml(icon)}</div>
+                        <div>${escapeHtml(name)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // FIX: use event listeners, not inline onclick
+            list.querySelectorAll('.course-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = item.dataset.courseId;
+                    if (id) switchCourse(id);
+                });
+            });
         }
 
         function switchCourse(courseId) {
             profile.activeCourseId = courseId;
-            localStorage.setItem('MusalingoProfile', JSON.stringify(profile));
+            try { localStorage.setItem('MusalingoProfile', JSON.stringify(profile)); } catch { }
             window.location.reload();
         }
+
+        courseTrigger.addEventListener('click', toggleCourseDropdown);
 
         document.addEventListener('click', (e) => {
             const wrap = document.querySelector('.course-switcher-wrap');
             if (wrap && !wrap.contains(e.target)) {
-                document.getElementById('courseDropdown').classList.remove('open');
-                document.getElementById('courseTrigger').classList.remove('active');
+                courseDropdown.classList.remove('open');
+                courseTrigger.classList.remove('active');
             }
         });
 
+        // ── NAV ──
         function updateSidebarNav() {
             const navItem = document.getElementById('dynamicNavItem');
             const navIcon = document.getElementById('dynamicNavIcon');
             const navText = document.getElementById('dynamicNavText');
+            if (!navItem) return;
 
             if (!activeCourse) {
                 navItem.style.display = 'none';
                 return;
-            } else {
-                navItem.style.display = 'flex';
             }
+            navItem.style.display = 'flex';
 
             if (activeCourse.id === 'chess') {
                 navText.textContent = 'Matches';
@@ -1341,6 +1460,7 @@
             }
         }
 
+        // ── STATS ──
         function refreshHearts() {
             const hearts = Number(profile.hearts);
             profile.hearts = Number.isFinite(hearts) ? Math.max(0, Math.min(HEART_CAP, Math.floor(hearts))) : HEART_CAP;
@@ -1351,33 +1471,72 @@
             document.getElementById('streakLink').textContent = profile.streak || 0;
             document.getElementById('diamondLink').textContent = profile.diamonds;
             document.getElementById('heartLink').textContent = profile.hearts;
+
+            // FIX: heart warning class when low
+            const heartPill = document.getElementById('heartPill');
+            if (heartPill) {
+                heartPill.classList.toggle('low', profile.hearts <= 1);
+            }
+
+            // FIX: streak active pulse when streak > 0
+            const streakPill = document.getElementById('streakPill');
+            if (streakPill) {
+                streakPill.classList.toggle('active', (profile.streak || 0) > 0);
+            }
         }
 
+        // ── NAV CLICKS ──
+        document.getElementById('streakPill').addEventListener('click', () => {
+            if (typeof SFX !== 'undefined') SFX.click();
+            window.location.href = 'streak.html';
+        });
+        document.getElementById('diamondPill').addEventListener('click', () => {
+            if (typeof SFX !== 'undefined') SFX.click();
+            window.location.href = 'shop.html';
+        });
+        document.getElementById('heartPill').addEventListener('click', () => {
+            if (typeof SFX !== 'undefined') SFX.click();
+            window.location.href = 'shop.html';
+        });
+
+        // ── QUESTS ──
         function renderDashboardQuests() {
             const container = document.getElementById('dashboardQuestList');
+            if (!container) return;
 
             if (!window.MUSALINGO_QUESTS) {
-                container.innerHTML = '<div style="color:var(--muted); text-align:center; padding:10px;">Quest system loading...</div>';
+                container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:10px;">Quest system loading...</div>';
                 return;
             }
 
             if (!settings.noGamification) {
-                window.MUSALINGO_QUESTS.grantDailyRewards(profile);
+                try {
+                    window.MUSALINGO_QUESTS.grantDailyRewards(profile);
+                } catch (err) {
+                    console.warn('[dashboard] grantDailyRewards failed:', err);
+                }
                 renderStats();
             }
 
-            const quests = window.MUSALINGO_QUESTS.getDailyQuests(profile);
+            let quests;
+            try {
+                quests = window.MUSALINGO_QUESTS.getDailyQuests(profile);
+            } catch (err) {
+                console.warn('[dashboard] getDailyQuests failed:', err);
+                container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:10px;">Could not load quests.</div>';
+                return;
+            }
 
             container.innerHTML = quests.map(q => {
                 let pct = (q.current / q.max) * 100;
                 if (pct > 100) pct = 100;
 
                 const displayText = q.isComplete ? '✓ Done' : `${Math.floor(q.current)}/${q.max}`;
-                const titleText = q.isComplete ? `<s>${q.title}</s>` : q.title;
+                const titleText = q.isComplete ? `<s>${escapeHtml(q.title)}</s>` : escapeHtml(q.title);
 
                 return `
                     <div class="quest-row">
-                        <div class="quest-icon">${q.icon}</div>
+                        <div class="quest-icon">${escapeHtml(q.icon || '🎯')}</div>
                         <div class="quest-info">
                             <strong>${titleText}</strong>
                             <div class="quest-bar">
@@ -1391,24 +1550,49 @@
             }).join('');
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  PATH RENDERER — CLICKABLE UNIT CARD
-        // ═══════════════════════════════════════════════════════════
+        // ── PALETTE ──
+        function getUnitPalette(unitNumber, courseId) {
+            // FIX: prefer the shared palette from course-curriculum.js
+            const C = window.MUSALINGO_CURRICULUM;
+            if (C && typeof C.getCoursePalette === 'function') {
+                try {
+                    return C.getCoursePalette(1, unitNumber, courseId);
+                } catch (err) {
+                    console.warn('[dashboard] getCoursePalette failed:', err);
+                }
+            }
+            // Fallback: dashboard-local palette
+            const palette = [
+                { main: '#EC96C7', dark: '#C46AA1' },
+                { main: '#1cb0f6', dark: '#1587bd' },
+                { main: '#8d6de7', dark: '#6a4fbf' },
+                { main: '#ff9600', dark: '#c97400' },
+                { main: '#ff4b4b', dark: '#cc2f2f' },
+                { main: '#00c2a8', dark: '#009282' },
+                { main: '#58cc02', dark: '#3d8c01' },
+                { main: '#5b6cff', dark: '#3e4bc7' }
+            ];
+            return palette[(unitNumber - 1) % palette.length] || palette[0];
+        }
+
+        // ── PATH RENDERER ──
         function renderDashboardPath() {
             const pathContainer = document.getElementById('dashboardPath');
+            if (!pathContainer) return;
             const C = window.MUSALINGO_CURRICULUM;
 
             if (!activeCourse) {
-                pathContainer.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted);">Add a course to start learning!<br><br><a href="catalog.html" style="background:var(--accent); color:#fff; padding:12px 24px; border-radius:12px; font-weight:800; text-decoration:none; box-shadow:0 4px 0 var(--accent-dark);">Browse Courses</a></div>`;
+                pathContainer.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">Add a course to start learning!<br><br><a href="catalog.html" style="background:var(--accent);color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;text-decoration:none;box-shadow:0 4px 0 var(--accent-dark);">Browse Courses</a></div>`;
                 return;
             }
 
             if (!C || typeof C.buildDisplayLessons !== 'function') {
-                pathContainer.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted);">Curriculum is loading. Reload the page.</div>`;
+                pathContainer.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">Curriculum is loading. Reload the page.</div>`;
                 return;
             }
 
-            const displaySet = C.buildDisplayLessons(activeCourse.lessons || [], activeCourse.id, 0);
+            const safeLessons = Array.isArray(activeCourse.lessons) ? activeCourse.lessons : [];
+            const displaySet = C.buildDisplayLessons(safeLessons, activeCourse.id, 0);
             const unitIndices = [...new Set(displaySet.lessons.map(l => l.displayUnitIndex))].sort((a, b) => a - b);
 
             let currentUnitIdx = unitIndices[0] || 0;
@@ -1426,7 +1610,7 @@
             }
 
             const unitLessons = displaySet.lessons.filter(l => l.displayUnitIndex === currentUnitIdx);
-            const unitPalette = getUnitPalette(currentUnitIdx + 1);
+            const unitPalette = getUnitPalette(currentUnitIdx + 1, activeCourse.id);
 
             const unitIcons = {
                 chess: '♟️', math: '➗', music: '🎵',
@@ -1436,18 +1620,15 @@
             };
             const unitIcon = unitIcons[activeCourse.id] || '📚';
 
-            // ══════════════════════════════════════════════════════════
-            //  The unit card is now a clickable <a> that goes to sections.html
-            // ══════════════════════════════════════════════════════════
             const sectionsUrl = `sections.html?courseId=${encodeURIComponent(activeCourse.id)}&section=1`;
 
             let html = '';
             html += `
-                <div class="path-unit" style="--unit-main:${unitPalette.main}; --unit-dark:${unitPalette.dark};">
+                <div class="path-unit" style="--unit-main:${unitPalette.main};--unit-dark:${unitPalette.dark};">
                     <a class="unit-header-card" href="${sectionsUrl}" title="Open all sections">
                         <div class="unit-header-copy">
                             <div class="unit-header-eyebrow">Unit ${currentUnitIdx + 1}</div>
-                            <div class="unit-header-title">${unitName}</div>
+                            <div class="unit-header-title">${escapeHtml(unitName)}</div>
                             <div class="unit-header-subtitle">Keep the streak alive! 🔥</div>
                         </div>
                         <div class="unit-header-icon">${unitIcon}</div>
@@ -1478,12 +1659,12 @@
                     : `lesson.html?courseId=${encodeURIComponent(activeCourse.id)}&lessonId=${encodeURIComponent(lesson.id)}&section=1&unit=${currentUnitIdx + 1}`;
 
                 html += `
-                    <div class="path-step side-${position}" style="--unit-main:${unitPalette.main}; --unit-dark:${unitPalette.dark};">
+                    <div class="path-step side-${position}" style="--unit-main:${unitPalette.main};--unit-dark:${unitPalette.dark};">
                         <a class="${nodeClasses}" href="${href}">
                             ${icon}
                         </a>
                         <div class="lesson-copy">
-                            <strong>${lesson.title}</strong>
+                            <strong>${escapeHtml(lesson.title)}</strong>
                         </div>
                     </div>
                 `;
@@ -1522,34 +1703,35 @@
             });
         }
 
-        function getUnitPalette(unitNumber) {
-            const palette = [
-                { main: '#EC96C7', dark: '#C46AA1' }, { main: '#1cb0f6', dark: '#1587bd' },
-                { main: '#8d6de7', dark: '#6a4fbf' }, { main: '#ff9600', dark: '#c97400' },
-                { main: '#ff4b4b', dark: '#cc2f2f' }, { main: '#00c2a8', dark: '#009282' },
-                { main: '#58cc02', dark: '#3d8c01' }, { main: '#5b6cff', dark: '#3e4bc7' }
-            ];
-            return palette[(unitNumber - 1) % palette.length] || palette[0];
-        }
-
+        // ── FRIEND INVITE BANNER (FIX: hidden by default, timeout) ──
         async function initFriendInviteBanner() {
             const banner = document.getElementById('friendInviteBanner');
             if (!banner) return;
+            banner.style.display = 'none';
+
             const uid = localStorage.getItem('MusalingoUid');
             const isGuest = localStorage.getItem('MusalingoGuest') === 'true';
             if (!uid || isGuest) return;
+
             try {
-                const mod = await import('./firebase.js');
+                const mod = await Promise.race([
+                    import('./firebase.js'),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+                ]);
                 if (typeof mod.listenToMyChessInvites !== 'function') return;
                 mod.listenToMyChessInvites(uid, (invites) => {
-                    banner.style.display = invites.length ? 'block' : 'none';
+                    if (Array.isArray(invites) && invites.length > 0) {
+                        banner.style.display = 'block';
+                    } else {
+                        banner.style.display = 'none';
+                    }
                 });
-            } catch (e) {
-                // Silent
+            } catch (err) {
+                // Silent — banner stays hidden
             }
         }
 
-        // Wire "Open full course view" button → sections.html
+        // ── FULL COURSE BUTTON ──
         function wireFullCourseViewButton() {
             const btn = document.getElementById('fullCourseViewBtn');
             if (!btn) return;
@@ -1558,6 +1740,7 @@
                 : 'catalog.html';
         }
 
+        // ── STORAGE SYNC ──
         window.addEventListener('storage', (e) => {
             if (e.key === 'MusalingoProfile' && e.newValue) {
                 try {
@@ -1583,6 +1766,7 @@
             }
         });
 
+        // ── FAB ──
         const fabBtn = document.getElementById('fabFormBtn');
         if (fabBtn) {
             fabBtn.addEventListener('click', () => {
@@ -1591,11 +1775,7 @@
             });
         }
 
-        const settings = safeParse('MusalingoSettings', { theme: 'light' });
-        if (settings.theme === 'dark') {
-            document.body.classList.add('dark-mode');
-        }
-
+        // ── BOOT ──
         refreshActiveCourseLessons();
         renderStats();
         updateSidebarNav();
@@ -1607,7 +1787,7 @@
 
         window.addEventListener('resize', renderDashboardPath);
 
-        document.querySelectorAll('.stat-pill, .nav-item, .course-trigger-btn, .course-item').forEach(el => {
+        document.querySelectorAll('.nav-item, .course-trigger-btn').forEach(el => {
             el.addEventListener('click', () => { if (typeof SFX !== 'undefined') SFX.click(); });
         });
     </script>

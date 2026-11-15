@@ -251,57 +251,77 @@
     </main>
     <script src="sounds.js"></script>
     <script src="quest.js"></script>
-    <script>
-        const profile = JSON.parse(localStorage.getItem('MusalingoProfile')) || { courses: [] };
-        const settings = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
-        profile.inventory = Array.isArray(profile.inventory) ? profile.inventory : [];
-
-        function renderQuests() {
-            if (settings.noGamification) {
-                document.getElementById('questSubtitle').textContent = 'Quests are turned off in Remove Bloat settings.';
-                document.querySelector('.note').hidden = true;
-                return;
+        <script>
+            // ── SAFE PARSE (fixes blank-page crash on corrupted localStorage) ──
+            function safeParse(key, fallback) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) return fallback;
+                    const parsed = JSON.parse(raw);
+                    return parsed && typeof parsed === 'object' ? parsed : fallback;
+                } catch (err) {
+                    console.warn(`[quest] Corrupted localStorage for ${key}; using defaults.`, err);
+                    return fallback;
+                }
             }
-            const quests = window.MUSALINGO_QUESTS.getDailyQuests(profile);
-            const completedCount = quests.filter(quest => quest.isComplete).length;
-            window.MUSALINGO_QUESTS.grantDailyRewards(profile);
-            document.getElementById('questList').innerHTML = quests.map(quest => {
-                const isComplete = quest.isComplete;
-                return `
-                    <article class="quest-card${isComplete ? ' completed' : ''}" role="status" aria-label="${quest.title}${isComplete ? ' completed' : ' not completed'}">
-                        <div class="quest-icon" aria-hidden="true">${quest.icon}</div>
-                        <div class="quest-copy">
-                            <h2>${quest.title}</h2>
-                            <p>${quest.detail}</p>
-                        </div>
-                        <span class="tick" aria-hidden="true">✓</span>
-                    </article>
-                `;
-            }).join('');
-            renderRewards(completedCount);
-        }
 
-        function renderRewards(completedCount) {
-            const rewards = Array.isArray(profile.dailyQuestRewards) ? profile.dailyQuestRewards : [];
-            const rewardPanel = document.getElementById('rewardPanel');
-            const rewardList = document.getElementById('rewardList');
-            if (!rewards.length) {
-                rewardPanel.hidden = true;
-                return;
+            const profile = safeParse('MusalingoProfile', { courses: [] });
+            const settings = safeParse('MusalingoSettings', {});
+            profile.inventory = Array.isArray(profile.inventory) ? profile.inventory : [];
+
+            function renderQuests() {
+                if (settings.noGamification) {
+                    document.getElementById('questSubtitle').textContent = 'Quests are turned off in Remove Bloat settings.';
+                    document.querySelector('.note').hidden = true;
+                    return;
+                }
+
+                // ── GUARD: quest.js might not have loaded ──
+                if (!window.MUSALINGO_QUESTS || typeof window.MUSALINGO_QUESTS.getDailyQuests !== 'function') {
+                    document.getElementById('questSubtitle').textContent = 'Quest system failed to load. Reload the page.';
+                    return;
+                }
+
+                const quests = window.MUSALINGO_QUESTS.getDailyQuests(profile);
+                const completedCount = quests.filter(quest => quest.isComplete).length;
+                window.MUSALINGO_QUESTS.grantDailyRewards(profile);
+                document.getElementById('questList').innerHTML = quests.map(quest => {
+                    const isComplete = quest.isComplete;
+                    return `
+                            <article class="quest-card${isComplete ? ' completed' : ''}" role="status" aria-label="${quest.title}${isComplete ? ' completed' : ' not completed'}">
+                                <div class="quest-icon" aria-hidden="true">${quest.icon}</div>
+                                <div class="quest-copy">
+                                    <h2>${quest.title}</h2>
+                                    <p>${quest.detail}</p>
+                                </div>
+                                <span class="tick" aria-hidden="true">✓</span>
+                            </article>
+                        `;
+                }).join('');
+                renderRewards(completedCount);
             }
-            rewardPanel.hidden = false;
-            rewardList.innerHTML = rewards.map((reward) => reward === 'mega-chest'
-                ? '<div class="reward-card mega"><span class="chest-icon">👑</span><div><strong>Mega Chest</strong><span>+100 diamonds</span></div></div>'
-                : '<div class="reward-card"><span class="chest-icon">🎁</span><div><strong>Quest Chest</strong><span>+25 diamonds</span></div></div>'
-            ).join('');
-        }
 
-        renderQuests();
-    </script>
+            function renderRewards(completedCount) {
+                const rewards = Array.isArray(profile.dailyQuestRewards) ? profile.dailyQuestRewards : [];
+                const rewardPanel = document.getElementById('rewardPanel');
+                const rewardList = document.getElementById('rewardList');
+                if (!rewards.length) {
+                    rewardPanel.hidden = true;
+                    return;
+                }
+                rewardPanel.hidden = false;
+                rewardList.innerHTML = rewards.map((reward) => reward === 'mega-chest'
+                    ? '<div class="reward-card mega"><span class="chest-icon">👑</span><div><strong>Mega Chest</strong><span>+100 diamonds</span></div></div>'
+                    : '<div class="reward-card"><span class="chest-icon">🎁</span><div><strong>Quest Chest</strong><span>+25 diamonds</span></div></div>'
+                ).join('');
+            }
+
+            renderQuests();
+        </script>
     <script src="theme.js"></script>
     <script src="bloat.js"></script>
     <script src="pwa.js" defer></script>
-    
+
 </body>
 
 </html>

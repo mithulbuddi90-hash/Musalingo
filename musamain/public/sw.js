@@ -1,13 +1,13 @@
 ﻿/* ============================================================
-   Musalingo — Service Worker (v35)
+   Musalingo — Service Worker (v37)
    - Caches the app shell for offline use
-   - Network-first for HTML (with 3s timeout)
+   - Network-first for HTML (with 5s timeout)
    - Cache-first for static assets
    - Never caches API calls (/api/*)
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v36';  // Update this to force a new cache
+const CACHE_VERSION = 'musalingo-v37';  // Update this to force a new cache
 
 const APP_SHELL = [
     '/',
@@ -46,11 +46,13 @@ const APP_SHELL = [
     '/quest.js',
     '/forms.html',
     '/practice.html',
-    '/settings.json',
     '/manifest.json',
     '/chessboard.css',
     '/chessboard.js',
     '/coming-soon.html',
+    '/player.html',
+    '/account-actions.js',
+    '/engine/stockfish-19-lite-single.js',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/icons/icon-maskable-192.png',
@@ -121,7 +123,7 @@ self.addEventListener('fetch', (event) => {
         });
 
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('SW: Network timeout')), 3000)
+            setTimeout(() => reject(new Error('SW: Network timeout')), 5000)
         );
 
         event.respondWith(

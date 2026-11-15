@@ -111,7 +111,7 @@ function rateLimit({ windowMs, max, name }) {
     return (req, res, next) => {
         const now = Date.now();
         let key = req.ip || 'unknown';
-        if (key.startsWith('::ffff:')) key = key.slice(7);   // ← ADD
+        if (key.startsWith('::ffff:')) key = key.slice(7);
         let entry = hits.get(key);
         if (!entry || now > entry.reset) {
             entry = { count: 0, reset: now + windowMs };
@@ -129,6 +129,7 @@ function rateLimit({ windowMs, max, name }) {
 app.use('/api/chat', rateLimit({ windowMs: 60 * 1000, max: 20, name: 'chat' }));
 app.use('/api/generate-questions', rateLimit({ windowMs: 60 * 1000, max: 30, name: 'gen' }));
 app.use('/api/send-form', rateLimit({ windowMs: 10 * 60 * 1000, max: 5, name: 'form' }));
+app.use('/api/tts', rateLimit({ windowMs: 60 * 1000, max: 120, name: 'tts' }));
 
 // ============================================================
 //  HEALTH / SELF-PING
@@ -144,6 +145,7 @@ app.get('/api/health', (req, res) => {
         models: GEMINI_MODELS,
         emailConfigured: Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS),
         firebaseConfigured: Boolean(firebaseAdminApp),
+        tts: 'enabled',
         timestamp: new Date().toISOString()
     });
 });
@@ -171,6 +173,66 @@ app.get('/api/firebase-config', (req, res) => {
 });
 
 // ============================================================
+//  TEXT-TO-SPEECH PROXY (NEW — fixes pronunciation for all languages)
+// ============================================================
+// Uses Google Translate's free unofficial TTS endpoint. Works for all
+// languages Google supports (including Telugu, Hindi, Arabic, Japanese).
+// No API key needed. Falls back to nothing if Google is unreachable —
+// sounds.js then uses Web Speech.
+app.get('/api/tts', async (req, res) => {
+    const lang = String(req.query.lang || 'en').trim().slice(0, 10);
+    const text = String(req.query.text || '').trim().slice(0, 500);
+
+    if (!text) {
+        return res.status(400).json({ error: 'Missing text' });
+    }
+
+    // Simple validation — prevent injection
+    if (!/^[a-z]{2}(-[A-Za-z]{2,4})?$/i.test(lang)) {
+        return res.status(400).json({ error: 'Invalid lang' });
+    }
+
+    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(lang)}&client=tw-ob&q=${encodeURIComponent(text)}`;
+
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(ttsUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'https://translate.google.com/'
+            },
+            signal: controller.signal
+        });
+        clearTimeout(timer);
+
+        if (!response.ok) {
+            console.warn(`[tts] Google returned ${response.status} for lang=${lang}`);
+            return res.status(502).json({ error: `TTS upstream returned ${response.status}` });
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer());
+        if (buffer.length < 100) {
+            console.warn(`[tts] Google returned tiny body for lang=${lang} (${buffer.length} bytes)`);
+            return res.status(502).json({ error: 'Empty audio from upstream' });
+        }
+
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');   // cache 24h — same word spoken = same audio
+        res.setHeader('Content-Length', String(buffer.length));
+        return res.send(buffer);
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            console.warn(`[tts] Upstream timeout for lang=${lang}`);
+            return res.status(504).json({ error: 'TTS timeout' });
+        }
+        console.warn(`[tts] Failed for lang=${lang}:`, err.message);
+        return res.status(502).json({ error: 'TTS upstream error' });
+    }
+});
+
+// ============================================================
 //  HELPERS
 // ============================================================
 const SQUARES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].flatMap(f =>
@@ -192,9 +254,6 @@ function isValidPuzzlePosition(game) {
     }
 }
 
-// ============================================================
-//  KING-HIDING LOGIC  ← NEW
-// ============================================================
 function shouldHideKings(topic, movingPiece) {
     const t = String(topic || '').toLowerCase();
     if (/check|mate|king/i.test(t)) return false;
@@ -203,7 +262,7 @@ function shouldHideKings(topic, movingPiece) {
 }
 
 // ============================================================
-//  CHESS — SINGLE-MOVE GENERATORS (updated for hideKings)
+//  CHESS GENERATORS
 // ============================================================
 function genFindMove(topic = '') {
     const whiteKing = 'a1';
@@ -230,7 +289,7 @@ function genFindMove(topic = '') {
             from: square,
             answer,
             legalMoves: moves.map(move => move.to),
-            hideKings: shouldHideKings(topic, piece),   // ← NEW
+            hideKings: shouldHideKings(topic, piece),
             prompt: `The ${pieceName(piece)} is highlighted. Tap a square where it can move.`,
             hint: `The ${pieceName(piece)} on ${square} has ${moves.length} legal moves.`
         };
@@ -268,7 +327,7 @@ function genCapture(topic = '') {
             answer: captures[0].to,
             legalMoves: legalMoves.map(move => move.to),
             captureSquares: captures.map(move => move.to),
-            hideKings: shouldHideKings(topic, movingType),   // ← NEW
+            hideKings: shouldHideKings(topic, movingType),
             prompt: `The ${pieceName(movingType)} is highlighted. Tap the piece it can capture.`,
             hint: `Look along the lines the ${pieceName(movingType)} attacks.`
         };
@@ -301,7 +360,7 @@ function genMateInOne() {
                 fen: game.fen(),
                 from: mate.from,
                 answer: mate.to,
-                hideKings: false,   // Mate-in-one always shows kings
+                hideKings: false,
                 prompt: 'Find the move that delivers checkmate.',
                 hint: 'The mating move puts the black king in check with no escape.'
             };
@@ -310,9 +369,6 @@ function genMateInOne() {
     return null;
 }
 
-// ============================================================
-//  CHESS — MULTI-MOVE GENERATORS
-// ============================================================
 function genMoveSequence(steps = 2) {
     for (let attempt = 0; attempt < 800; attempt++) {
         const game = new Chess();
@@ -376,7 +432,7 @@ function genMoveSequence(steps = 2) {
             moves,
             from: firstWhite.from,
             legalFirstMoves: legalFirst,
-            hideKings: false,   // Multi-move always shows kings
+            hideKings: false,
             prompt: `Play ${steps} move${steps > 1 ? 's' : ''}. Choose any legal continuation.`,
             hint: `You have ${steps} move${steps > 1 ? 's' : ''}. Capture or check when you can.`
         };
@@ -435,7 +491,7 @@ function genMateInN(n = 2) {
                     from: firstMove.from,
                     answer: firstMove.to,
                     legalMoves: firstWhiteMoves.map(m => m.to),
-                    hideKings: false,   // Mate-in-N always shows kings
+                    hideKings: false,
                     prompt: `Find the first move of a forced mate in ${n}.`,
                     hint: `There's a move that forces mate no matter what black plays.`
                 };
@@ -445,9 +501,6 @@ function genMateInN(n = 2) {
     return null;
 }
 
-// ============================================================
-//  CHESS — DISPATCHERS (pass topic to generators)
-// ============================================================
 function chessQuestionType(topic) {
     const t = String(topic || '').toLowerCase();
     if (/mate in 2|mate in two|mate-in-2/.test(t)) return 'mate-in-2';
@@ -470,12 +523,12 @@ function generateChessQuestions(count, level = 1, topic = '') {
             case 'mate-in-3': return genMateInN(3);
             case 'mate-in-one': return genMateInOne();
             case 'move-sequence': return genMoveSequence(2);
-            case 'capture': return genCapture(topic);   // ← pass topic
+            case 'capture': return genCapture(topic);
             case 'find-move':
             default:
-                return level >= 3 ? (pick([() => genFindMove(topic), () => genCapture(topic), genMateInOne])())   // ← pass topic
-                    : level === 2 ? (pick([() => genFindMove(topic), () => genCapture(topic)])())   // ← pass topic
-                        : genFindMove(topic);   // ← pass topic
+                return level >= 3 ? (pick([() => genFindMove(topic), () => genCapture(topic), genMateInOne])())
+                    : level === 2 ? (pick([() => genFindMove(topic), () => genCapture(topic)])())
+                        : genFindMove(topic);
         }
     };
 
@@ -487,16 +540,13 @@ function generateChessQuestions(count, level = 1, topic = '') {
 
     while (out.length < count && attempts < maxAttempts * 2) {
         attempts++;
-        const q = pick([() => genFindMove(topic), () => genCapture(topic), genMateInOne])();   // ← pass topic
+        const q = pick([() => genFindMove(topic), () => genCapture(topic), genMateInOne])();
         if (q) out.push(q);
     }
 
     return out;
 }
 
-// ============================================================
-//  CHESS — PROMPT + VALIDATOR
-// ============================================================
 function chessQuestionPrompt(topic, count, level) {
     const type = chessQuestionType(topic);
     const isMulti = type === 'mate-in-2' || type === 'mate-in-3' || type === 'move-sequence';
@@ -581,7 +631,7 @@ function normalizeChessQuestion(question, topic) {
             from: firstWhite.from,
             answer: firstWhite.to,
             legalMoves: firstLegal,
-            hideKings: false,   // Multi-move always shows kings
+            hideKings: false,
             prompt: typeof question.prompt === 'string' && question.prompt.trim()
                 ? question.prompt.trim().slice(0, 240)
                 : `Play the sequence.`,
@@ -616,7 +666,6 @@ function normalizeChessQuestion(question, topic) {
         ? question.hint.trim().slice(0, 240)
         : `The ${piece.toLowerCase()} on ${from} has ${legalMoves.length} legal moves.`;
 
-    // ← NEW: hideKings for single-move questions
     const hideKings = shouldHideKings(topic, movingPiece.type);
 
     return {
@@ -628,7 +677,7 @@ function normalizeChessQuestion(question, topic) {
         ...(requiredType === 'capture'
             ? { captureSquares: legalMoves.filter(move => move.captured).map(move => move.to) }
             : {}),
-        hideKings,   // ← NEW
+        hideKings,
         prompt,
         hint
     };
@@ -992,13 +1041,18 @@ function parseStructuredResponse(text) {
 }
 
 // ============================================================
-//  AI CALL — GEMINI
+//  AI CALL — GEMINI (FIX: default model is now gemini-2.0-flash)
 // ============================================================
 const GEMINI_KEYS = (process.env.GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
-const GEMINI_MODELS = (process.env.GEMINI_MODELS || process.env.GEMINI_MODEL || 'gemini-2.5-flash')
+
+// FIX: use gemini-2.0-flash as the safe default (2.5-flash may not exist)
+const DEFAULT_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || process.env.GEMINI_MODEL || DEFAULT_MODEL)
     .split(',')
     .map(m => m.trim())
     .filter(Boolean);
+
+console.log(`[gemini] Configured ${GEMINI_KEYS.length} key(s), models: ${GEMINI_MODELS.join(' → ')}`);
 
 const keyCooldowns = {};
 let currentKeyIndex = 0;
@@ -1025,7 +1079,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function requestGemini(model, key, payload) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
+    const timer = setTimeout(() => controller.abort(), 20000);
     try {
         const response = await fetch(
             `${process.env.GEMINI_PROXY_URL || 'https://generativelanguage.googleapis.com'}/v1beta/models/${model}:generateContent`,
@@ -1044,7 +1098,7 @@ async function requestGemini(model, key, payload) {
 
 async function callAI(prompt, language, topic, count) {
     if (!GEMINI_KEYS.length) {
-        console.warn('No GEMINI_API_KEY found; using local fallback questions.');
+        console.warn('[gemini] No GEMINI_API_KEY found; using local fallback questions.');
         return { questions: generateFallbackQuestions(language, topic, count), source: 'fallback' };
     }
 
@@ -1054,7 +1108,7 @@ async function callAI(prompt, language, topic, count) {
         for (let attempt = 0; attempt < GEMINI_KEYS.length * 2; attempt++) {
             const keyEntry = getNextAvailableKey();
             if (!keyEntry) {
-                console.warn('All Gemini keys are cooling down. Using fallback.');
+                console.warn('[gemini] All keys are cooling down. Using fallback.');
                 break;
             }
 
@@ -1078,22 +1132,34 @@ async function callAI(prompt, language, topic, count) {
                     }
                     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';
                     const parsed = parseStructuredResponse(text);
-                    if (parsed.length > 0) return { questions: parsed, source: 'ai' };
+                    if (parsed.length > 0) {
+                        console.log(`[gemini] Success on ${model}: ${parsed.length} questions`);
+                        return { questions: parsed, source: 'ai' };
+                    }
                     lastError = 'Empty JSON response from Gemini';
                     keyCooldowns[keyIdx] = Date.now() + COOLDOWN.TRANSIENT;
                     continue;
                 }
 
-                if (r.status === 400) { lastError = 'Bad request'; break; }
-                if (r.status === 401) { keyCooldowns[keyIdx] = Date.now() + COOLDOWN.RATE_LIMIT_DAY; lastError = 'Unauthorized'; continue; }
-                if (r.status === 403) { keyCooldowns[keyIdx] = Date.now() + COOLDOWN.QUOTA_EXCEEDED; lastError = 'Forbidden'; continue; }
-                if (r.status === 404) { lastError = `Model not found: ${model}`; break; }
+                if (r.status === 400) {
+                    console.warn(`[gemini] 400 Bad Request on ${model}: ${r.body.slice(0, 200)}`);
+                    lastError = 'Bad request';
+                    break;
+                }
+                if (r.status === 401) { keyCooldowns[keyIdx] = Date.now() + COOLDOWN.RATE_LIMIT_DAY; lastError = 'Unauthorized (401)'; console.warn(`[gemini] 401 Unauthorized on ${model}`); continue; }
+                if (r.status === 403) { keyCooldowns[keyIdx] = Date.now() + COOLDOWN.QUOTA_EXCEEDED; lastError = 'Forbidden (403)'; console.warn(`[gemini] 403 Forbidden on ${model}`); continue; }
+                if (r.status === 404) {
+                    console.warn(`[gemini] 404 Model not found: ${model} — trying next model`);
+                    lastError = `Model not found: ${model}`;
+                    break;
+                }
 
                 if (r.status === 429) {
                     const isDailyQuota = /per.?day|daily|quota.*day/i.test(r.body);
                     const cooldownMs = isDailyQuota ? COOLDOWN.RATE_LIMIT_DAY : COOLDOWN.RATE_LIMIT_MINUTE;
                     keyCooldowns[keyIdx] = Date.now() + cooldownMs;
-                    lastError = 'Rate limited';
+                    lastError = 'Rate limited (429)';
+                    console.warn(`[gemini] 429 on ${model}: ${isDailyQuota ? 'daily quota' : 'per-minute'}`);
                     continue;
                 }
 
@@ -1107,12 +1173,13 @@ async function callAI(prompt, language, topic, count) {
                 continue;
             } catch (error) {
                 lastError = error.name === 'AbortError' ? 'Timeout' : error.message;
+                console.warn(`[gemini] Exception on ${model}:`, lastError);
                 continue;
             }
         }
     }
 
-    console.warn(`All Gemini attempts failed (last: ${lastError}). Using local fallback.`);
+    console.warn(`[gemini] All attempts failed (last: ${lastError}). Using local fallback.`);
     return { questions: generateFallbackQuestions(language, topic, count), source: 'fallback' };
 }
 
@@ -1420,7 +1487,7 @@ app.post('/api/send-form', async (req, res) => {
 });
 
 // ============================================================
-//  SELF-PING
+//  SELF-PING (FIX: non-200 logs as console.error)
 // ============================================================
 const SELF_PING_ENABLED = process.env.ENABLE_SELF_PING === 'true' || process.env.NODE_ENV === 'production';
 const SELF_PING_INTERVAL_MS = 10 * 60 * 1000;
@@ -1444,7 +1511,12 @@ function startSelfPing() {
     selfPingTimer = setInterval(async () => {
         try {
             const r = await fetch(SELF_PING_URL, { method: 'GET', signal: AbortSignal.timeout(8000) });
-            console.log(`[self-ping] ${r.status} at ${new Date().toISOString()}`);
+            // FIX: non-200 logs as console.error
+            if (r.status !== 200) {
+                console.error(`[self-ping] UNHEALTHY: ${r.status} at ${new Date().toISOString()}`);
+            } else {
+                console.log(`[self-ping] ${r.status} at ${new Date().toISOString()}`);
+            }
         } catch (err) {
             console.warn(`[self-ping] failed: ${err.message}`);
         }
@@ -1466,6 +1538,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     if (GEMINI_MODELS.length) console.log(`🤖 Models: ${GEMINI_MODELS.join(' → ')}`);
     if (process.env.EMAIL_USER) console.log(`📧 Email configured for: ${process.env.EMAIL_USER}`);
     console.log(`🏥 Health endpoint: http://localhost:${PORT}/api/health`);
+    console.log(`🔊 TTS endpoint: http://localhost:${PORT}/api/tts?lang=en&text=hello`);
     startSelfPing();
 });
 

@@ -9,17 +9,25 @@ const audienceData = window.MusalingoAudience || {
 };
 
 /* ============================================================
-   Musalingo — lesson.js (v3)
-   Features:
-     • 10 language question types
-     • Multi-move chess sequences
-     • King hiding on non-king-relevant puzzles
-     • Exit confirmation when lesson is in progress
-     • AI/Offline source badge with error codes
-     • Clean fallback messaging
+   Musalingo — lesson.js (v4)
+   Fixes applied:
+     • Source badge no longer wiped by textContent assignment
+     • renderListen guards against missing distractors
+     • renderQuestion filters malformed AI questions
+     • fetchAIQuestions uses AbortController (cancels on exit)
+     • sourceError dead variable removed
+     • match-pairs: at most 1 heart lost per question
+     • match-pairs: skip no longer deducts a heart
+     • NEW: "I can't listen" button on listen questions
+     • NEW: better error code labels
    ============================================================ */
 
-const savedTheme = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+const savedTheme = (() => {
+    try {
+        const v = JSON.parse(localStorage.getItem('MusalingoSettings'));
+        return v && typeof v === 'object' ? v : {};
+    } catch { return {}; }
+})();
 document.body.classList.toggle('dark-mode', savedTheme.theme === 'dark');
 
 // ---------- URL PARAMS ----------
@@ -63,7 +71,7 @@ const ERROR_CODES = {
     E50: 'All Gemini attempts failed (unknown reason)',
     E60: 'Network error talking to Gemini',
     E70: 'Empty response from Gemini (safety filter or malformed JSON)',
-    E99: 'Unexpected error'
+    E99: 'Unexpected error — check browser console for details'
 };
 
 function errorLabel(code) {
@@ -105,7 +113,7 @@ function setSourceBadge(element, source, errorMessage) {
     element.style.marginLeft = '8px';
 }
 
-// ---------- FALLBACK QUESTIONS (questions.js) ----------
+// ---------- FALLBACK QUESTIONS ----------
 function buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode) {
     const bank = window.MusalingoQuestions;
     if (!bank || typeof bank.generateFallbackQuestions !== 'function') {
@@ -114,9 +122,11 @@ function buildFallbackQuestions(language, topic, count, audienceLanguage, unitIn
     return bank.generateFallbackQuestions(language, topic, count, audienceLanguage, { unitIndex, practiceMode, localizeMeaning: localizeEnglishMeaning });
 }
 
-// ---------- FETCH AI QUESTIONS ----------
+// ---------- FETCH AI QUESTIONS (with AbortController) ----------
 async function fetchAIQuestions(topic, language, count = 10, level = 1, learningProfile = null, unitIndex = null, audienceLanguage = 'English', practiceMode = '') {
     let errorMessage = null;
+    const controller = new AbortController();
+    window.__musalingoAbortController = controller;
     try {
         const res = await fetch('/api/generate-questions', {
             method: 'POST',
@@ -128,14 +138,15 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
                 goal: learningProfile?.goal || 'confidence',
                 experience: learningProfile?.experience || 'new',
                 practiceMode
-            })
+            }),
+            signal: controller.signal
         });
 
         const sourceHeader = res.headers.get('X-Musal-Question-Source') || 'unknown';
 
         if (!res.ok) {
             errorMessage = `HTTP ${res.status}`;
-            console.warn('⚠️ AI failed, using FALLBACK questions. Status:', res.status);
+            console.warn('AI failed, using FALLBACK questions. Status:', res.status);
             return {
                 questions: buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode),
                 source: 'fallback',
@@ -145,8 +156,6 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
 
         const data = await res.json();
         if (Array.isArray(data) && data.length) {
-            // Server-built fallback only knows English meanings. For language courses, the client bank
-            // (questions.js) covers every language and translates meanings for the learner's own language.
             if (sourceHeader === 'fallback' && !/^(chess|math|music)$/i.test(String(language).trim())) {
                 try {
                     return { questions: buildFallbackQuestions(language, topic, count, audienceLanguage, unitIndex, practiceMode), source: 'fallback', error: null };
@@ -167,6 +176,10 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
             error: errorMessage
         };
     } catch (error) {
+        if (error?.name === 'AbortError') {
+            console.log('[lesson] AI fetch aborted by user');
+            return { questions: [], source: 'aborted', error: 'User exited' };
+        }
         errorMessage = error?.message || 'Unknown network error';
         console.warn('AI fetch failed:', error);
         return {
@@ -174,6 +187,10 @@ async function fetchAIQuestions(topic, language, count = 10, level = 1, learning
             source: 'fallback',
             error: errorMessage
         };
+    } finally {
+        if (window.__musalingoAbortController === controller) {
+            window.__musalingoAbortController = null;
+        }
     }
 }
 
@@ -186,7 +203,7 @@ function loadProfile() {
     if (!s) return createDefaultProfile();
     try {
         const p = JSON.parse(s);
-        if (!p) return createDefaultProfile();
+        if (!p || typeof p !== 'object') return createDefaultProfile();
         p.courses = Array.isArray(p.courses) ? p.courses : [];
         p.inventory = Array.isArray(p.inventory) ? p.inventory : [];
         const d = Number(p.diamonds); p.diamonds = Number.isFinite(d) ? Math.max(0, Math.floor(d)) : 100;
@@ -216,8 +233,8 @@ function updateHeartRefill(now = Date.now()) {
     return prevH !== profile.hearts || prevR !== profile.heartRefillAt;
 }
 
-const course = profile?.courses?.find((c) => c.id === courseId);
-const lesson = course?.lessons?.find((l) => l.id === lessonId) || course?.lessons?.[0];
+const course = profile?.courses?.find((c) => c && c.id === courseId);
+const lesson = course?.lessons?.find((l) => l && l.id === lessonId) || course?.lessons?.[0];
 
 const lessonTitle = document.getElementById('lessonTitle');
 const lessonSubtitle = document.getElementById('lessonSubtitle');
@@ -245,13 +262,17 @@ const accuracyLabel = document.getElementById('accuracyLabel');
 const xpEarnedLabel = document.getElementById('xpEarnedLabel');
 const backDashboardLink = document.getElementById('backDashboardLink');
 
-// Inject source badge next to the subtitle
+// ── SOURCE BADGE (BUG FIX: textContent no longer destroys the badge) ──
 const sourceBadge = document.createElement('span');
 sourceBadge.id = 'lessonSourceBadge';
 sourceBadge.style.marginLeft = '8px';
 sourceBadge.style.fontSize = '0.85rem';
 sourceBadge.style.fontWeight = '700';
 sourceBadge.textContent = '';
+
+const lessonSubtitleText = document.createTextNode('');
+lessonSubtitle.innerHTML = '';
+lessonSubtitle.appendChild(lessonSubtitleText);
 lessonSubtitle.appendChild(sourceBadge);
 
 function renderHeartGauge() {
@@ -287,6 +308,7 @@ const LESSON_COPY = {
         arrange: 'Arrange:', listen: 'What did you hear?', say: 'Say:', spell: 'Listen and spell:',
         typeWhatHeard: 'Type what you hear…',
         matchPairs: 'Match the pairs', startSpeaking: '🎤 Start speaking', cantSpeak: "I can't speak",
+        cantListen: "I can't listen",
         listening: 'Listening…', chooseAnswer: 'Choose an answer first.', answerFirst: 'Answer first.',
         correct: 'Correct! Great job.', incorrect: 'Not quite — correct answer: {answer}', tryAgain: 'Try again',
         finishQuestions: 'Finish all questions first.', retryQuestions: 'Try the same questions again.',
@@ -299,6 +321,7 @@ const LESSON_COPY = {
         questionSkipped: 'Question skipped.', notMatch: 'Not a match. Try again.',
         normalVoice: 'Normal', slowVoice: 'Slow', heartsCount: 'Hearts: {count}', unlimitedHearts: 'Unlimited hearts', heartsDisabled: 'Hearts are disabled in settings',
         continueSpeaking: 'Are you sure you want to skip speaking questions for the rest of this lesson?',
+        continueListening: 'Are you sure you want to skip listening questions for the rest of this lesson?',
         speechUnsupported: 'Speech recognition is not supported here.', takeYourTime: 'Take your time.',
         aiBadge: 'AI-generated', offlineBadge: 'Offline questions',
         exitConfirm: 'Are you sure you want to exit? Your current lesson progress will not be saved.',
@@ -316,6 +339,7 @@ const LESSON_COPY = {
         arrange: 'Ordena:', listen: '¿Qué has oído?', say: 'Di:', spell: 'Escucha y escribe:',
         typeWhatHeard: 'Escribe lo que oyes…',
         matchPairs: 'Une las parejas', startSpeaking: '🎤 Empezar a hablar', cantSpeak: 'No puedo hablar',
+        cantListen: 'No puedo escuchar',
         listening: 'Escuchando…', chooseAnswer: 'Elige una respuesta primero.', answerFirst: 'Responde primero.',
         correct: '¡Correcto! ¡Muy bien!', incorrect: 'No exactamente. La respuesta correcta es: {answer}', tryAgain: 'Intentar de nuevo',
         finishQuestions: 'Responde todas las preguntas primero.', retryQuestions: 'Inténtalo de nuevo con las mismas preguntas.',
@@ -328,6 +352,7 @@ const LESSON_COPY = {
         questionSkipped: 'Pregunta omitida.', notMatch: 'No coincide. Inténtalo de nuevo.',
         normalVoice: 'Normal', slowVoice: 'Lento', heartsCount: 'Corazones: {count}', unlimitedHearts: 'Corazones ilimitados', heartsDisabled: 'Los corazones están desactivados en los ajustes',
         continueSpeaking: '¿Seguro que quieres saltarte las preguntas habladas durante el resto de esta lección?',
+        continueListening: '¿Seguro que quieres saltarte las preguntas de escucha durante el resto de esta lección?',
         speechUnsupported: 'El reconocimiento de voz no está disponible aquí.', takeYourTime: 'Tómate tu tiempo.',
         aiBadge: 'Generado por IA', offlineBadge: 'Preguntas sin conexión',
         exitConfirm: '¿Seguro que quieres salir? El progreso de esta lección no se guardará.',
@@ -345,6 +370,7 @@ const LESSON_COPY = {
         arrange: 'Remettez dans l’ordre :', listen: 'Qu’avez-vous entendu ?', say: 'Dites :', spell: 'Écoutez et écrivez :',
         typeWhatHeard: 'Saisissez ce que vous entendez…',
         matchPairs: 'Associez les éléments', startSpeaking: '🎤 Commencer à parler', cantSpeak: 'Je ne peux pas parler',
+        cantListen: 'Je ne peux pas écouter',
         listening: 'Écoute en cours…', chooseAnswer: 'Choisissez d’abord une réponse.', answerFirst: 'Répondez d’abord.',
         correct: 'Correct ! Bravo !', incorrect: 'Pas tout à fait. La bonne réponse est : {answer}', tryAgain: 'Réessayer',
         finishQuestions: 'Répondez d’abord à toutes les questions.', retryQuestions: 'Réessayez avec les mêmes questions.',
@@ -357,6 +383,7 @@ const LESSON_COPY = {
         questionSkipped: 'Question ignorée.', notMatch: 'Ce n’est pas une correspondance. Réessayez.',
         normalVoice: 'Normal', slowVoice: 'Lent', heartsCount: 'Cœurs : {count}', unlimitedHearts: 'Cœurs illimités', heartsDisabled: 'Les cœurs sont désactivés dans les paramètres',
         continueSpeaking: 'Voulez-vous vraiment ignorer les exercices oraux pour le reste de cette leçon ?',
+        continueListening: 'Voulez-vous vraiment ignorer les exercices d’écoute pour le reste de cette leçon ?',
         speechUnsupported: 'La reconnaissance vocale n’est pas disponible ici.', takeYourTime: 'Prenez votre temps.',
         aiBadge: 'Généré par IA', offlineBadge: 'Questions hors ligne',
         exitConfirm: 'Voulez-vous vraiment quitter ? Votre progression actuelle ne sera pas enregistrée.',
@@ -374,6 +401,7 @@ const LESSON_COPY = {
         arrange: '正しい順に並べてください：', listen: '何と聞こえましたか？', say: '声に出してください：', spell: '聞いて書いてください：',
         typeWhatHeard: '聞こえた内容を入力…',
         matchPairs: '組み合わせてください', startSpeaking: '🎤 話し始める', cantSpeak: '話せません',
+        cantListen: '聞き取れません',
         listening: '聞き取り中…', chooseAnswer: '先に答えを選んでください。', answerFirst: '先に答えてください。',
         correct: '正解です！よくできました。', incorrect: '残念！正解は「{answer}」です。', tryAgain: 'もう一度',
         finishQuestions: '先にすべての問題に答えてください。', retryQuestions: '同じ問題でもう一度挑戦しましょう。',
@@ -386,6 +414,7 @@ const LESSON_COPY = {
         questionSkipped: '問題をスキップしました。', notMatch: '一致しません。もう一度試してください。',
         normalVoice: '通常', slowVoice: 'ゆっくり', heartsCount: 'ハート：{count}', unlimitedHearts: 'ハート無制限', heartsDisabled: '設定でハートが無効になっています',
         continueSpeaking: 'このレッスンの残りのスピーキング問題をスキップしますか？',
+        continueListening: 'このレッスンの残りのリスニング問題をスキップしますか？',
         speechUnsupported: 'この環境では音声認識を利用できません。', takeYourTime: '落ち着いて考えてください。',
         aiBadge: 'AI生成', offlineBadge: 'オフライン問題',
         exitConfirm: '本当に終了しますか？このレッスンの進捗は保存されません。',
@@ -403,6 +432,7 @@ const LESSON_COPY = {
         arrange: 'सही क्रम में लगाएँ:', listen: 'आपने क्या सुना?', say: 'बोलें:', spell: 'सुनें और लिखें:',
         typeWhatHeard: 'जो सुनाई दे उसे लिखें…',
         matchPairs: 'जोड़े मिलाएँ', startSpeaking: '🎤 बोलना शुरू करें', cantSpeak: 'मैं बोल नहीं सकता/सकती',
+        cantListen: 'मैं सुन नहीं सकता/सकती',
         listening: 'सुना जा रहा है…', chooseAnswer: 'पहले एक उत्तर चुनें।', answerFirst: 'पहले उत्तर दें।',
         correct: 'सही! बहुत बढ़िया।', incorrect: 'सही नहीं। सही उत्तर है: {answer}', tryAgain: 'फिर से कोशिश करें',
         finishQuestions: 'पहले सभी प्रश्नों के उत्तर दें।', retryQuestions: 'इन्हीं प्रश्नों को फिर से हल करें।',
@@ -415,6 +445,7 @@ const LESSON_COPY = {
         questionSkipped: 'प्रश्न छोड़ दिया गया।', notMatch: 'जोड़ा सही नहीं है। फिर कोशिश करें।',
         normalVoice: 'सामान्य', slowVoice: 'धीमा', heartsCount: 'दिल: {count}', unlimitedHearts: 'असीमित दिल', heartsDisabled: 'सेटिंग में दिल बंद हैं',
         continueSpeaking: 'क्या आप इस पाठ के बाकी बोलने वाले प्रश्न छोड़ना चाहते हैं?',
+        continueListening: 'क्या आप इस पाठ के बाकी सुनने वाले प्रश्न छोड़ना चाहते हैं?',
         speechUnsupported: 'यहाँ वाक् पहचान उपलब्ध नहीं है।', takeYourTime: 'आराम से सोचें।',
         aiBadge: 'AI जनित', offlineBadge: 'ऑफ़लाइन प्रश्न',
         exitConfirm: 'क्या आप वाकई बाहर जाना चाहते हैं? इस पाठ की प्रगति सहेजी नहीं जाएगी।',
@@ -437,7 +468,7 @@ function lessonText(key, values = {}) {
 }
 
 promptHeading.textContent = lessonText('practicePrompt');
-lessonSubtitle.textContent = lessonText('loadingLesson');
+lessonSubtitleText.textContent = lessonText('loadingLesson');
 statusText.textContent = lessonText('completeToEarn');
 exitBtn.textContent = lessonText('exit');
 hintBtn.textContent = lessonText('hint');
@@ -455,14 +486,11 @@ backDashboardLink.textContent = lessonText('backDashboard');
 renderHeartGauge();
 
 // ═══════════════════════════════════════════════════════════
-//  EXIT CONFIRMATION (NEW)
-//  - Asks before leaving when there are unsaved changes
-//  - Skipped if lesson is finished, no questions answered, or exit button already clicked
+//  EXIT CONFIRMATION
 // ═══════════════════════════════════════════════════════════
-
-let lessonInProgress = false;     // Set to true once the first question renders
-let lessonFinished = false;        // Set to true when completion panel shows
-let exitConfirmed = false;         // Prevents double prompts
+let lessonInProgress = false;
+let lessonFinished = false;
+let exitConfirmed = false;
 
 function requestExitConfirmation() {
     if (lessonFinished || !lessonInProgress) return true;
@@ -472,16 +500,13 @@ function requestExitConfirmation() {
     return confirmed;
 }
 
-// Intercept all navigation triggers
 window.addEventListener('beforeunload', (e) => {
     if (lessonFinished || !lessonInProgress || exitConfirmed) return;
-    // Modern browsers ignore the custom message, but show a native prompt
     e.preventDefault();
     e.returnValue = '';
     return '';
 });
 
-// Intercept clicks on anchors/links that navigate away
 document.addEventListener('click', (e) => {
     const anchor = e.target.closest('a[href]');
     if (!anchor) return;
@@ -494,18 +519,19 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
-// Intercept finish button — no confirmation needed
 document.addEventListener('click', (e) => {
     if (e.target.closest('#finishBtn')) exitConfirmed = true;
 }, true);
 
-// Wire the exit button specifically
 if (exitBtn) {
     exitBtn.addEventListener('click', (e) => {
-        if (lessonFinished) return;    // Let it navigate normally
+        if (lessonFinished) return;
         if (lessonInProgress) {
             e.preventDefault();
             if (requestExitConfirmation()) {
+                if (window.__musalingoAbortController) {
+                    try { window.__musalingoAbortController.abort(); } catch (err) { /* ignore */ }
+                }
                 window.location.href = exitBtn.getAttribute('href') || 'dashboard.html';
             }
         }
@@ -518,13 +544,15 @@ if (backDashboardLink) {
         if (lessonInProgress) {
             e.preventDefault();
             if (requestExitConfirmation()) {
+                if (window.__musalingoAbortController) {
+                    try { window.__musalingoAbortController.abort(); } catch (err) { /* ignore */ }
+                }
                 window.location.href = backDashboardLink.getAttribute('href') || 'dashboard.html';
             }
         }
     });
 }
 
-// Expose to lesson logic
 window.__musalingoLessonState = {
     setInProgress: () => { lessonInProgress = true; },
     setFinished: () => { lessonFinished = true; exitConfirmed = true; }
@@ -594,7 +622,7 @@ function getChoiceDisplayLabel(value, question, language) {
 
 function renderHeartGate() {
     lessonTitle.textContent = lessonText('outOfHearts');
-    lessonSubtitle.textContent = lessonText('needHeart');
+    lessonSubtitleText.textContent = lessonText('needHeart');
     promptText.textContent = lessonText('buyOrWait');
     audioControls.style.display = 'none';
     chessActivity.hidden = true;
@@ -645,7 +673,7 @@ function renderHeartGate() {
 
 if (!course || !lesson) {
     lessonTitle.textContent = lessonText('lessonNotFound');
-    lessonSubtitle.textContent = lessonText('missingLesson');
+    lessonSubtitleText.textContent = lessonText('missingLesson');
     promptText.textContent = lessonText('missingLesson');
     statusText.textContent = lessonText('noLesson');
     finishBtn.disabled = true;
@@ -675,7 +703,7 @@ if (!course || !lesson) {
 
                     if (!savedMistakeQuestions.length) {
                         lessonTitle.textContent = 'Mistake review';
-                        lessonSubtitle.textContent = `${course.name} • Review session`;
+                        lessonSubtitleText.textContent = `${course.name} • Review session`;
                         promptText.textContent = 'No missed questions yet. Complete a regular lesson and any incorrect answers will appear here.';
                         statusText.textContent = 'No mistakes to review';
                         finishBtn.disabled = true;
@@ -714,6 +742,7 @@ if (!course || !lesson) {
                         isReview ? practiceMode : ''
                     );
 
+                    if (aiResult.source === 'aborted') return;
                     if (!Array.isArray(aiResult.questions) || aiResult.questions.length === 0) throw new Error('No questions');
                     practice = {
                         language: selectedLanguage,
@@ -722,7 +751,6 @@ if (!course || !lesson) {
                         source: aiResult.source,
                         error: aiResult.error
                     };
-                    
                 }
             } catch (err) {
                 console.error('AI generation failed:', err);
@@ -745,7 +773,7 @@ if (!course || !lesson) {
                             ? `${course.name} • Built-in practice`
                             : `${course.name} • ${lessonText('offlinePractice')}`;
 
-            lessonSubtitle.textContent = baseSubtitle;
+            lessonSubtitleText.textContent = baseSubtitle;
             setSourceBadge(sourceBadge, practice.source, practice.error);
             if (practice.error) {
                 console.warn('[lesson] Fallback reason:', errorLabel(extractErrorCode(practice.error)));
@@ -762,7 +790,7 @@ if (!course || !lesson) {
                 };
                 document.body.classList.add('practice-mode');
                 lessonTitle.textContent = practiceLabels[practiceMode] || 'Quick practice';
-                lessonSubtitle.textContent = practice.source === 'review'
+                lessonSubtitleText.textContent = practice.source === 'review'
                     ? `${course.name} • Saved lesson mistakes`
                     : practice.source === 'ai'
                         ? `${course.name} • AI-generated review`
@@ -780,6 +808,7 @@ if (!course || !lesson) {
             let currentIndex = 0;
             let selectedAnswer = null;
             let skipSpeakingQuestions = false;
+            let skipListeningQuestions = false;
             const skippedQuestionIndices = new Set();
             let questionPhrase = '';
             let questionSpeechLanguage = practice.language;
@@ -875,6 +904,18 @@ if (!course || !lesson) {
                 window.setTimeout(renderQuestion, 0);
             }
 
+            function skipCurrentListenQuestion() {
+                skippedQuestionIndices.add(currentIndex);
+                refreshFinishState();
+                if (currentIndex === questions.length - 1) {
+                    if (canEnableFinish()) finishBtn.click();
+                    else lockLastQuestionAfterSkip();
+                    return;
+                }
+                currentIndex += 1;
+                window.setTimeout(renderQuestion, 0);
+            }
+
             function pronounceText(text, rate = 0.85, language = practice.language) {
                 return window.SFX?.pronounce ? window.SFX.pronounce(text, { lang: language, rate: rate }) : false;
             }
@@ -897,6 +938,31 @@ if (!course || !lesson) {
                             && expected.length <= 200
                             && similarity(actual, expected) >= 0.7);
                 });
+            }
+
+            // ---------- QUESTION VALIDATION (BUG FIX) ----------
+            function validateQuestion(q) {
+                if (!q || typeof q !== 'object') return false;
+                const type = q.type || 'multiple-choice';
+                switch (type) {
+                    case 'listen':
+                        return q.answer != null && Array.isArray(q.distractors) && q.distractors.length > 0;
+                    case 'fill-blank':
+                        return typeof q.sentence === 'string' && q.answer != null;
+                    case 'arrange':
+                        return Array.isArray(q.words) && q.words.length > 0 && q.answer != null;
+                    case 'match-pairs':
+                        return Array.isArray(q.pairs) && q.pairs.length >= 2;
+                    case 'slider':
+                    case 'graph':
+                        return q.answer != null && typeof q.min === 'number' && typeof q.max === 'number';
+                    case 'spell':
+                    case 'speak':
+                    case 'translate-type':
+                        return q.answer != null || q.phrase != null;
+                    default:
+                        return q.answer != null;
+                }
             }
 
             function renderMultipleChoice(q) {
@@ -969,10 +1035,24 @@ if (!course || !lesson) {
                 }
             }
 
+            // ---------- LISTEN RENDERER (BUG FIX + "I can't listen" button) ----------
             function renderListen(q) {
                 const targetLanguage = normalizeLanguageName(practice.language || course.name || 'English');
                 promptText.textContent = lessonText('listen');
-                const choices = shuffle([q.answer, ...q.distractors]);
+
+                const answer = q?.answer;
+                const distractors = Array.isArray(q?.distractors) ? q.distractors.filter(d => d != null) : [];
+
+                if (answer == null) {
+                    promptText.textContent = 'This question could not be shown.';
+                    options.innerHTML = `<div class="message" style="color:#b91c1c;">Skipping broken question…</div>`;
+                    results[currentIndex] = false;
+                    refreshFinishState();
+                    nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
+                    return;
+                }
+
+                const choices = shuffle([answer, ...distractors]);
                 options.innerHTML = choices.map(c => {
                     const romanization = q.pronunciationMap?.[c] || (c === q.answer ? q.pronunciation : '');
                     const romanizationLabel = hasNonLatinText(c) && romanization
@@ -980,6 +1060,27 @@ if (!course || !lesson) {
                         : '';
                     return `<button class="answer-btn" data-answer="${escapeHtml(c)}" data-speech-language="${escapeHtml(targetLanguage)}"><span class="answer-choice">${escapeHtml(c)}</span>${romanizationLabel}</button>`;
                 }).join('');
+
+                // "I can't listen" button — appended below the choices
+                const cantListenWrap = document.createElement('div');
+                cantListenWrap.style.cssText = 'margin-top:12px;';
+                const cantListenBtn = document.createElement('button');
+                cantListenBtn.type = 'button';
+                cantListenBtn.className = 'btn secondary';
+                cantListenBtn.style.cssText = 'font-size:0.9rem;';
+                cantListenBtn.textContent = lessonText('cantListen');
+                cantListenWrap.appendChild(cantListenBtn);
+                options.appendChild(cantListenWrap);
+
+                cantListenBtn.addEventListener('click', () => {
+                    if (!skipListeningQuestions) {
+                        const confirmed = window.confirm(lessonText('continueListening'));
+                        if (!confirmed) return;
+                        skipListeningQuestions = true;
+                    }
+                    skipCurrentListenQuestion();
+                });
+
                 wireAnswerButtons();
                 window.setTimeout(() => pronounceText(q.phrase, 0.85), 300);
             }
@@ -1093,6 +1194,7 @@ if (!course || !lesson) {
                 window.setTimeout(() => pronounceText(q.english, 0.9, 'English'), 200);
             }
 
+            // ---------- MATCH PAIRS (BUG FIX: 1 heart per question, skip free) ----------
             function renderMatchPairs(q) {
                 const targetLanguage = normalizeLanguageName(practice.language || course.name || 'English');
                 promptText.textContent = lessonText('matchPairs');
@@ -1113,7 +1215,7 @@ if (!course || !lesson) {
                     nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';
                     return;
                 }
-                matchPairsState = { selL: null, selR: null, matched: 0, total: sanitizedPairs.length, shakeTimer: null };
+                matchPairsState = { selL: null, selR: null, matched: 0, total: sanitizedPairs.length, shakeTimer: null, wrongDeducted: false };
                 const left = shuffle(sanitizedPairs.map(p => p.left));
                 const right = shuffle(sanitizedPairs.map(p => p.right));
                 const correctMap = new Map(sanitizedPairs.map(p => [p.left, p.right]));
@@ -1133,7 +1235,7 @@ if (!course || !lesson) {
                     </div>`;
                 document.getElementById('matchSkipBtn').addEventListener('click', () => {
                     if (state.shakeTimer) { clearTimeout(state.shakeTimer); state.shakeTimer = null; }
-                    results[currentIndex] = false; playSound('heartsLost'); deductHeart();
+                    results[currentIndex] = false;
                     refreshFinishState();
                     if (currentIndex === questions.length - 1) { lockLastQuestionAfterSkip(); return; }
                     currentIndex += 1; renderQuestion();
@@ -1163,7 +1265,12 @@ if (!course || !lesson) {
                                     if (currentIndex === questions.length - 1 && canEnableFinish()) finishBtn.click();
                                 }
                             } else {
-                                playSound('wrong'); deductHeart(); playSound('heartsLost');
+                                playSound('wrong');
+                                if (!state.wrongDeducted) {
+                                    deductHeart();
+                                    state.wrongDeducted = true;
+                                }
+                                playSound('heartsLost');
                                 const lBtn = state.selL, rBtn = state.selR;
                                 lBtn.classList.add('shake'); rBtn.classList.add('shake');
                                 state.shakeTimer = setTimeout(() => {
@@ -1230,7 +1337,7 @@ if (!course || !lesson) {
             }
 
             // ═══════════════════════════════════════════════════════════
-            //  CHESS RENDERER (single-move + multi-move + king hiding)
+            //  CHESS RENDERER
             // ═══════════════════════════════════════════════════════════
             function renderChessQuestion(q) {
                 audioControls.style.display = 'none';
@@ -1366,7 +1473,6 @@ if (!course || !lesson) {
 
                     const piece = chess.get(sq);
 
-                    // ── KING HIDING (NEW) ──
                     const kingsHidden = piece && piece.type === 'k' && q.hideKings;
                     if (kingsHidden) {
                         s.style.opacity = '0.15';
@@ -1443,7 +1549,6 @@ if (!course || !lesson) {
                     if (locked) return;
                     if (isMultiMove && currentStep < q.moves.length && q.moves[currentStep].color === 'black') return;
 
-                    // Kings are unclickable when hidden
                     const clickedPiece = chess.get(sq);
                     if (clickedPiece && clickedPiece.type === 'k' && q.hideKings) return;
 
@@ -1613,12 +1718,25 @@ if (!course || !lesson) {
                 scheduleTimeout(() => window.fitBoards?.(), 250);
             }
 
+            // ---------- RENDER QUESTION (with validation) ----------
             function renderQuestion() {
                 if (activeRecognition) { try { activeRecognition.abort(); } catch (e) { } activeRecognition = null; }
                 if (matchPairsState && matchPairsState.shakeTimer) { clearTimeout(matchPairsState.shakeTimer); matchPairsState = null; }
 
-                // Mark lesson as in-progress for exit confirmation
                 window.__musalingoLessonState?.setInProgress();
+
+                if (!validateQuestion(questions[currentIndex])) {
+                    console.warn('[lesson] Skipping malformed question at index', currentIndex, questions[currentIndex]);
+                    results[currentIndex] = false;
+                    skippedQuestionIndices.add(currentIndex);
+                    refreshFinishState();
+                    if (currentIndex >= questions.length - 1) {
+                        finishBtn.disabled = !canEnableFinish();
+                        return;
+                    }
+                    currentIndex += 1;
+                    return renderQuestion();
+                }
 
                 const q = questions[currentIndex];
                 questionPhrase = q.phrase || q.sentence || q.pronunciation || (isMath ? q.question : '');
@@ -1638,6 +1756,7 @@ if (!course || !lesson) {
                 if (isChess) return renderChessQuestion(q);
 
                 if (q.type === 'speak' && skipSpeakingQuestions) { skipCurrentSpeakQuestion(); return; }
+                if (q.type === 'listen' && skipListeningQuestions) { skipCurrentListenQuestion(); return; }
 
                 switch (q.type) {
                     case 'fill-blank': return renderFillBlank(q);

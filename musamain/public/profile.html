@@ -6,17 +6,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile - Musalingo</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EC96C7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Musalingo">
+    <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
 
     <style>
         :root {
             --bg: #f7f8fc;
             --card: #ffffff;
             --text: #1f2937;
+            --text-strong: #111827;
             --muted: #6b7280;
-            --accent: #ec96c7;
-            --accent-dark: #f490c3;
-            --soft-pink: #fdf2f8;
+            --accent: #EC96C7;
+            --accent-dark: #F490C3;
+            --accent-soft: #fdf2f8;
             --border: #e5e7eb;
+            --blue: #1cb0f6;
+            --blue-dark: #1587bd;
+            --green: #58cc02;
+            --green-dark: #46a302;
+            --gold: #ffc800;
+            --gold-dark: #e5b200;
+            --danger: #dc2626;
+            --danger-dark: #991b1b;
+        }
+
+        body.dark-mode {
+            --bg: #131f24;
+            --card: #1c2a30;
+            --text: #e5e7eb;
+            --text-strong: #f1f7fb;
+            --muted: #8a9aa6;
+            --border: #2f3e46;
+            --accent-soft: #4b2941;
         }
 
         * {
@@ -27,94 +52,136 @@
             margin: 0;
             min-height: 100vh;
             padding: 24px;
-            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+            background: var(--bg);
             color: var(--text);
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         .page {
-            width: min(980px, 100%);
+            width: min(900px, 100%);
             margin: 0 auto;
         }
 
-        .shell {
-            overflow: hidden;
-            background: var(--card);
-            border: 1px solid rgba(148, 163, 184, 0.18);
+        /* ---------- HEADER / AVATAR BLOCK ---------- */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 28px;
             border-radius: 24px;
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+            background: var(--card);
+            border: 2px solid var(--border);
+            margin-bottom: 18px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .profile-hero {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 30px;
-            background: linear-gradient(135deg, #fce7f3, #fff7fb);
-        }
-
-        .identity {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+        .profile-header::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg,
+                    color-mix(in srgb, var(--accent) 12%, transparent),
+                    transparent 60%);
+            pointer-events: none;
         }
 
         .avatar {
+            width: 110px;
+            height: 110px;
+            flex-shrink: 0;
+            border-radius: 50%;
             display: grid;
-            width: 76px;
-            height: 76px;
             place-items: center;
-            border-radius: 24px;
-            background: linear-gradient(135deg, var(--accent), #ff9ac8);
-            color: #fff;
-            font-size: 2rem;
+            font-size: 3rem;
             font-weight: 900;
-            box-shadow: inset 0 -6px rgba(0, 0, 0, 0.08);
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            box-shadow: 0 8px 0 color-mix(in srgb, var(--accent) 40%, transparent);
+            position: relative;
+            z-index: 1;
         }
 
-        h1,
-        h2,
-        p {
-            margin-top: 0;
+        .identity {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            z-index: 1;
         }
 
-        h1 {
-            margin-bottom: 5px;
-            font-size: 2rem;
+        .identity h1 {
+            margin: 0 0 4px;
+            font-size: clamp(1.4rem, 3vw, 2rem);
+            color: var(--text-strong);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .email {
+        .identity p {
             margin: 0;
             color: var(--muted);
             font-weight: 600;
+            font-size: 0.95rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .actions {
+        .header-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
         }
 
+        /* ---------- BUTTONS ---------- */
         .btn {
-            display: inline-block;
-            padding: 11px 16px;
-            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 11px 18px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+            box-shadow: 0 4px 0 var(--btn-shadow, var(--accent-dark));
             background: var(--accent);
             color: #fff;
-            font-weight: 800;
-            text-decoration: none;
-            box-shadow: 0 5px 0 var(--accent-shadow, var(--accent-dark));
+        }
+
+        .btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 var(--btn-shadow, var(--accent-dark));
+        }
+
+        .btn:hover {
+            filter: brightness(1.05);
         }
 
         .btn.secondary {
-            background: #2b70c9;
-            box-shadow: 0 5px 0 #205ea5;
+            background: var(--blue);
+            --btn-shadow: var(--blue-dark);
+        }
+
+        .btn.success {
+            background: var(--green);
+            --btn-shadow: var(--green-dark);
         }
 
         .btn.danger {
-            background: #dc2626;
-            box-shadow: 0 5px 0 #991b1b;
+            background: var(--danger);
+            --btn-shadow: var(--danger-dark);
         }
 
         [data-account-sign-in][hidden],
@@ -122,175 +189,253 @@
             display: none !important;
         }
 
-        .content {
-            padding: 24px 30px 30px;
-        }
-
-        .stats {
+        /* ---------- STATS ROW ---------- */
+        .stats-row {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 12px;
-            margin-bottom: 26px;
+            margin-bottom: 18px;
         }
 
         .stat {
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            background: #fff;
+            padding: 18px 14px;
+            border-radius: 18px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            text-align: center;
+            position: relative;
         }
 
-        .stat-label {
-            display: block;
-            margin-bottom: 6px;
-            color: var(--muted);
-            font-size: 0.8rem;
-            font-weight: 800;
-            text-transform: uppercase;
+        .stat-icon {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+            line-height: 1;
         }
 
         .stat-value {
-            color: #6d2d57;
-            font-size: 1.45rem;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--text-strong);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 4px;
+        }
+
+        /* ---------- SECTION CARDS ---------- */
+        .section-card {
+            padding: 22px;
+            border-radius: 20px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            margin-bottom: 18px;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-head h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--text-strong);
             font-weight: 900;
         }
 
-        .section-title {
+        .section-head .link {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--blue);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .section-head .link:hover {
+            text-decoration: underline;
+        }
+
+        /* ---------- COURSE ROWS ---------- */
+        .course-row {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .section-title h2 {
-            margin-bottom: 0;
-            font-size: 1.3rem;
-        }
-
-        .course-list {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
         }
 
-        .course-card {
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            background: #fff;
+        .course-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
         }
 
-        .course-heading {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
+        .course-icon {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            font-size: 1.5rem;
+            background: var(--accent-soft);
         }
 
-        .course-heading h3 {
-            margin: 0;
-            font-size: 1.05rem;
+        .course-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .course-info h3 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-strong);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .progress-track {
+            height: 10px;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--border) 70%, transparent);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+            transition: width 0.35s ease;
         }
 
         .course-percent {
-            color: var(--accent-dark);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 900;
+            color: var(--accent-dark);
+            margin-left: 12px;
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
         }
 
-        .progress {
-            height: 10px;
-            overflow: hidden;
-            border-radius: 999px;
-            background: #f1f5f9;
-        }
-
-        .progress-bar {
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, var(--accent), #ff8cdd);
-        }
-
+        /* ---------- EMPTY STATE ---------- */
         .empty-state {
-            padding: 22px;
-            border: 1px dashed #e5b8d3;
+            padding: 28px 20px;
             border-radius: 16px;
-            background: var(--soft-pink);
-            color: #6d2d57;
+            background: var(--accent-soft);
+            border: 2px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
+            text-align: center;
+            color: var(--text);
             font-weight: 700;
+            font-size: 0.9rem;
         }
 
-        .friends-section {
-            margin-top: 26px;
+        .empty-state a {
+            color: var(--accent-dark);
+            font-weight: 900;
+            text-decoration: underline;
         }
 
-        .friends-list {
-            display: grid;
-            gap: 10px;
-        }
-
+        /* ---------- FRIEND ROWS ---------- */
         .friend-row {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 14px 16px;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            background: #fff;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .friend-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .friend-avatar {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 1rem;
+            font-weight: 900;
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+        }
+
+        .friend-info {
+            flex: 1;
+            min-width: 0;
         }
 
         .friend-name {
             font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--text-strong);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .friend-streak {
-            color: var(--accent-dark);
-            font-size: 0.9rem;
-            font-weight: 800;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-top: 2px;
         }
 
-        .add-friends-link {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: var(--accent);
-            color: #fff;
-            font-weight: 800;
-            text-decoration: none;
-            box-shadow: 0 4px 0 var(--accent-shadow, var(--accent-dark));
+        .friend-streak .fire {
+            color: #f59e0b;
         }
 
+        /* ---------- RESPONSIVE ---------- */
         @media (max-width: 700px) {
             body {
                 padding: 14px;
             }
 
-            .profile-hero {
-                align-items: flex-start;
+            .profile-header {
                 flex-direction: column;
-                padding: 22px 18px;
+                align-items: flex-start;
+                padding: 20px;
+                text-align: left;
             }
 
-            .content {
-                padding: 20px 18px 24px;
+            .avatar {
+                width: 84px;
+                height: 84px;
+                font-size: 2.3rem;
             }
 
-            .actions,
-            .btn {
+            .header-actions {
                 width: 100%;
-                text-align: center;
             }
 
-            .stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+            .header-actions .btn {
+                flex: 1;
             }
 
-            .course-list {
-                grid-template-columns: 1fr;
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-value {
+                font-size: 1.4rem;
+            }
+
+            .section-card {
+                padding: 16px;
             }
         }
     </style>
@@ -299,115 +444,190 @@
 
 <body>
     <main class="page">
-        <section class="shell">
-            <header class="profile-hero">
-                <div class="identity">
-                    <div class="avatar" id="avatar" aria-hidden="true">L</div>
-                    <div>
-                        <h1 id="profileName">Learner</h1>
-                        <p class="email" id="profileEmail">Guest account</p>
-                    </div>
-                </div>
-                <div class="actions">
-                    <a class="btn secondary" href="signin.html" data-account-sign-in hidden>Sign in</a>
-                    <button class="btn danger" type="button" data-account-sign-out hidden>Sign out</button>
-                    <a class="btn secondary" href="settings.html">Edit settings</a>
-                    <a class="btn" href="dashboard.html">Dashboard</a>
 
-                </div>
-            </header>
+        <!-- ============ HEADER ============ -->
+        <header class="profile-header">
+            <div class="avatar" id="avatar" aria-hidden="true">L</div>
+            <div class="identity">
+                <h1 id="profileName">Learner</h1>
+                <p id="profileEmail">Guest account</p>
+            </div>
+            <div class="header-actions">
+                <a class="btn secondary" href="signin.html" data-account-sign-in hidden>Sign in</a>
+                <button class="btn danger" type="button" data-account-sign-out hidden>Sign out</button>
+                <a class="btn secondary" href="settings.html">Settings</a>
+                <a class="btn" href="dashboard.html">Dashboard</a>
+            </div>
+        </header>
 
-            <div class="content">
-                <section class="stats" aria-label="Learning statistics">
-                    <div class="stat"><span class="stat-label">Streak</span><span class="stat-value" id="streakValue">0
-                            days</span></div>
-                    <div class="stat"><span class="stat-label">Diamonds</span><span class="stat-value"
-                            id="diamondValue">0</span></div>
-                    <div class="stat"><span class="stat-label">XP</span><span class="stat-value" id="xpValue">0</span>
-                    </div>
-                    <div class="stat"><span class="stat-label">Lessons</span><span class="stat-value"
-                            id="lessonValue">0</span></div>
-                </section>
-
-                <section>
-                    <div class="section-title">
-                        <h2>Course progress</h2>
-                    </div>
-                    <div class="course-list" id="courseList"></div>
-                </section>
-
-                <section class="friends-section" id="friends">
-                    <div class="section-title">
-                        <h2>Friends</h2>
-                    </div>
-                    <div class="friends-list" id="friendsList"></div>
-                </section>
+        <!-- ============ STATS ============ -->
+        <section class="stats-row" aria-label="Learning statistics">
+            <div class="stat">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="streakValue">0</div>
+                <div class="stat-label">Day streak</div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon">💎</div>
+                <div class="stat-value" id="diamondValue">0</div>
+                <div class="stat-label">Diamonds</div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value" id="xpValue">0</div>
+                <div class="stat-label">Total XP</div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon">📚</div>
+                <div class="stat-value" id="lessonValue">0</div>
+                <div class="stat-label">Lessons</div>
             </div>
         </section>
+
+        <!-- ============ COURSES ============ -->
+        <section class="section-card">
+            <div class="section-head">
+                <h2>Course progress</h2>
+                <a class="link" href="catalog.html">Add a course →</a>
+            </div>
+            <div id="courseList"></div>
+        </section>
+
+        <!-- ============ FRIENDS ============ -->
+        <section class="section-card" id="friends">
+            <div class="section-head">
+                <h2>Friends</h2>
+                <a class="link" href="friends.html">Manage →</a>
+            </div>
+            <div id="friendsList"></div>
+        </section>
+
     </main>
 
     <script>
-        const defaultProfile = {
+        /* ============================================================
+           Musalingo — profile page
+           ============================================================ */
+
+        // ── SAFE PARSE ──
+        function safeParse(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : fallback;
+            } catch (err) {
+                console.warn(`[profile] Corrupted localStorage for ${key}; using defaults.`, err);
+                return fallback;
+            }
+        }
+
+        const DEFAULT_PROFILE = {
             name: 'Learner',
+            email: '',
             streak: 0,
             diamonds: 0,
             xp: 0,
             hearts: 5,
-            courses: []
+            courses: [],
+            friends: []
         };
-        const storedProfile = JSON.parse(localStorage.getItem('MusalingoProfile') || 'null');
-        const profile = { ...defaultProfile, ...(storedProfile || {}) };
+
+        const stored = safeParse('MusalingoProfile', null);
+        const profile = { ...DEFAULT_PROFILE, ...(stored || {}) };
         const courses = Array.isArray(profile.courses) ? profile.courses : [];
-        const friends = Array.isArray(profile.friends) ? profile.friends : [];
+        const rawFriendUids = Array.isArray(profile.friends) ? profile.friends : [];
+
         const displayName = String(profile.name || 'Learner').trim() || 'Learner';
-        const completedLessons = courses.reduce((total, course) => {
-            return total + (Array.isArray(course.lessons) ? course.lessons.filter(lesson => lesson.completed).length : 0);
-        }, 0);
         const email = profile.email || localStorage.getItem('MusalingoUser') || 'Guest account';
 
+        const completedLessons = courses.reduce((total, course) => {
+            return total + (Array.isArray(course.lessons) ? course.lessons.filter(l => l && l.completed).length : 0);
+        }, 0);
+
+        // ── HEADER ──
         document.getElementById('profileName').textContent = displayName;
         document.getElementById('profileEmail').textContent = email;
-        document.getElementById('avatar').textContent = Array.from(displayName)[0].toUpperCase();
-        document.getElementById('streakValue').textContent = `${Number(profile.streak) || 0} days`;
+        document.getElementById('avatar').textContent = (displayName[0] || 'L').toUpperCase();
+
+        // ── STATS ──
+        document.getElementById('streakValue').textContent = Number(profile.streak) || 0;
         document.getElementById('diamondValue').textContent = Number(profile.diamonds) || 0;
         document.getElementById('xpValue').textContent = Number(profile.xp) || 0;
         document.getElementById('lessonValue').textContent = completedLessons;
 
+        // ── COURSES ──
         const courseList = document.getElementById('courseList');
         if (!courses.length) {
-            courseList.innerHTML = '<div class="empty-state">No courses added yet. Visit the dashboard to choose a course.</div>';
+            courseList.innerHTML = '<div class="empty-state">No courses added yet.<br><a href="catalog.html">Choose a course →</a></div>';
         } else {
-            courses.forEach(course => {
+            courseList.innerHTML = courses.map(course => {
                 const progress = Math.min(100, Math.max(0, Number(course.progress) || 0));
-                const card = document.createElement('article');
-                card.className = 'course-card';
-                card.innerHTML = `
-                    <div class="course-heading">
-                        <h3></h3>
+                const icon = course.icon || '📘';
+                const name = String(course.name || course.id || 'Course');
+                return `
+                    <div class="course-row">
+                        <div class="course-icon" aria-hidden="true">${escapeHtml(icon)}</div>
+                        <div class="course-info">
+                            <h3>${escapeHtml(name)}</h3>
+                            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
+                                <div class="progress-fill" style="width:${progress}%"></div>
+                            </div>
+                        </div>
                         <span class="course-percent">${progress}%</span>
                     </div>
-                    <div class="progress" aria-label="${progress}% complete">
-                        <div class="progress-bar" style="width: ${progress}%"></div>
-                    </div>
                 `;
-                card.querySelector('h3').textContent = course.name || 'Course';
-                courseList.appendChild(card);
-            });
+            }).join('');
         }
 
+        // ── FRIENDS (async — reads real profiles from Firestore when signed in) ──
         const friendsList = document.getElementById('friendsList');
-        if (!friends.length) {
-            friendsList.innerHTML = '<div class="empty-state">No friends are there yet.<br><a class="add-friends-link" href="friends.html#friends">Add new friends</a></div>';
-        } else {
-            friends.forEach(friend => {
-                const row = document.createElement('div');
-                row.className = 'friend-row';
-                row.innerHTML = '<span class="friend-name"></span><span class="friend-streak"></span>';
-                row.querySelector('.friend-name').textContent = friend.name || 'Friend';
-                row.querySelector('.friend-streak').textContent = `${Number(friend.streak) || 0} day streak`;
-                friendsList.appendChild(row);
-            });
+        const isSignedIn = localStorage.getItem('MusalingoLoggedIn') === 'true'
+            && localStorage.getItem('MusalingoGuest') !== 'true';
+        const uid = localStorage.getItem('MusalingoUid') || '';
+
+        async function renderFriends() {
+            if (!isSignedIn || !uid || rawFriendUids.length === 0) {
+                friendsList.innerHTML = '<div class="empty-state">No friends yet.<br><a href="friends.html#friends">Add friends →</a></div>';
+                return;
+            }
+
+            friendsList.innerHTML = '<div class="empty-state">Loading friends…</div>';
+
+            try {
+                const fb = await import('./firebase.js');
+                const profiles = await fb.loadFriendsProfiles(uid);
+                if (!Array.isArray(profiles) || profiles.length === 0) {
+                    friendsList.innerHTML = '<div class="empty-state">No friends yet.<br><a href="friends.html#friends">Add friends →</a></div>';
+                    return;
+                }
+                friendsList.innerHTML = profiles.map(f => {
+                    const name = String(f.name || f.email || 'Friend');
+                    const initial = name[0] ? name[0].toUpperCase() : '?';
+                    const streak = Number(f.streak) || 0;
+                    return `
+                        <div class="friend-row">
+                            <div class="friend-avatar" aria-hidden="true">${escapeHtml(initial)}</div>
+                            <div class="friend-info">
+                                <div class="friend-name">${escapeHtml(name)}</div>
+                                <div class="friend-streak"><span class="fire">🔥</span> ${streak} day${streak === 1 ? '' : 's'} streak</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.warn('[profile] Could not load friends:', err);
+                friendsList.innerHTML = '<div class="empty-state">Could not load friends right now.<br><a href="friends.html#friends">Try the friends page →</a></div>';
+            }
         }
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[c]));
+        }
+
+        renderFriends();
     </script>
     <script src="theme.js"></script>
     <script src="bloat.js"></script>

@@ -3,7 +3,12 @@
    Fixed: Interview jump logic, double navigation, popover handling.
    ============================================================ */
 
-const savedTheme = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+const savedTheme = (() => {
+    try {
+        const value = JSON.parse(localStorage.getItem('MusalingoSettings'));
+        return value && typeof value === 'object' ? value : {};
+    } catch { return {}; }
+})();
 if (savedTheme.theme !== 'light') {
     document.body.classList.toggle('dark-mode', savedTheme.theme === 'dark');
 }
@@ -37,10 +42,10 @@ function loadProfile() {
     if (!s) return createDefaultProfile();
     try {
         const p = JSON.parse(s);
-        if (!p) return createDefaultProfile();
+        if (!p || typeof p !== 'object') return createDefaultProfile();
         p.courses = Array.isArray(p.courses) ? p.courses : [];
         p.inventory = Array.isArray(p.inventory) ? p.inventory : [];
-        p.diamonds = Number(p.diamonds) || 100;
+        p.diamonds = Number.isFinite(Number(p.diamonds)) ? Number(p.diamonds) : 100;
         return p;
     } catch { return createDefaultProfile(); }
 }
@@ -78,7 +83,7 @@ if (!sectionOverride && !urlUnitOverride) {
 }
 
 const profile = loadProfile();
-const course = profile.courses.find(c => c.id === courseId);
+const course = profile.courses.find(c => c && c.id === courseId);
 if (course) {
     course.lessons = Array.isArray(course.lessons) ? course.lessons : [];
     // Ensure the course has lessons from curriculum
@@ -118,26 +123,10 @@ if (!course) {
 
 // ---------- COLOR HELPERS ----------
 function getCoursePalette(sectionNo, unitNo, courseIdOverride = courseId) {
-    const baseNo = Number(sectionNo) || 1;
-    const unitIndex = Number(unitNo) || 1;
-    const coursePalette = {
-        telugu: ['#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316'],
-        korean: ['#EC96C7', '#1cb0f6', '#8d6de7', '#ff9600', '#ff4b4b', '#00c2a8', '#58cc02', '#5b6cff'],
-        japanese: ['#EC96C7', '#1cb0f6', '#8d6de7', '#ff9600', '#ff4b4b', '#00c2a8', '#58cc02', '#5b6cff'],
-        spanish: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#84cc16', '#ec4899'],
-        french: ['#f97316', '#a855f7', '#06b6d4', '#22c55e', '#ef4444', '#f59e0b', '#6366f1', '#ec4899'],
-        german: ['#10b981', '#0ea5e9', '#6366f1', '#f97316', '#ef4444', '#14b8a6', '#84cc16', '#ec4899'],
-        italian: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#06b6d4', '#84cc16', '#ec4899'],
-        hindi: ['#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316'],
-        arabic: ['#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444', '#22c55e', '#3b82f6'],
-        chess: ['#EC96C7', '#1cb0f6', '#8d6de7', '#ff9600', '#ff4b4b', '#00c2a8', '#58cc02', '#5b6cff'],
-        math: ['#ff9600', '#1cb0f6', '#8d6de7', '#58cc02', '#ff4b4b', '#00c2a8', '#5b6cff', '#EC96C7'],
-        music: ['#8d6de7', '#1cb0f6', '#EC96C7', '#00c2a8', '#ff9600', '#58cc02', '#5b6cff', '#ff4b4b']
-    };
-
-    const genericPalette = Object.values(SECTION_PALETTE).map(c => c.main);
-    const colors = coursePalette[courseIdOverride] || genericPalette;
-    const main = colors[(unitIndex - 1) % colors.length] || SECTION_PALETTE[baseNo]?.main || DEFAULT_PALETTE.main;
+    // Same colours as the dashboard: the palette lives in course-curriculum.js.
+    const shared = window.MUSALINGO_CURRICULUM?.getCoursePalette;
+    if (typeof shared === 'function') return shared(sectionNo, unitNo, courseIdOverride);
+    const main = SECTION_PALETTE[Number(sectionNo) || 1]?.main || DEFAULT_PALETTE.main;
     return { main, dark: shiftColor(main, -0.18) };
 }
 
@@ -170,12 +159,59 @@ function shiftColor(hex, amount) {
 
 function getUnitName(sectionIndex, unitIndex) {
     const sectionTopics = window.MUSALINGO_CURRICULUM
-        .getCourseUnitTopics(course.id, course.learningProfile?.experience)?.[sectionIndex];
+        ?.getCourseUnitTopics?.(course.id, course.learningProfile?.experience)?.[sectionIndex];
     return sectionTopics?.[unitIndex] || `Unit ${unitIndex + 1}`;
+}
+
+// ---------- EXPERIENCE SKIP ----------
+// A learner who says they already know some of the language starts further into SECTION 1.
+// Later sections always start from their first unit (it used to mark early units done in every section).
+function applyExperienceSkip(courseObj, sectionIndex) {
+    const jumpByExperience = { some: 2, comfortable: 4, advanced: 6 };
+    const jumpToUnit = jumpByExperience[courseObj.learningProfile?.experience] || 0;
+    if (jumpToUnit <= 0 || sectionIndex !== 0) return 0;
+
+    let lessonsMarked = 0;
+    for (const lesson of courseObj.lessons) {
+        const lessonUnit = lesson.displayUnitIndex ?? lesson.unitIndex ?? 0;
+        if ((lesson.sectionIndex ?? 0) === sectionIndex && lessonUnit < jumpToUnit && !lesson.completed) {
+            lesson.completed = true;
+            lessonsMarked++;
+        }
+    }
+    if (lessonsMarked > 0) {
+        const stored = loadProfile();
+        const idx = stored.courses.findIndex(c => c && c.id === courseObj.id);
+        if (idx >= 0) {
+            stored.courses[idx] = courseObj;
+            saveProfile(stored);
+        }
+    }
+    return lessonsMarked;
+}
+
+// ---------- POPOVER MARKUP (titles/hrefs are escaped: they come from saved data) ----------
+function popoverMarkup(state, isSkipped, nodeTitle, href) {
+    const safeTitle = escapeAttr(nodeTitle);
+    const safeHref = escapeAttr(href);
+    const heading = `<h3 class="node-popover-title">${safeTitle}</h3>`;
+    if (isSkipped) return `${heading}<a class="node-popover-btn practice" href="${safeHref}">Practice +5 XP</a>`;
+    if (state === 'locked') return `${heading}<p class="node-popover-message">Complete all levels above to unlock this!</p><button class="node-popover-btn locked" disabled>Locked</button>`;
+    if (state === 'jump') return `${heading}<p class="node-popover-message">Skip ahead — tested on everything so far.</p><a class="node-popover-btn primary" href="${safeHref}">Jump +20 XP</a>`;
+    if (state === 'starting') return `${heading}<a class="node-popover-btn primary" href="${safeHref}">Start +20 XP</a>`;
+    return `${heading}<a class="node-popover-btn practice" href="${safeHref}">Practice +5 XP</a>`;
 }
 
 // ---------- RENDER ----------
 function renderCourse() {
+    if (!window.MUSALINGO_CURRICULUM) {
+        title.textContent = 'Course data failed to load';
+        subtitle.textContent = 'Please refresh the page.';
+        level.textContent = 'Error';
+        contentArea.innerHTML = `<div class="empty-state">Something went wrong loading the lessons. <a class="btn small" href="javascript:location.reload()" style="margin-left:8px;">Reload</a></div>`;
+        return;
+    }
+
     title.textContent = course.name;
     subtitle.textContent = course.description;
     level.textContent = course.level || 'Course';
@@ -183,30 +219,7 @@ function renderCourse() {
     const sectionIndex = (sectionOverride || 1) - 1;
 
     // --- APPLY INTERVIEW EXPERIENCE (Skip ahead) ---
-    const experience = course.learningProfile?.experience || 'new';
-    let jumpToUnit = 0;
-    if (experience === 'some') jumpToUnit = 2;
-    else if (experience === 'comfortable') jumpToUnit = 4;
-    else if (experience === 'advanced') jumpToUnit = 6;
-
-    if (jumpToUnit > 0) {
-        let lessonsMarked = 0;
-        for (const lesson of course.lessons) {
-            const lessonUnit = lesson.displayUnitIndex ?? lesson.unitIndex ?? 0;
-            if ((lesson.sectionIndex ?? 0) === sectionIndex && lessonUnit < jumpToUnit && !lesson.completed) {
-                lesson.completed = true;
-                lessonsMarked++;
-            }
-        }
-        if (lessonsMarked > 0) {
-            const profile = loadProfile();
-            const idx = profile.courses.findIndex(c => c.id === course.id);
-            if (idx >= 0) {
-                profile.courses[idx] = course;
-                saveProfile(profile);
-            }
-        }
-    }
+    applyExperienceSkip(course, sectionIndex);
 
     const displaySet = window.MUSALINGO_CURRICULUM.buildDisplayLessons(
         course.lessons, course.id, sectionIndex
@@ -248,7 +261,7 @@ function renderCourse() {
         }
 
         // Consumed — clear so it doesn't persist forever
-        sessionStorage.removeItem('MusalingoJumpState');
+        try { sessionStorage.removeItem('MusalingoJumpState'); } catch { /* storage unavailable */ }
     }
 
     // ---------- CURRENT UNIT ----------
@@ -414,8 +427,8 @@ function renderCourse() {
                         ${icon}
                     </a>
                     <div class="lesson-copy">
-                        <strong>${displayTitle}</strong>
-                        <span>${lesson.description}</span>
+                        <strong>${escapeAttr(displayTitle)}</strong>
+                        <span>${escapeAttr(lesson.description)}</span>
                     </div>
                 </div>
             `);
@@ -496,7 +509,7 @@ function renderCourse() {
 
     contentArea.innerHTML = `
         <div class="progress-track">
-            <div class="progress-bar" style="width: ${course.progress || 0}%"></div>
+            <div class="progress-bar" style="width: ${Number(course.progress) || 0}%"></div>
         </div>
         <div class="course-path"><svg class="path-trail" aria-hidden="true"></svg>${pathContent}</div>
         ${nextUpMarkup}
@@ -604,34 +617,7 @@ function renderCourse() {
         const nodeTitle = nodeEl.dataset.title;
         const href = nodeEl.dataset.href;
 
-        if (isSkipped) {
-            popover.innerHTML = `
-                <h3 class="node-popover-title">${nodeTitle}</h3>
-                <a class="node-popover-btn practice" href="${href}">Practice +5 XP</a>
-            `;
-        } else if (state === 'locked') {
-            popover.innerHTML = `
-                <h3 class="node-popover-title">${nodeTitle}</h3>
-                <p class="node-popover-message">Complete all levels above to unlock this!</p>
-                <button class="node-popover-btn locked" disabled>Locked</button>
-            `;
-        } else if (state === 'jump') {
-            popover.innerHTML = `
-                <h3 class="node-popover-title">${nodeTitle}</h3>
-                <p class="node-popover-message">Skip ahead — tested on everything so far.</p>
-                <a class="node-popover-btn primary" href="${href}">Jump +20 XP</a>
-            `;
-        } else if (state === 'starting') {
-            popover.innerHTML = `
-                <h3 class="node-popover-title">${nodeTitle}</h3>
-                <a class="node-popover-btn primary" href="${href}">Start +20 XP</a>
-            `;
-        } else {
-            popover.innerHTML = `
-                <h3 class="node-popover-title">${nodeTitle}</h3>
-                <a class="node-popover-btn practice" href="${href}">Practice +5 XP</a>
-            `;
-        }
+        popover.innerHTML = popoverMarkup(state, isSkipped, nodeTitle, href);
 
         const rect = nodeEl.getBoundingClientRect();
         popover.style.left = (rect.left + rect.width / 2) + 'px';

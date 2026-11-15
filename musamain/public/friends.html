@@ -361,7 +361,7 @@
                     <div class="friend-list" id="outgoingList"></div>
                 </section>
 
-                <section class="panel">
+                <section class="panel" id="friends">
                     <h2>Your friends</h2>
                     <div class="friend-list" id="friendsList"></div>
                 </section>
@@ -372,7 +372,17 @@
     <script src="sounds.js"></script>
 
     <script type="module">
-        import {
+        let fb;
+        try {
+            fb = await import('./firebase.js');
+        } catch (err) {
+            console.error('[friends] firebase.js failed:', err);
+            document.getElementById('friendsList').innerHTML =
+                '<div class="empty-state">Could not connect to the server. Reload to try again.</div>';
+            // Stop here — the rest of the module can't run without Firebase
+            throw err;
+        }
+        const {
             isGuestMode,
             loadLocalProfile,
             saveLocalProfile,
@@ -384,7 +394,7 @@
             listenToIncomingRequests,
             listenToOutgoingRequests,
             listenToUserDocument
-        } from './firebase.js';
+        } = fb;
 
         const profile = loadLocalProfile();
         const myUid = profile.uid || '';

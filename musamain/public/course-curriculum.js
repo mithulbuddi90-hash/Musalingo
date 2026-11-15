@@ -1,5 +1,12 @@
 window.MUSALINGO_CURRICULUM = (() => {
-    if (!window.MusalingoAudience) throw new Error('Audience data did not load. Make sure audience.js is included before course-curriculum.js.');
+    // audience.js supplies speaker-language data. If it fails to load, keep the app working with an
+    // English-only fallback instead of crashing every page that needs the curriculum.
+    const audience = window.MusalingoAudience || (() => {
+        console.error('[Musalingo] audience.js did not load; using the built-in English-only fallback. Check that audience.js is included before course-curriculum.js.');
+        const fallback = { languageCodes: { English: 'en' }, languageNames: {}, translations: {}, hints: {}, catalogGroups: null, isFallback: true };
+        window.MusalingoAudience = fallback;
+        return fallback;
+    })();
 
     // ============================================================
     //  CONFIG
@@ -499,7 +506,7 @@ window.MUSALINGO_CURRICULUM = (() => {
         // ── Middle Eastern / other ───────────────────────
         arabic: 'ar', hebrew: 'he', turkish: 'tr', persian: 'fa', swahili: 'sw',
         // ── Small and Pretend languages ──────────────────
-        latin:'la',
+        latin: 'la',
         // ── English ──────────────────────────────────────
         english: 'en', 'intermediate-english': 'ie',
         // ── Skill paths ──────────────────────────────────
@@ -507,12 +514,42 @@ window.MUSALINGO_CURRICULUM = (() => {
     };
 
     // ============================================================
+    //  RESILIENT LOOKUPS — adding a language only needs its units in languageUnits
+    // ============================================================
+    const usedPrefixes = new Set(Object.values(prefixes));
+
+    function resolveCourseDetails(id) {
+        if (courseDetails[id]) return courseDetails[id];
+        const name = id.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        console.warn(`[Musalingo] No courseDetails entry for "${id}"; using generated details.`);
+        courseDetails[id] = [name, 'New', `Learn ${name} step by step.`, '🌐'];
+        return courseDetails[id];
+    }
+
+    function resolvePrefix(id) {
+        if (prefixes[id]) return prefixes[id];
+        const letters = id.replace(/[^a-z]/g, '') || 'xx';
+        let candidate = letters.slice(0, 2).padEnd(2, 'x');
+        let length = 3;
+        while (usedPrefixes.has(candidate) && length <= letters.length) candidate = letters.slice(0, length++);
+        for (let n = 2; usedPrefixes.has(candidate); n++) candidate = letters.slice(0, 2) + n;
+        console.warn(`[Musalingo] No lesson-id prefix for "${id}"; using "${candidate}".`);
+        prefixes[id] = candidate;
+        usedPrefixes.add(candidate);
+        return candidate;
+    }
+
+    // ============================================================
     //  BUILD COURSES (FIXED MATH CRASH)
     // ============================================================
     const courses = Object.fromEntries(
         Object.entries(unitData).map(([id, sectionGroups]) => {
-            const [name, level, description, icon] = courseDetails[id];
-            const prefix = prefixes[id];
+            if (id !== 'math' && !Array.isArray(sectionGroups)) {
+                console.warn(`[Musalingo] Skipping "${id}": its unit data is not a list of sections.`);
+                return null;
+            }
+            const [name, level, description, icon] = resolveCourseDetails(id);
+            const prefix = resolvePrefix(id);
 
             let lessons = [];
             let totalSections = 0;
@@ -543,13 +580,33 @@ window.MUSALINGO_CURRICULUM = (() => {
                 lessons,
                 totalSections
             }];
-        })
+        }).filter(Boolean)
     );
 
     // ============================================================
     //  CATALOG GROUPS
     // ============================================================
-    const catalogGroups = window.MusalingoAudience.catalogGroups;
+    function buildCatalogGroups(rawGroups) {
+        const known = (ids) => (Array.isArray(ids) ? ids : []).filter(id => {
+            if (courses[id]) return true;
+            console.warn(`[Musalingo] Catalog lists "${id}" but no course data exists for it; hiding it.`);
+            return false;
+        });
+        if (Array.isArray(rawGroups) && rawGroups.length) {
+            return rawGroups
+                .map(group => ({ ...group, courseIds: known(group.courseIds) }))
+                .filter(group => group.courseIds.length);
+        }
+        // No audience data: show every course in a single English-speaker group.
+        const skills = ['chess', 'math', 'music'].filter(id => courses[id]);
+        const languages = Object.keys(courses).filter(id => !skills.includes(id) && id !== 'intermediate-english');
+        return [
+            { audience: 'For English speakers', courseIds: languages },
+            { audience: 'Special skill paths', courseIds: skills }
+        ].filter(group => group.courseIds.length);
+    }
+    const catalogGroups = buildCatalogGroups(audience.catalogGroups);
+    if (audience.isFallback) audience.catalogGroups = catalogGroups;
 
     // ============================================================
     //  SECTION DATA
@@ -708,6 +765,7 @@ window.MUSALINGO_CURRICULUM = (() => {
             }
 
             // Handle languages/chess/music (which are arrays)
+            if (!Array.isArray(sectionGroups)) return [id, []];
             return [
                 id,
                 sectionGroups.map(section =>
@@ -747,7 +805,7 @@ window.MUSALINGO_CURRICULUM = (() => {
         const lessonDefinitions = courseId === 'math'
             ? getMathUnits(experience).flatMap((sectionUnits, sectionIndex) =>
                 sectionUnits.flatMap((unit, unitIndex) =>
-                    expandUnit(prefixes[courseId], sectionIndex, unitIndex, unit)
+                    expandUnit(resolvePrefix(courseId), sectionIndex, unitIndex, unit)
                 )
             )
             : definition.lessons;
@@ -760,14 +818,11 @@ window.MUSALINGO_CURRICULUM = (() => {
         });
 
         // Only carry over saved lessons that match the NEW id format
-        const prefix = prefixes[courseId];
+        const prefix = resolvePrefix(courseId);
+        const idFormat = new RegExp(`^${prefix}\\d+-\\d+-\\d+$`);
         saved.forEach(lesson => {
-            if (!lesson || !lesson.id || seen.has(lesson.id)) return;
-            const parts = lesson.id.split('-');
-            const matchesFormat =
-                lesson.id.startsWith(prefix) &&
-                parts.length === 3;
-            if (matchesFormat) {
+            if (!lesson || typeof lesson.id !== 'string' || seen.has(lesson.id)) return;
+            if (idFormat.test(lesson.id)) {
                 lessons.push({ ...lesson });
                 seen.add(lesson.id);
             }
@@ -841,6 +896,54 @@ window.MUSALINGO_CURRICULUM = (() => {
         return courses[courseId]?.icon || '★';
     }
 
+    // ============================================================
+    //  COLOURS — one palette for every page (course, dashboard, sections)
+    // ============================================================
+    const PINK = { main: '#EC96C7', dark: '#C46AA1' };
+    const SECTION_PALETTE = {
+        1: PINK,
+        2: { main: '#1cb0f6', dark: '#1587bd' },
+        3: { main: '#8d6de7', dark: '#6a4fbf' },
+        4: { main: '#ff9600', dark: '#c97400' },
+        5: { main: '#ff4b4b', dark: '#cc2f2f' },
+        6: { main: '#00c2a8', dark: '#009282' },
+        7: { main: '#58cc02', dark: '#3d8c01' },
+        8: { main: '#5b6cff', dark: '#3e4bc7' }
+    };
+    const DEFAULT_PALETTE = PINK;
+    const COURSE_COLORS = {
+        telugu: ['#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316'],
+        korean: ['#EC96C7', '#1cb0f6', '#8d6de7', '#ff9600', '#ff4b4b', '#00c2a8', '#58cc02', '#5b6cff'],
+        japanese: ['#EC96C7', '#1cb0f6', '#8d6de7', '#ff9600', '#ff4b4b', '#00c2a8', '#58cc02', '#5b6cff'],
+        spanish: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#84cc16', '#ec4899'],
+        french: ['#f97316', '#a855f7', '#06b6d4', '#22c55e', '#ef4444', '#f59e0b', '#6366f1', '#ec4899'],
+        german: ['#10b981', '#0ea5e9', '#6366f1', '#f97316', '#ef4444', '#14b8a6', '#84cc16', '#ec4899'],
+        italian: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#06b6d4', '#84cc16', '#ec4899'],
+        hindi: ['#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316'],
+        arabic: ['#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444', '#22c55e', '#3b82f6'],
+        english: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#ec4899'],
+        'intermediate-english': ['#6366f1', '#f97316', '#14b8a6', '#a855f7', '#ef4444', '#0ea5e9', '#84cc16', '#ec4899'],
+        chess: ['#EC96C7', '#1cb0f6', '#8d6de7', '#ff9600', '#ff4b4b', '#00c2a8', '#58cc02', '#5b6cff'],
+        math: ['#ff9600', '#1cb0f6', '#8d6de7', '#58cc02', '#ff4b4b', '#00c2a8', '#5b6cff', '#EC96C7'],
+        music: ['#8d6de7', '#1cb0f6', '#EC96C7', '#00c2a8', '#ff9600', '#58cc02', '#5b6cff', '#ff4b4b']
+    };
+
+    function shiftColor(hex, amount) {
+        const c = String(hex).replace('#', '');
+        const adjust = v => Math.max(0, Math.min(255, Math.round(v * (1 + amount))));
+        return '#' + [0, 2, 4]
+            .map(start => adjust(parseInt(c.slice(start, start + 2), 16)).toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    function getCoursePalette(sectionNo, unitNo, courseId) {
+        const baseNo = Number(sectionNo) || 1;
+        const unitIndex = Number(unitNo) || 1;
+        const colors = COURSE_COLORS[courseId] || Object.values(SECTION_PALETTE).map(c => c.main);
+        const main = colors[(unitIndex - 1) % colors.length] || SECTION_PALETTE[baseNo]?.main || DEFAULT_PALETTE.main;
+        return { main, dark: shiftColor(main, -0.18) };
+    }
+
     return {
         courses,
         catalogGroups,
@@ -851,6 +954,7 @@ window.MUSALINGO_CURRICULUM = (() => {
         pathConfig,
         getCourseLessons,
         buildDisplayLessons,
-        getLessonIcon
+        getLessonIcon,
+        getCoursePalette
     };
 })();
