@@ -1625,7 +1625,7 @@ if (!course || !lesson) {
                         }
                     }
 
-                    s.addEventListener('click', () => onSquareClick(sq));
+                    s.addEventListener('click', () => onSquareClick(sq, q.type));
                     return s;
                 }
 
@@ -1639,7 +1639,7 @@ if (!course || !lesson) {
                     }
                 }
 
-                function onSquareClick(sq) {
+                function onSquareClick(sq, qType) {
                     if (locked) return;
                     if (isMultiMove && currentStep < q.moves.length && q.moves[currentStep].color === 'black') return;
 
@@ -1693,12 +1693,47 @@ if (!course || !lesson) {
                         bf.style.color = '#b45309';
                         return;
                     }
-                    if (!isMultiMove && q.type === 'capture' && !legalMove.captured) {
-                        playSound('click');
-                        bf.textContent = 'That move is legal but captures nothing. Choose a capture square.';
-                        bf.style.color = '#b45309';
-                        return;
+
+                    // ── STRICT RULE ENFORCEMENT ──
+                    if (!isMultiMove) {
+                        // 1. Capture lesson: MUST capture
+                        if (qType === 'capture' && !legalMove.captured) {
+                            playSound('click');
+                            bf.textContent = 'That move is legal but captures nothing. You must capture a piece!';
+                            bf.style.color = '#b45309';
+                            return;
+                        }
+                        // 2. Find-move lesson: MUST land on the specific target square
+                        if (qType === 'find-move' && sq !== q.answer) {
+                            playSound('click');
+                            bf.textContent = 'That is a legal move, but not the correct one. Try another square.';
+                            bf.style.color = '#b45309';
+                            return;
+                        }
+                        // 3. Mate-in-one: MUST be checkmate
+                        if (qType === 'mate-in-one') {
+                            const test = new Chess(chess.fen());
+                            test.move(legalMove);
+                            if (!test.isCheckmate()) {
+                                playSound('click');
+                                bf.textContent = 'That move is legal, but it does not deliver checkmate. Try again.';
+                                bf.style.color = '#b45309';
+                                return;
+                            }
+                        }
+                    } else {
+                        // 4. Move Sequence (Multi-move): MUST match the exact expected move
+                        const expectedMove = q.moves[currentStep];
+                        if (expectedMove && (legalMove.from !== expectedMove.from || legalMove.to !== expectedMove.to)) {
+                            playSound('wrong');
+                            bf.textContent = `Incorrect. The sequence requires a different move.`;
+                            bf.style.color = '#b45309';
+                            // Optional: briefly highlight the piece that SHOULD move to help them
+                            // highlightCoachSquares([{ r: 8 - parseInt(expectedMove.from[1]), c: "abcdefgh".indexOf(expectedMove.from[0]), color: "yellow" }]);
+                            return;
+                        }
                     }
+
                     handleMovePlayed(legalMove);
                 }
 
