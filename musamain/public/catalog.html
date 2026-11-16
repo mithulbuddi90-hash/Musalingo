@@ -632,19 +632,53 @@
         }
 
         // ---------- COURSE CARD ----------
-        function learnerCountFor(courseId) {
-            // Deterministic pseudo-count so the UI feels alive (same as Duolingo).
-            const base = { chess: 12, math: 8, music: 6 }[courseId] || 0;
-            let hash = 0;
-            for (const ch of String(courseId)) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-            const n = (base + 3 + (hash % 47)) * 100000 + (hash % 97) * 1000;
-            if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M learners';
-            return Math.floor(n / 1000) + 'K learners';
+        // ── REAL LEARNER COUNT (fetches from Firestore) ──
+        const learnerCounts = {}; // Cache to avoid repeated DB calls
+
+            async function fetchRealLearnerCounts() {
+                    try {
+                        const fb = await import('./firebase.js');
+                        // Use the Firestore client from your firebase.js
+                        const { getFirestore, collection, getDocs, query, limit } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+                        const db = getFirestore(fb.app);
+
+                        // Fetch the first 500 user profiles (we only need the 'courses' array)
+                        // This prevents reading the whole database and blowing up your quota.
+                        const q = query(collection(db, 'users'), limit(500));
+                        const snapshot = await getDocs(q);
+
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            if (Array.isArray(data.courses)) {
+                                data.courses.forEach(c => {
+                                    if (c && c.id) {
+                                        learnerCounts[c.id] = (learnerCounts[c.id] || 0) + 1;
+                                    }
+                                });
+                            }
+                        });
+
+                        // Re-render the catalog now that we have real numbers
+                        renderCatalog();
+                    } catch (err) {
+                        console.warn('[catalog] Could not fetch real learner counts:', err);
+                        // If Firebase is offline or fails, fall back to showing no count
+                        renderCatalog();
+                    }
+                }   
+
+        function formatLearnerCount(courseId) {
+            const count = learnerCounts[courseId] || 0;
+            if (count === 0) return 'Be the first learner!';
+            if (count === 1) return '1 learner';
+            if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M learners';
+            if (count >= 1000) return (count / 1000).toFixed(1) + 'K learners';
+            return count + ' learners';
         }
 
         function renderCourseCard(course, speakerLanguage) {
             const icon = COURSE_ICONS[course.id] || '📘';
-            const learners = learnerCountFor(course.id);
+            const learners = formatLearnerCount(course.id);
             const badge = course.level || '';
             return `
                 <button class="course-card" type="button"
@@ -736,7 +770,8 @@
 
         // ---------- BOOT ----------
         renderFilterTabs();
-        renderCatalog();
+        renderCatalog(); // Render immediately with "Be the first learner!"
+        fetchRealLearnerCounts(); // Fetch real numbers in the background and re-render
 
         document.getElementById('interviewCancel').addEventListener('click', closeCourseInterview);
 
