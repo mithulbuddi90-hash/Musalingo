@@ -278,7 +278,19 @@ lessonSubtitle.appendChild(sourceBadge);
 function renderHeartGauge() {
     if (!heartGauge || !heartGaugeCount) return;
     const heartsDisabled = savedTheme.noHearts || savedTheme.noGamification;
-    const hearts = heartsDisabled ? HEART_CAP : Math.max(0, Math.min(HEART_CAP, profile.hearts));
+
+    // Pull current hearts from Hearts if available (handles refill)
+    let hearts;
+    if (heartsDisabled) {
+        hearts = HEART_CAP;
+    } else if (window.Hearts) {
+        Hearts.refill();
+        hearts = Hearts.get();
+        profile.hearts = hearts;
+    } else {
+        hearts = Math.max(0, Math.min(HEART_CAP, Number(profile.hearts) || 0));
+    }
+
     heartGaugeCount.textContent = heartsDisabled ? '∞' : String(hearts);
     heartGauge.setAttribute('aria-label', heartsDisabled ? lessonText('unlimitedHearts') : lessonText('heartsCount', { count: hearts }));
     heartGauge.title = heartsDisabled ? lessonText('heartsDisabled') : lessonText('heartsCount', { count: hearts });
@@ -853,11 +865,93 @@ if (!course || !lesson) {
 
             function deductHeart() {
                 if (savedTheme.noGamification || savedTheme.noHearts) return;
+
+                // Use hearts.js for consistent behavior across pages
+                if (window.Hearts) {
+                    const result = Hearts.deduct(1);
+                    // Sync local profile object with what Hearts just saved
+                    try {
+                        const fresh = JSON.parse(localStorage.getItem('MusalingoProfile') || '{}');
+                        profile.hearts = Number.isFinite(Number(fresh.hearts)) ? Number(fresh.hearts) : profile.hearts;
+                        profile.diamonds = Number.isFinite(Number(fresh.diamonds)) ? Number(fresh.diamonds) : profile.diamonds;
+                        profile.heartRefillAt = fresh.heartRefillAt;
+                    } catch (err) {
+                        console.warn('[lesson] Could not sync profile after deductHeart:', err);
+                    }
+                    renderHeartGauge();
+                    if (result.outOfHearts) handleOutOfHearts();
+                    return;
+                }
+
+                // Fallback: hearts.js not loaded
                 updateHeartRefill();
                 profile.hearts = Math.max(0, profile.hearts - 1);
                 if (!profile.heartRefillAt) profile.heartRefillAt = Date.now() + HEART_REFILL_INTERVAL;
                 saveProfile(profile);
                 renderHeartGauge();
+
+                if (profile.hearts === 0) handleOutOfHearts();
+            }
+
+            // NEW: end the lesson cleanly when hearts hit 0
+            function handleOutOfHearts() {
+                if (activeRecognition) { try { activeRecognition.abort(); } catch (e) { } activeRecognition = null; }
+                if (matchPairsState && matchPairsState.shakeTimer) { clearTimeout(matchPairsState.shakeTimer); matchPairsState = null; }
+
+                isFinished = true;
+                window.__musalingoLessonState?.setFinished();
+
+                if (window.__musalingoAbortController) {
+                    try { window.__musalingoAbortController.abort(); } catch (err) { }
+                }
+
+                lessonTitle.textContent = lessonText('outOfHearts');
+                lessonSubtitle.textContent = lessonText('needHeart');
+                promptText.textContent = lessonText('buyOrWait');
+
+                audioControls.style.display = 'none';
+                chessActivity.hidden = true;
+                options.innerHTML = '';
+                feedback.textContent = '';
+                checkBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                hintBtn.style.display = 'none';
+                finishBtn.style.display = 'none';
+
+                completionPanel.hidden = false;
+                completionHeading.textContent = lessonText('outOfHearts');
+                completionAccuracy.textContent = `${Math.round(currentAccuracy() * 100)}%`;
+                completionXp.textContent = '+0';
+
+                // Replace the "Back to dashboard" button with heart-gate actions
+                const statsEl = completionPanel.querySelector('.completion-stats');
+                const container = statsEl?.parentElement;
+                if (container) {
+                    const oldBtn = container.querySelector('#backDashboardLink');
+                    if (oldBtn) oldBtn.style.display = 'none';
+
+                    let gateDiv = container.querySelector('.heart-gate-actions');
+                    if (!gateDiv) {
+                        gateDiv = document.createElement('div');
+                        gateDiv.className = 'heart-gate-actions';
+                        gateDiv.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:16px;';
+                        container.appendChild(gateDiv);
+                    }
+                    gateDiv.innerHTML = `
+                        <a class="btn" href="shop.html" style="text-decoration:none;">Buy hearts in the shop</a>
+                        <a class="btn secondary" href="dashboard.html" style="text-decoration:none;">Back to dashboard</a>
+                    `;
+                }
+
+                playSound('heartsLost');
+                setTimeout(() => playSound('lose'), 200);
+
+                lessonFinished = true;
+                exitConfirmed = true;
+
+                try {
+                    completionPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } catch (err) { /* ignore */ }
             }
 
             function recordAnswer(correct) {

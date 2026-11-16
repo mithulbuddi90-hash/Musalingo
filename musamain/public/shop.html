@@ -586,6 +586,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="sounds.js"></script>
+    <script src="hearts.js"></script>
 
     <script>
         /* ============================================================
@@ -791,9 +792,12 @@
         }
 
         function getItemEffectiveCost(item) {
-            // FIX: heart-full dynamic cost
+            if (item.id === 'heart-full' && window.Hearts) {
+                const missing = Hearts.MAX - Hearts.get();
+                return missing <= 0 ? item.cost : missing * Hearts.COST_PER_HEART;
+            }
             if (item.id === 'heart-full') {
-                const missing = Math.max(0, 5 - profile.hearts);
+                const missing = Math.max(0, 5 - Number(profile.hearts) || 5);
                 return missing === 0 ? item.cost : missing * 10;
             }
             return item.cost;
@@ -943,15 +947,42 @@
                 return;
             }
 
-            // Guard: full hearts (FIX: this was the silent-fail bug)
-            const cost = getItemEffectiveCost(item);
-            if (item.id === 'heart-full' && profile.hearts >= 5) {
-                showToast('Your hearts are already full.', 'error');
-                playSfx('error');
+            // FIX: heart purchases go through hearts.js
+            // This fixes the "0 hearts + enough diamonds" bug
+            if (item.id === 'heart-1' || item.id === 'heart-full') {
+                if (!window.Hearts) {
+                    showToast('Heart system unavailable. Reload the page.', 'error');
+                    playSfx('error');
+                    return;
+                }
+
+                const count = item.id === 'heart-1' ? 1 : Hearts.MAX;
+                const missing = Hearts.MAX - Hearts.get();
+
+                if (missing <= 0) {
+                    showToast('Your hearts are already full.', 'error');
+                    playSfx('error');
+                    return;
+                }
+
+                const result = Hearts.buy(count);
+                if (!result.ok) {
+                    showToast(result.message, 'error');
+                    playSfx('error');
+                    return;
+                }
+
+                profile = loadProfile();
+                updateBalance();
+                renderGrid();
+                renderInventory();
+                showToast(result.message, 'success');
+                playSfx('gemEarned');
                 return;
             }
 
-            // Guard: can't afford
+            // Guard: can't afford (non-heart items)
+            const cost = item.cost;
             if (profile.diamonds < cost) {
                 const short = cost - profile.diamonds;
                 showToast(`You need ${short} more 💎 to buy ${item.name}.`, 'error');
@@ -963,15 +994,7 @@
             profile.diamonds -= cost;
 
             // Apply effect
-            if (item.consumable) {
-                const applied = applyConsumable(item);
-                if (!applied) {
-                    profile.diamonds += cost;  // refund
-                    showToast('Could not apply this item right now.', 'error');
-                    playSfx('error');
-                    return;
-                }
-            } else if (item.id === 'streak-shield') {
+            if (item.id === 'streak-shield') {
                 profile.streakFreezes = Math.min(3, (profile.streakFreezes || 0) + 1);
             } else {
                 profile.inventory.push(item.id);
@@ -982,35 +1005,10 @@
             renderGrid();
             renderInventory();
             showToast(`Purchased ${item.name}!`, 'success');
-
-            // FX
-            if (item.id === 'heart-1' || item.id === 'heart-full') {
-                playSfx('gemEarned');
-            } else {
-                playSfx('correct');
-            }
+            playSfx('correct');
         }
 
-        function applyConsumable(item) {
-            const maxHearts = 5;
-            const current = Math.max(0, Math.min(maxHearts, Number(profile.hearts) || maxHearts));
-
-            if (item.id === 'heart-1') {
-                if (current >= maxHearts) return false;
-                profile.hearts = Math.min(maxHearts, current + 1);
-                delete profile.heartRefillAt;
-                return true;
-            }
-
-            if (item.id === 'heart-full') {
-                if (current >= maxHearts) return false;
-                profile.hearts = maxHearts;
-                delete profile.heartRefillAt;
-                return true;
-            }
-
-            return false;
-        }
+        /* applyConsumable removed — heart purchases now use Hearts.buy() from hearts.js */
 
         /* ============================================================
            TOAST

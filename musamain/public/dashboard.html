@@ -1239,6 +1239,7 @@
     <script src="audience.js"></script>
     <script src="course-curriculum.js"></script>
     <script src="sounds.js"></script>
+    <script src="hearts.js"></script>
 
     <script>
         /* ============================================================
@@ -1467,18 +1468,23 @@
         }
 
         function renderStats() {
-            refreshHearts();
+            // FIX: use Hearts.refill() so elapsed timer refills work
+            if (window.Hearts) {
+                Hearts.refill();
+                profile.hearts = Hearts.get();
+            } else {
+                refreshHearts();
+            }
+
             document.getElementById('streakLink').textContent = profile.streak || 0;
             document.getElementById('diamondLink').textContent = profile.diamonds;
             document.getElementById('heartLink').textContent = profile.hearts;
 
-            // FIX: heart warning class when low
             const heartPill = document.getElementById('heartPill');
             if (heartPill) {
                 heartPill.classList.toggle('low', profile.hearts <= 1);
             }
 
-            // FIX: streak active pulse when streak > 0
             const streakPill = document.getElementById('streakPill');
             if (streakPill) {
                 streakPill.classList.toggle('active', (profile.streak || 0) > 0);
