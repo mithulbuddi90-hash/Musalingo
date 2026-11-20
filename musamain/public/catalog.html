@@ -669,7 +669,7 @@
 
         function formatLearnerCount(courseId) {
             const count = learnerCounts[courseId] || 0;
-            if (count === 0) return 'Be the first learner!';
+            if (count === 0) return 'Check this amazing course!';
             if (count === 1) return '1 learner';
             if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M learners';
             if (count >= 1000) return (count / 1000).toFixed(1) + 'K learners';

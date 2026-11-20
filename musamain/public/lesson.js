@@ -239,6 +239,8 @@ const lesson = course?.lessons?.find((l) => l && l.id === lessonId) || course?.l
 const lessonTitle = document.getElementById('lessonTitle');
 const lessonSubtitle = document.getElementById('lessonSubtitle');
 const promptText = document.getElementById('promptText');
+const meaningReveal = document.getElementById('meaningReveal');
+const meaningHint = document.getElementById('meaningHint');
 const audioControls = document.getElementById('audioControls');
 const normalVoiceBtn = document.getElementById('normalVoiceBtn');
 const slowVoiceBtn = document.getElementById('slowVoiceBtn');
@@ -1874,6 +1876,9 @@ if (!course || !lesson) {
                     : isMath ? 'English' : audienceLanguage;
                 feedback.textContent = '';
                 feedback.style.color = 'var(--accent-dark)';
+                if (meaningReveal) meaningReveal.hidden = true;
+                if (promptText) promptText.setAttribute('aria-expanded', 'false');
+                if (meaningHint) meaningHint.textContent = 'Tap the question to reveal its meaning';
                 statusText.textContent = lessonText('questionNumber', { current: currentIndex + 1, total: questions.length });
                 selectedAnswer = null;
                 audioControls.style.display = '';
@@ -1901,6 +1906,45 @@ if (!course || !lesson) {
                 }
             }
 
+            function getTapRevealMeaning(question) {
+                if (!question || typeof question !== 'object') return '';
+                const candidates = [
+                    question.translation,
+                    question.english,
+                    question.meaning,
+                    question.audienceMeaning,
+                    question.explanation
+                ];
+                const meaning = candidates.find(value => typeof value === 'string' && value.trim());
+                return meaning ? meaning.trim() : '';
+            }
+
+            function toggleQuestionMeaning() {
+                const question = questions[currentIndex];
+                if (!question || !meaningReveal) return;
+                const isOpening = meaningReveal.hidden;
+                if (isOpening) {
+                    const meaning = getTapRevealMeaning(question);
+                    meaningReveal.textContent = meaning || 'No extra meaning is available for this question.';
+                    meaningReveal.hidden = false;
+                    promptText.setAttribute('aria-expanded', 'true');
+                    if (meaningHint) meaningHint.textContent = 'Tap the question again to hide the meaning';
+                } else {
+                    meaningReveal.hidden = true;
+                    promptText.setAttribute('aria-expanded', 'false');
+                    if (meaningHint) meaningHint.textContent = 'Tap the question to reveal its meaning';
+                }
+            }
+
+            const promptContainer = document.getElementById('promptContainer');
+            promptContainer.addEventListener('click', toggleQuestionMeaning);
+            promptContainer.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggleQuestionMeaning();
+                }
+            });
+
             normalVoiceBtn.addEventListener('click', () => pronounceQuestion(1));
             slowVoiceBtn.addEventListener('click', () => pronounceQuestion(0.5));
 
@@ -1923,15 +1967,19 @@ if (!course || !lesson) {
 
                 const selectedButton = options.querySelector('.answer-btn.selected');
                 if (selectedButton) { selectedButton.classList.remove('selected'); selectedButton.classList.add(isCorrect ? 'correct' : 'wrong'); }
+                if (!isCorrect) {
+                    const correctButton = Array.from(options.querySelectorAll('.answer-btn')).find(button => button.getAttribute('data-answer') === String(q.answer));
+                    if (correctButton) correctButton.classList.add('correct');
+                }
 
                 isCorrect ? playSound('correct') : playSound('wrong');
                 options.querySelectorAll('.answer-btn').forEach(o => o.disabled = true);
 
                 recordAnswer(isCorrect);
-                feedback.textContent = isCorrect
+                statusText.textContent = isCorrect
                     ? lessonText('correct')
                     : lessonText('incorrect', { answer: q.answer || q.phrase });
-                feedback.style.color = isCorrect ? 'var(--accent-dark)' : '#b91c1c';
+                statusText.className = 'status-text ' + (isCorrect ? '' : 'wrong-text');
 
                 checkBtn.style.display = 'none';
                 nextBtn.style.display = currentIndex < questions.length - 1 ? 'inline-block' : 'none';

@@ -160,11 +160,21 @@ try {
     stockfish = null;
 }
 
+let stockfishWatchdog = null;
 function askStockfish(fen, depth = 5) {
     if (!stockfish) return false;
     try {
         stockfish.postMessage('position fen ' + fen);
         stockfish.postMessage('go depth ' + depth);
+        clearTimeout(stockfishWatchdog);
+        stockfishWatchdog = setTimeout(() => {
+            if (botThinking) {
+                console.warn('[matches] Stockfish did not reply in time; unlocking board.');
+                botThinking = false;
+                setStatus('Engine took too long — your turn.', 'bad');
+                updateStatus();
+            }
+        }, 8000);
         return true;
     } catch (err) {
         console.warn('[matches] askStockfish failed:', err);
@@ -467,6 +477,8 @@ function quiescenceSearchTimed(b, castling, ep, alpha, beta, color, depth, deadl
 
 /* ============ STOCKFISH INTEGRATION ============ */
 function applyStockfishMove(moveStr) {
+    clearTimeout(stockfishWatchdog);
+    stockfishWatchdog = null;
     if (gameOver || !moveStr || moveStr.length < 4 || moveStr === '(none)') {
         botThinking = false;
         updateStatus();
@@ -1541,157 +1553,6 @@ function addChat(who, text) {
     chat.scrollTop = chat.scrollHeight;
 }
 
-async function askCoach() {
-    const inp = document.getElementById("textInput");
-    if (!inp) return;
-    const q = inp.value.trim();
-    if (!q) return;
-
-    addChat("user", q);
-    inp.value = "";
-
-    const chat = document.getElementById("chat");
-    const pending = document.createElement("div");
-    pending.className = "msg ai";
-    pending.innerHTML = '<span class="thinking-spinner"></span>Thinking...';
-    chat.appendChild(pending);
-    chat.scrollTop = chat.scrollHeight;
-
-    const lower = q.toLowerCase();
-    if (/^(hi|hello|hey|good morning|good afternoon|good evening)[!.? ]*$/.test(lower)) {
-        pending.textContent = 'Hi! Ask me about a chess position, move, or strategy.';
-        return;
-    }
-
-    if (/best move|what should i|recommend|suggest/i.test(lower)) {
-        const color = gameMode === "bot" ? "w" : turn;
-        const moves = allLegalMoves(color, boardState, castlingRights, enPassant);
-        if (moves.length) {
-            const best = chooseAICoachMove(moves) || moves[0];
-            setTimeout(() => {
-                const reply = "🎯 I'd recommend " + squareName(best.fr, best.fc) + " → " + squareName(best.tr, best.tc) + ".";
-                pending.textContent = reply;
-                if (window.SFX?.pronounce) SFX.pronounce(reply, { lang: 'English', rate: 0.95 });
-            }, 400);
-            return;
-        }
-    }
-
-    // FIX: added 15s timeout so the spinner never hangs forever
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    try {
-        let boardString = "";
-        for (let r = 0; r < 8; r++) {
-            let empty = 0;
-            for (let c = 0; c < 8; c++) {
-                const p = boardState[r][c];
-                if (!p) { empty++; }
-                else {
-                    if (empty > 0) { boardString += empty; empty = 0; }
-                    boardString += p[0] === "w" ? p[1] : p[1].toLowerCase();
-                }
-            }
-            if (empty > 0) boardString += empty;
-            if (r < 7) boardString += "/";
-        }
-
-        const lastMoveStr = aiCoachLastMove ? `I just played ${aiCoachLastMove.san}.` : "We just started.";
-        const fullPrompt = `You are a helpful chess coach inside a learning app. Keep answers short (1-3 sentences). 
-Current board FEN: ${boardString}. Side to move: ${turn === "w" ? "White" : "Black"}. ${lastMoveStr}
-User question: ${q}`;
-
-        const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: fullPrompt }),
-            signal: controller.signal
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const reply = data.text || 'I could not generate a reply.';
-        pending.textContent = reply;
-        if (window.SFX?.pronounce) SFX.pronounce(reply, { lang: 'English', rate: 0.95 });
-    } catch (err) {
-        if (err.name === 'AbortError') {
-            pending.textContent = '⚠️ Coach took too long to respond. Please try again.';
-        } else {
-            pending.textContent = '⚠️ AI is currently offline. Make sure your local server.js is running.';
-        }
-    } finally {
-        clearTimeout(timeoutId);
-    }
-}
-
-function startVoice() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { addChat("ai", "Voice not supported."); return; }
-    const rec = new SR();
-    rec.lang = 'en-US';
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    const st = document.getElementById("voiceStatus");
-    if (st) st.textContent = "Listening...";
-    rec.onresult = (e) => {
-        const inp = document.getElementById("textInput");
-        if (inp) inp.value = e.results[0][0].transcript;
-        askCoach();
-    };
-    rec.onerror = () => { if (st) st.textContent = "Ready"; };
-    rec.onend = () => { if (st) st.textContent = "Ready"; };
-    rec.start();
-}
-
-let orbState = "idle", orbRecognition = null;
-
-function orbClick() {
-    if (orbState === "listening") { stopOrbListening(); return; }
-    if (orbState === "thinking") return;
-    startOrbListening();
-}
-
-function startOrbListening() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { addChat("ai", "Voice not supported."); return; }
-    if (orbRecognition) { try { orbRecognition.abort(); } catch (e) { } orbRecognition = null; }
-    setOrbState("listening");
-    orbRecognition = new SR();
-    orbRecognition.lang = 'en-US';
-    orbRecognition.interimResults = false;
-    orbRecognition.onresult = (e) => {
-        const tx = (e.results[0][0].transcript || "").trim();
-        if (!tx) { setOrbState("idle"); return; }
-        addChat("user", tx);
-        setOrbState("thinking");
-        askCoachWithText(tx).finally(() => setTimeout(() => { if (orbState === "thinking") setOrbState("idle"); }, 500));
-    };
-    orbRecognition.onerror = () => setOrbState("idle");
-    orbRecognition.onend = () => { if (orbState === "listening") setOrbState("idle"); };
-    try { orbRecognition.start(); } catch (e) { setOrbState("idle"); }
-}
-
-function stopOrbListening() {
-    if (orbRecognition) { try { orbRecognition.abort(); } catch (e) { } orbRecognition = null; }
-    if (orbState === "listening") setOrbState("idle");
-}
-
-function setOrbState(state) {
-    orbState = state;
-    const orb = document.getElementById("orb"), label = document.getElementById("orbLabel"), icon = document.getElementById("orbIcon");
-    if (!orb) return;
-    orb.classList.remove("listening", "thinking");
-    if (state === "listening") { orb.classList.add("listening"); if (label) label.textContent = "Listening..."; if (icon) icon.textContent = "🎙️"; }
-    else if (state === "thinking") { orb.classList.add("thinking"); if (label) label.textContent = "Thinking..."; if (icon) icon.textContent = "⏳"; }
-    else { if (label) label.textContent = "Talk to Coach"; if (icon) icon.textContent = "🎙️"; }
-}
-
-async function askCoachWithText(q) {
-    const inp = document.getElementById("textInput");
-    if (inp) inp.value = q;
-    await askCoach();
-}
-
 /* ============ FRIEND GAMES ============ */
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -2071,6 +1932,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+/* ============ SHARED COACH (chess) ============ */
+const chessCoach = (window.MusalingoCoach && typeof window.MusalingoCoach.createCoach === 'function')
+    ? window.MusalingoCoach.createCoach({
+        courseType: 'chess',
+        courseId: 'chess',
+        courseName: 'Chess',
+        targetLanguage: 'English',
+        audienceLanguage: 'English',
+        els: {
+            chat: document.getElementById('chat'),
+            input: null,                // matches.html owns Enter/submit via window.askCoach shim
+            send: null,                 // inline onclick="askCoach()" handles the send button
+            mic: document.getElementById('voiceBtn'),
+            orb: document.getElementById('orb'),
+            orbIcon: document.getElementById('orbIcon'),
+            orbLabel: document.getElementById('orbLabel'),
+            status: document.getElementById('voiceStatus'),
+            chips: null,
+            close: null,
+            voiceToggle: null,
+            speakSelect: null,
+            panel: null                 // chat panel is always visible; no open/close
+        }
+    })
+    : { ask: () => console.warn('[matches] coach unavailable'), open: () => { }, close: () => { }, clear: () => { }, init: () => { }, buildPrompt: () => '', state: { history: [] } };
+
+chessCoach.init(null, []);          // no greeting — startAICoachGame owns the welcome
+
+/* window.askCoach — shim inline onclick / Enter back to the shared coach.
+   Preserves the two old shortcuts: greeting reply and best-move recommendation. */
+window.askCoach = () => {
+    const inp = document.getElementById('textInput');
+    if (!inp) return;
+    const q = inp.value.trim();
+    if (!q) return;
+    inp.value = '';
+
+    // Shortcut: greeting
+    if (/^(hi|hello|hey|good morning|good afternoon|good evening)[!.? ]*$/i.test(q)) {
+        addChat('user', q);
+        addChat('ai', 'Hi! Ask me about a chess position, move, or strategy.');
+        return;
+    }
+
+    // Shortcut: best-move recommendation (local engine + board highlights)
+    if (/best move|what should i|recommend|suggest/i.test(q)) {
+        addChat('user', q);
+        const color = gameMode === 'bot' ? 'w' : turn;
+        const moves = allLegalMoves(color, boardState, castlingRights, enPassant);
+        if (moves.length) {
+            const best = chooseAICoachMove(moves) || moves[0];
+            setTimeout(() => {
+                const reply = "🎯 I'd recommend " + squareName(best.fr, best.fc) + " → " + squareName(best.tr, best.tc) + ".";
+                addChat('ai', reply);
+                highlightCoachSquares([
+                    { r: best.fr, c: best.fc, color: 'yellow' },
+                    { r: best.tr, c: best.tc, color: 'green' }
+                ]);
+                setTimeout(() => clearCoachHighlights(), 2500);
+                if (window.SFX?.pronounce) SFX.pronounce(reply, { lang: 'English', rate: 0.95 });
+            }, 400);
+            return;
+        }
+    }
+
+    // Everything else → shared coach.js (hardened prompt, retry, metadata)
+    chessCoach.ask(q);
+};
+
 /* ============ GLOBAL HANDLERS FOR INLINE onclick ============ */
 window.start1v1 = start1v1;
 window.showBotMenu = showBotMenu;
@@ -2082,9 +2012,6 @@ window.newGame = newGame;
 window.closeResultModal = closeResultModal;
 window.startGameAnalysis = startGameAnalysis;
 window.closeAnalysis = closeAnalysis;
-window.askCoach = askCoach;
-window.startVoice = startVoice;
-window.orbClick = orbClick;
 window.joinLiveGame = joinLiveGame;
 window.undoMove = undoMove;
 window.hintMove = hintMove;

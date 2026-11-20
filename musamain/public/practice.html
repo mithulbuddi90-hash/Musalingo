@@ -861,6 +861,687 @@
                 animation-duration: .01ms !important;
             }
         }
+
+        /* ===== WORD BANK + COACH (practice.js) ===== */
+        .secondary-btn.blue {
+            background: var(--blue);
+            box-shadow: 0 4px 0 var(--blue-dark);
+        }
+
+        .hero-copy .secondary-btn {
+            margin: 8px 0 0 10px;
+        }
+
+        body.overlay-open {
+            overflow: hidden;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            background: rgba(15, 23, 42, .55);
+        }
+
+        .overlay[hidden],
+        .coach-panel[hidden],
+        .coach-orb-wrap[hidden] {
+            display: none;
+        }
+
+        .sheet {
+            display: flex;
+            flex-direction: column;
+            width: min(720px, 100%);
+            max-height: min(90vh, 780px);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: var(--panel);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, .35);
+        }
+
+        .sheet-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px 8px;
+        }
+
+        .sheet-head h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--text-strong);
+        }
+
+        .sheet-sub {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: .85rem;
+            font-weight: 700;
+        }
+
+        .icon-btn {
+            display: inline-grid;
+            place-items: center;
+            flex: 0 0 auto;
+            width: 38px;
+            height: 38px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            background: var(--panel);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--blue);
+        }
+
+        .wb-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 8px 20px 0;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .wb-tab {
+            padding: 10px 14px;
+            border: 0;
+            border-bottom: 4px solid transparent;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-weight: 900;
+            font-size: .85rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .wb-tab.active {
+            border-bottom-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .wb-body {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 18px 20px 22px;
+        }
+
+        .wb-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            color: var(--muted);
+            font-weight: 800;
+            font-size: .85rem;
+        }
+
+        .wb-progress .mini-track {
+            flex: 1;
+        }
+
+        .wb-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .flashcard {
+            display: grid;
+            place-items: center;
+            width: 100%;
+            min-height: 220px;
+            padding: 20px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            background: var(--panel-2);
+            color: var(--text);
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .flashcard.flipped {
+            border-color: var(--green);
+            background: color-mix(in srgb, var(--green) 10%, var(--panel));
+        }
+
+        .fc-face {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fc-back {
+            display: none;
+        }
+
+        .flashcard.flipped .fc-front {
+            display: none;
+        }
+
+        .flashcard.flipped .fc-back {
+            display: flex;
+        }
+
+        .fc-word,
+        .quiz-word {
+            font-size: clamp(1.6rem, 5vw, 2.4rem);
+            font-weight: 900;
+            color: var(--text-strong);
+            overflow-wrap: anywhere;
+        }
+
+        .fc-sub {
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .fc-hint {
+            color: var(--muted);
+            font-size: .8rem;
+            font-weight: 700;
+        }
+
+        .fc-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .wb-btn {
+            min-height: 50px;
+            border: 0;
+            border-radius: 13px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 900;
+        }
+
+        .wb-btn.again {
+            background: var(--red);
+            box-shadow: 0 4px 0 var(--red-dark);
+        }
+
+        .wb-btn.good {
+            background: var(--green);
+            box-shadow: 0 4px 0 var(--green-dark);
+        }
+
+        .wb-btn:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .quiz-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .quiz-label {
+            color: var(--muted);
+            font-weight: 800;
+            font-size: .85rem;
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            min-height: 56px;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            background: var(--panel);
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+        .quiz-option:hover:not(:disabled) {
+            border-color: var(--blue);
+        }
+
+        .quiz-option.correct {
+            border-color: var(--green);
+            background: color-mix(in srgb, var(--green) 18%, var(--panel));
+        }
+
+        .quiz-option.wrong {
+            border-color: var(--red);
+            background: color-mix(in srgb, var(--red) 16%, var(--panel));
+        }
+
+        .quiz-feedback {
+            margin-top: 14px;
+            text-align: center;
+            font-weight: 900;
+        }
+
+        .quiz-feedback.ok {
+            color: var(--green-dark);
+        }
+
+        .quiz-feedback.bad {
+            color: var(--red-dark);
+        }
+
+        .wb-search {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--panel);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .wb-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .wb-chip {
+            padding: 7px 12px;
+            border: 2px solid var(--border);
+            border-radius: 999px;
+            background: var(--panel);
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 800;
+            font-size: .8rem;
+        }
+
+        .wb-chip.active {
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .wb-list {
+            display: grid;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .wb-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .wb-item-text {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .wb-item-text strong {
+            color: var(--text-strong);
+            overflow-wrap: anywhere;
+        }
+
+        .wb-pron,
+        .wb-meaning {
+            color: var(--muted);
+            font-size: .85rem;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .wb-item-stats {
+            color: var(--muted);
+            font-size: .75rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .wb-none {
+            padding: 20px;
+            color: var(--muted);
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .wb-empty,
+        .wb-result {
+            padding: 24px 8px;
+            text-align: center;
+        }
+
+        .wb-empty h3,
+        .wb-result h3 {
+            margin: 8px 0;
+            color: var(--text-strong);
+        }
+
+        .wb-empty p,
+        .wb-result p {
+            margin: 0 0 16px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .wb-empty-icon {
+            font-size: 3rem;
+        }
+
+        /* coach */
+        .coach-orb-wrap {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        body.coach-open .coach-orb-wrap {
+            display: none;
+        }
+
+        .coach-orb {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 58px;
+            height: 58px;
+            border: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 70%, white), var(--accent) 50%, var(--accent-dark));
+            box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
+            cursor: pointer;
+            animation: coachFloat 3s ease-in-out infinite;
+        }
+
+        .coach-orb.listening {
+            background: radial-gradient(circle at 30% 30%, #f87171, #dc2626 50%, #991b1b);
+            animation: coachPulse .8s ease-in-out infinite;
+        }
+
+        .coach-orb.thinking {
+            background: radial-gradient(circle at 30% 30%, #fbbf24, #f59e0b 50%, #b45309);
+            animation: coachSpin 2s linear infinite;
+        }
+
+        .orb-inner {
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .4);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .orb-ring {
+            position: absolute;
+            inset: -6px;
+            border: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+            border-radius: 50%;
+            animation: coachRing 2s ease-out infinite;
+            pointer-events: none;
+        }
+
+        .orb-label {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--panel);
+            color: var(--muted);
+            box-shadow: 0 2px 8px var(--shadow);
+            font-size: .68rem;
+            font-weight: 800;
+        }
+
+        @keyframes coachFloat {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes coachPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.12);
+            }
+        }
+
+        @keyframes coachSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes coachRing {
+            0% {
+                transform: scale(1);
+                opacity: .8;
+            }
+
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .coach-panel {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 950;
+            display: flex;
+            flex-direction: column;
+            width: min(400px, calc(100vw - 24px));
+            max-height: min(78vh, 640px);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--panel);
+            box-shadow: 0 18px 48px var(--shadow);
+        }
+
+        .coach-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .coach-head strong {
+            flex: 1;
+            color: var(--text-strong);
+        }
+
+        .voice-status {
+            color: var(--muted);
+            font-size: .75rem;
+            font-weight: 800;
+        }
+
+        .coach-chat {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 160px;
+            overflow-y: auto;
+            padding: 14px;
+        }
+
+        .msg {
+            max-width: 88%;
+            padding: 10px 12px;
+            border-radius: 14px;
+            font-size: .92rem;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        .msg.ai {
+            align-self: flex-start;
+            background: var(--panel-2);
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            background: var(--blue);
+            color: #fff;
+        }
+
+        .msg.error {
+            color: var(--red-dark);
+        }
+
+        .thinking-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 8px;
+            border: 2px solid var(--border);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            vertical-align: -2px;
+            animation: coachSpin .8s linear infinite;
+        }
+
+        .coach-chips {
+            margin: 0;
+            padding: 0 14px 8px;
+        }
+
+        .coach-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px 14px;
+            border-top: 2px solid var(--border);
+        }
+
+        .coach-input-row select {
+            max-width: 112px;
+            padding: 8px 6px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+            color: var(--text);
+            font-size: .75rem;
+            font-weight: 800;
+        }
+
+        .coach-input-row input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--panel);
+            color: var(--text);
+            font-size: .95rem;
+        }
+
+        .coach-mic.listening {
+            border-color: var(--red);
+            background: var(--red);
+            color: #fff;
+        }
+
+        .coach-send {
+            min-height: 40px;
+            padding: 0 14px;
+            border: 0;
+            border-radius: 12px;
+            background: var(--green);
+            box-shadow: 0 3px 0 var(--green-dark);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 900;
+        }
+
+        .coach-send:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .toast {
+            z-index: 1200;
+        }
+
+        @media (max-width: 650px) {
+            .coach-orb-wrap {
+                bottom: 84px;
+                right: 12px;
+            }
+
+            .coach-panel {
+                right: 12px;
+                bottom: 76px;
+                left: 12px;
+                width: auto;
+                max-height: calc(100vh - 100px);
+            }
+
+            .quiz-options,
+            .fc-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-copy .secondary-btn {
+                margin-left: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .coach-orb,
+            .orb-ring,
+            .thinking-spinner {
+                animation: none;
+            }
+        }
     </style>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -931,6 +1612,7 @@
                         <p id="heroDesc">Review what you missed and get a little closer to remembering it for good.</p>
                         <button class="primary-btn" type="button" data-mode="mistakes">Start a quick review <span
                                 aria-hidden="true">→</span></button>
+                        <button class="secondary-btn blue" type="button" id="heroCoachBtn">🎙️ Talk to coach</button>
                     </div>
                     <div class="hero-mascot" aria-hidden="true" id="heroMascot">🦉</div>
                 </section>
@@ -980,399 +1662,62 @@
         </main>
     </div>
 
+    <div class="overlay" id="wordBankOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="wbTitle">
+        <div class="sheet">
+            <header class="sheet-head">
+                <div>
+                    <h2 id="wbTitle">📖 Word bank</h2>
+                    <p class="sheet-sub" id="wbSummary"></p>
+                </div>
+                <button type="button" class="icon-btn" id="wbClose" aria-label="Close word bank">✕</button>
+            </header>
+            <div class="wb-tabs" role="tablist" aria-label="Word bank views">
+                <button type="button" role="tab" class="wb-tab active" data-wb-tab="flashcards"
+                    aria-selected="true">Flashcards</button>
+                <button type="button" role="tab" class="wb-tab" data-wb-tab="quiz" aria-selected="false">Quiz</button>
+                <button type="button" role="tab" class="wb-tab" data-wb-tab="list" aria-selected="false">All
+                    words</button>
+            </div>
+            <div class="wb-body" id="wbBody"></div>
+        </div>
+    </div>
+
+    <div class="coach-orb-wrap" id="coachOrbWrap">
+        <button type="button" class="coach-orb" id="coachOrb" aria-label="Talk to your coach">
+            <span class="orb-ring"></span><span class="orb-ring"></span>
+            <span class="orb-inner" id="coachOrbIcon">🎙️</span>
+        </button>
+        <span class="orb-label" id="coachOrbLabel">Talk to Coach</span>
+    </div>
+
+    <section class="coach-panel" id="coachPanel" hidden role="dialog" aria-label="AI coach">
+        <header class="coach-head">
+            <strong id="coachTitle">🤖 Coach</strong>
+            <span class="voice-status" id="coachStatus">Ready</span>
+            <button type="button" class="icon-btn" id="coachVoiceToggle" aria-pressed="true"
+                aria-label="Turn voice replies off">🔊</button>
+            <button id="coachClear" type="button" class="wb-chip" aria-label="Clear chat">🧹</button>
+            <button type="button" class="icon-btn" id="coachClose" aria-label="Close coach">✕</button>
+        </header>
+        <div class="coach-chat" id="coachChat" aria-live="polite"></div>
+        <div class="wb-chips coach-chips" id="coachChips"></div>
+        <div class="coach-input-row">
+            <select id="coachSpeakLang" aria-label="Language you will speak"></select>
+            <input id="coachInput" type="text" placeholder="Type a message…" maxlength="500" autocomplete="off"
+                aria-label="Message to your coach">
+            <button type="button" class="icon-btn coach-mic" id="coachMic" aria-label="Speak to your coach">🎙️</button>
+            <button type="button" class="coach-send" id="coachSend">Send</button>
+        </div>
+    </section>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="sounds.js"></script>
 
-    <script>
-        (() => {
-            'use strict';
-
-            /* ============================================================
-               SAFE PARSE
-               ============================================================ */
-            function safeParse(key, fallback) {
-                try {
-                    const raw = localStorage.getItem(key);
-                    if (!raw) return fallback;
-                    const parsed = JSON.parse(raw);
-                    return parsed && typeof parsed === 'object' ? parsed : fallback;
-                } catch (err) {
-                    console.warn(`[practice] Corrupted localStorage for ${key}; using defaults.`, err);
-                    return fallback;
-                }
-            }
-
-            /* ============================================================
-               CONFIG
-               ============================================================ */
-            const DAILY_GOAL = 20;
-            const HEART_CAP = 5;
-            const PRACTICE_KEY = 'MusalingoPracticeData';
-            const $ = id => document.getElementById(id);
-
-            let profile = readProfile();
-            let practiceData = readPracticeData();
-            let toastTimer;
-
-            function readProfile() {
-                const raw = safeParse('MusalingoProfile', {});
-                return {
-                    ...raw,
-                    xp: finiteInt(raw.xp, 0),
-                    diamonds: finiteInt(raw.diamonds, 100),
-                    hearts: Math.min(HEART_CAP, finiteInt(raw.hearts, HEART_CAP)),
-                    streak: finiteInt(raw.streak, 0),
-                    activeCourseId: raw.activeCourseId || null,
-                    courses: Array.isArray(raw.courses) ? raw.courses.filter(c => c && typeof c === 'object') : [],
-                    dailyQuestProgress: raw.dailyQuestProgress && typeof raw.dailyQuestProgress === 'object'
-                        ? { ...raw.dailyQuestProgress }
-                        : { xp: 0, lessons: 0, practice: 0, accuracy: 0, streak: 0 }
-                };
-            }
-
-            function finiteInt(value, fallback) {
-                const number = Number(value);
-                return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : fallback;
-            }
-
-            function todayKey() {
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            }
-
-            function readPracticeData() {
-                const raw = safeParse(PRACTICE_KEY, {});
-                return {
-                    mistakes: Array.isArray(raw.mistakes)
-                        ? raw.mistakes.filter(item => item && typeof item === 'object' && item.question).slice(0, 100)
-                        : []
-                };
-            }
-
-            /* ============================================================
-               ACTIVE COURSE
-               ============================================================ */
-            function getActiveCourse() {
-                if (!Array.isArray(profile.courses) || profile.courses.length === 0) return null;
-                if (profile.activeCourseId) {
-                    const match = profile.courses.find(c => c.id === profile.activeCourseId);
-                    if (match) return match;
-                }
-                return profile.courses[0];
-            }
-
-            const activeCourse = getActiveCourse();
-            const courseId = activeCourse?.id || '';
-
-            // Determine course type (language / chess / math / music)
-            const COURSE_TYPE_MAP = {
-                chess: 'chess',
-                math: 'math',
-                music: 'music'
-            };
-            const courseType = COURSE_TYPE_MAP[courseId] || 'language';
-
-            // Course display info
-            const COURSE_ICONS = {
-                chess: '♟️', math: '➗', music: '🎵',
-                japanese: '🇯🇵', spanish: '🇪🇸', french: '🇫🇷', german: '🇩🇪',
-                italian: '🇮🇹', hindi: '🇮🇳', arabic: '🇸🇦', english: '🇬🇧',
-                korean: '🇰🇷', telugu: '🇮🇳'
-            };
-            const COURSE_NAMES = {
-                chess: 'Chess', math: 'Math', music: 'Music',
-                japanese: 'Japanese', spanish: 'Spanish', french: 'French',
-                german: 'German', italian: 'Italian', hindi: 'Hindi',
-                arabic: 'Arabic', english: 'English', korean: 'Korean', telugu: 'Telugu'
-            };
-            const courseIcon = COURSE_ICONS[courseId] || '📚';
-            const courseName = COURSE_NAMES[courseId] || (activeCourse?.name || 'Course');
-
-            /* ============================================================
-               COURSE-AWARE PRACTICE MODES
-               ============================================================ */
-
-            // Language: words, listening, speaking, speed, mixed
-            const LANGUAGE_MODES = [
-                { mode: 'words', icon: '📚', title: 'Words', desc: 'Build vocabulary with quick translation rounds.', color: '#a560e8', tag: null, progressLabel: 'Vocabulary review', progressValue: '5 min', progressPct: 42 },
-                { mode: 'listening', icon: '🎧', title: 'Listening', desc: 'Listen closely and choose the phrase you hear.', color: '#1cb0f6', tag: null, progressLabel: 'Audio practice', progressValue: '5 rounds', progressPct: 35 },
-                { mode: 'speaking', icon: '🎙️', title: 'Speaking', desc: 'Say it out loud and practice your pronunciation.', color: '#ff4b4b', tag: null, progressLabel: 'Speaking practice', progressValue: '5 rounds', progressPct: 20 },
-                { mode: 'speed', icon: '⚡', title: 'Quick practice', desc: 'How many can you get right before the timer runs out?', color: '#58a700', tag: '60 seconds', progressLabel: 'Fast recall', progressValue: 'Timed', progressPct: 64 },
-                { mode: 'mixed', icon: '🔄', title: 'Mixed review', desc: 'A little bit of everything, adapted to keep you learning.', color: '#ec75aa', tag: null, progressLabel: 'All skills', progressValue: '5 rounds', progressPct: 55 }
-            ];
-
-            // Chess: tactics, opening, endgame, mixed
-            const CHESS_MODES = [
-                { mode: 'tactics', icon: '♟️', title: 'Tactics', desc: 'Forks, pins, skewers — sharpen your tactical vision.', color: '#a560e8', tag: null, progressLabel: 'Puzzles', progressValue: '5 rounds', progressPct: 42 },
-                { mode: 'opening', icon: '♘', title: 'Openings', desc: 'Practice the first moves and develop your pieces.', color: '#1cb0f6', tag: null, progressLabel: 'Opening drills', progressValue: '5 rounds', progressPct: 35 },
-                { mode: 'endgame', icon: '♔', title: 'Endgames', desc: 'King + pawn, rook + king — master basic endings.', color: '#ff4b4b', tag: null, progressLabel: 'Endgame drills', progressValue: '5 rounds', progressPct: 20 },
-                { mode: 'speed', icon: '⚡', title: 'Quick tactics', desc: 'Solve fast — how many tactics can you spot in 60s?', color: '#58a700', tag: '60 seconds', progressLabel: 'Fast tactics', progressValue: 'Timed', progressPct: 64 },
-                { mode: 'mixed', icon: '🔄', title: 'Mixed review', desc: 'A blend of openings, tactics, and endgames.', color: '#ec75aa', tag: null, progressLabel: 'All skills', progressValue: '5 rounds', progressPct: 55 }
-            ];
-
-            // Math: addition, multiplication, division, fractions, mixed
-            const MATH_MODES = [
-                { mode: 'addition', icon: '➕', title: 'Addition', desc: 'Fast addition drills with numbers that fit your level.', color: '#a560e8', tag: null, progressLabel: 'Addition', progressValue: '5 rounds', progressPct: 42 },
-                { mode: 'multiplication', icon: '✖️', title: 'Multiplication', desc: 'Times tables and multi-digit multiplication.', color: '#1cb0f6', tag: null, progressLabel: 'Multiplication', progressValue: '5 rounds', progressPct: 35 },
-                { mode: 'division', icon: '➗', title: 'Division', desc: 'Division facts and long division.', color: '#ff4b4b', tag: null, progressLabel: 'Division', progressValue: '5 rounds', progressPct: 20 },
-                { mode: 'speed', icon: '⚡', title: 'Quick math', desc: 'How many problems can you solve in 60s?', color: '#58a700', tag: '60 seconds', progressLabel: 'Fast math', progressValue: 'Timed', progressPct: 64 },
-                { mode: 'mixed', icon: '🔄', title: 'Mixed review', desc: 'A blend of everything, adapted to your grade.', color: '#ec75aa', tag: null, progressLabel: 'All skills', progressValue: '5 rounds', progressPct: 55 }
-            ];
-
-            // Music: notes, intervals, chords, rhythm, mixed
-            const MUSIC_MODES = [
-                { mode: 'notes', icon: '🎵', title: 'Notes', desc: 'Identify pitches on the treble and bass clef.', color: '#a560e8', tag: null, progressLabel: 'Note names', progressValue: '5 rounds', progressPct: 42 },
-                { mode: 'intervals', icon: '🎶', title: 'Intervals', desc: 'Practice hearing and naming musical intervals.', color: '#1cb0f6', tag: null, progressLabel: 'Intervals', progressValue: '5 rounds', progressPct: 35 },
-                { mode: 'chords', icon: '🎼', title: 'Chords', desc: 'Major, minor, diminished, augmented.', color: '#ff4b4b', tag: null, progressLabel: 'Chord types', progressValue: '5 rounds', progressPct: 20 },
-                { mode: 'speed', icon: '⚡', title: 'Quick ear training', desc: 'How fast can you identify notes and intervals?', color: '#58a700', tag: '60 seconds', progressLabel: 'Ear training', progressValue: 'Timed', progressPct: 64 },
-                { mode: 'mixed', icon: '🔄', title: 'Mixed review', desc: 'Notes, intervals, chords, and rhythm together.', color: '#ec75aa', tag: null, progressLabel: 'All skills', progressValue: '5 rounds', progressPct: 55 }
-            ];
-
-            // Pick the mode set based on course type
-            const PRACTICE_MODES =
-                courseType === 'chess' ? CHESS_MODES :
-                    courseType === 'math' ? MATH_MODES :
-                        courseType === 'music' ? MUSIC_MODES :
-                            LANGUAGE_MODES;
-
-            // Hero content per course type
-            const HERO_COPY = {
-                language: { title: 'Make your tricky words stick', desc: 'Review words you missed and get a little closer to remembering them for good.', mascot: '🦉' },
-                chess: { title: 'Sharpen your tactical eye', desc: 'Solve puzzles, master openings, and refine your endgame play.', mascot: '♞' },
-                math: { title: 'Practice until it clicks', desc: 'Drill your facts, master operations, and build speed and confidence.', mascot: '🧮' },
-                music: { title: 'Train your ear', desc: 'Identify notes, intervals, and chords with a few minutes of focused practice.', mascot: '🎵' }
-            };
-
-            /* ============================================================
-               RENDER
-               ============================================================ */
-
-            function renderStats() {
-                $('streakLink').textContent = profile.streak;
-                $('diamondLink').textContent = profile.diamonds;
-                $('heartLink').textContent = profile.hearts;
-                $('xpValue').textContent = `${profile.xp} XP`;
-
-                const dailyXp = profile.dailyQuestDate === todayKey()
-                    ? finiteInt(profile.dailyQuestProgress.xp, 0)
-                    : 0;
-                $('goalXp').textContent = dailyXp;
-                $('goalTarget').textContent = DAILY_GOAL;
-                const progress = Math.min(100, (dailyXp / DAILY_GOAL) * 100);
-                $('goalProgress').style.width = `${progress}%`;
-                const goalBar = $('goalProgress').parentElement;
-                goalBar.setAttribute('aria-valuemax', DAILY_GOAL);
-                goalBar.setAttribute('aria-valuenow', Math.min(DAILY_GOAL, dailyXp));
-
-                $('streakCopy').textContent = profile.streak
-                    ? `${profile.streak} day${profile.streak === 1 ? '' : 's'} in a row`
-                    : 'Start a new streak';
-            }
-
-            function renderCourseChip() {
-                $('courseChipIcon').textContent = courseIcon;
-                $('courseChipName').textContent = courseName;
-            }
-
-            function renderHero() {
-                const copy = HERO_COPY[courseType] || HERO_COPY.language;
-                $('reviewTitle').textContent = copy.title;
-                $('heroDesc').textContent = copy.desc;
-                $('heroMascot').textContent = copy.mascot;
-            }
-
-            function renderPracticeGrid() {
-                const grid = $('practiceGrid');
-                if (!activeCourse) {
-                    grid.innerHTML = '';
-                    $('noCourseState').style.display = 'block';
-                    return;
-                }
-                $('noCourseState').style.display = 'none';
-
-                // Build grid: recommended mistakes card first, then modes
-                const mistakesCount = practiceData.mistakes.filter(m => m.courseId === courseId).length;
-
-                let html = '';
-
-                // Recommended: mistakes (only for language; for others, show "practice" as recommended)
-                if (courseType === 'language') {
-                    html += `
-                        <button class="practice-card" type="button" data-mode="mistakes" style="--card-color:#ff9600;">
-                            <span class="card-tag">Recommended</span>
-                            <span class="card-icon">🧠</span>
-                            <strong>Review mistakes</strong>
-                            <span class="card-description">Revisit questions you got wrong and turn them into wins.</span>
-                            <span class="card-progress">
-                                <span class="card-progress-line">
-                                    <span>Items to revisit</span>
-                                    <span>${mistakesCount}</span>
-                                </span>
-                                <span class="mini-track">
-                                    <span class="mini-fill" style="width:${Math.min(100, mistakesCount * 20)}%"></span>
-                                </span>
-                            </span>
-                        </button>
-                    `;
-                }
-
-                // All modes
-                html += PRACTICE_MODES.map(m => `
-                    <button class="practice-card" type="button" data-mode="${m.mode}" style="--card-color:${m.color};">
-                        ${m.tag ? `<span class="card-tag">${m.tag}</span>` : ''}
-                        <span class="card-icon">${m.icon}</span>
-                        <strong>${m.title}</strong>
-                        <span class="card-description">${m.desc}</span>
-                        <span class="card-progress">
-                            <span class="card-progress-line">
-                                <span>${m.progressLabel}</span>
-                                <span>${m.progressValue}</span>
-                            </span>
-                            <span class="mini-track">
-                                <span class="mini-fill" style="width:${m.progressPct}%"></span>
-                            </span>
-                        </span>
-                    </button>
-                `).join('');
-
-                grid.innerHTML = html;
-
-                // Bind click handlers
-                grid.querySelectorAll('[data-mode]').forEach(btn => {
-                    btn.addEventListener('click', () => startPractice(btn.dataset.mode));
-                });
-            }
-
-            function renderSkills() {
-                const container = $('skillsList');
-                const skillSets = {
-                    language: [
-                        { emoji: '🗣️', name: 'Speaking', detail: 'Practice clear pronunciation' },
-                        { emoji: '🎧', name: 'Listening', detail: 'Train your ear to catch more' },
-                        { emoji: '📖', name: 'Vocabulary', detail: 'Recall useful words and phrases' }
-                    ],
-                    chess: [
-                        { emoji: '♟️', name: 'Tactics', detail: 'Forks, pins, skewers' },
-                        { emoji: '♘', name: 'Openings', detail: 'Develop your pieces' },
-                        { emoji: '♔', name: 'Endgames', detail: 'Master basic endings' }
-                    ],
-                    math: [
-                        { emoji: '➕', name: 'Addition', detail: 'Fast, accurate addition' },
-                        { emoji: '✖️', name: 'Multiplication', detail: 'Times tables and beyond' },
-                        { emoji: '➗', name: 'Division', detail: 'Division facts and long division' }
-                    ],
-                    music: [
-                        { emoji: '🎵', name: 'Notes', detail: 'Identify pitch and clef' },
-                        { emoji: '🎶', name: 'Intervals', detail: 'Hear and name intervals' },
-                        { emoji: '🎼', name: 'Chords', detail: 'Major, minor, and more' }
-                    ]
-                };
-                const skills = skillSets[courseType] || skillSets.language;
-                container.innerHTML = skills.map(s => `
-                    <div class="skill-row">
-                        <span class="skill-emoji">${s.emoji}</span>
-                        <span>
-                            <span class="skill-name">${s.name}</span>
-                            <span class="skill-detail">${s.detail}</span>
-                        </span>
-                        <span class="skill-level">Ready</span>
-                    </div>
-                `).join('');
-            }
-
-            /* ============================================================
-               NAVIGATION — go to lesson.html with course-aware practiceMode
-               ============================================================ */
-
-            function startPractice(mode) {
-                profile = readProfile();
-                const course = getActiveCourse();
-                if (!course) {
-                    window.location.href = 'catalog.html';
-                    return;
-                }
-
-                // Prevent "mistakes" for non-language if no mistakes exist
-                if (mode === 'mistakes') {
-                    const hasMistakes = practiceData.mistakes.some(m => m.courseId === course.id);
-                    if (!hasMistakes) {
-                        showToast('No missed questions for this course yet. Complete a lesson first.');
-                        return;
-                    }
-                }
-
-                // Find a lesson to use as the "container" for the review
-                const lessons = Array.isArray(course.lessons) ? course.lessons.filter(l => l && l.id) : [];
-                let lesson = lessons.find(l => !l.completed) || lessons[0];
-                if (!lesson) {
-                    window.location.href = `dashboard.html?courseId=${encodeURIComponent(course.id)}`;
-                    return;
-                }
-
-                const params = new URLSearchParams({
-                    courseId: course.id,
-                    lessonId: lesson.id,
-                    review: '1',
-                    practiceMode: mode
-                });
-                window.location.href = `lesson.html?${params.toString()}`;
-            }
-
-            /* ============================================================
-               TOAST
-               ============================================================ */
-            function showToast(message) {
-                const toast = $('toast');
-                toast.textContent = message;
-                toast.classList.add('show');
-                clearTimeout(toastTimer);
-                toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
-            }
-
-            /* ============================================================
-               BOOT
-               ============================================================ */
-
-            renderCourseChip();
-            renderHero();
-            renderPracticeGrid();
-            renderSkills();
-            renderStats();
-
-            // Shuffle button
-            $('shufflePractice').addEventListener('click', () => {
-                if (!activeCourse) { window.location.href = 'catalog.html'; return; }
-                const mode = PRACTICE_MODES[Math.floor(Math.random() * PRACTICE_MODES.length)].mode;
-                startPractice(mode);
-            });
-
-            // Hero "Start a quick review"
-            document.querySelector('.primary-btn[data-mode="mistakes"]').addEventListener('click', () => {
-                if (courseType === 'language') {
-                    startPractice('mistakes');
-                } else {
-                    // Non-language: use "mixed" instead
-                    startPractice('mixed');
-                }
-            });
-
-            // Storage sync
-            window.addEventListener('storage', (event) => {
-                if (event.key === 'MusalingoProfile') {
-                    profile = readProfile();
-                    renderStats();
-                }
-                if (event.key === PRACTICE_KEY) {
-                    practiceData = readPracticeData();
-                    renderPracticeGrid();
-                }
-            });
-        })();
-    </script>
+    <script src="audience.js"></script>
+    <script src="questions.js"></script>
+    <script src="coach.js"></script>
+    <script src="practice.js"></script>
     <script src="theme.js"></script>
     <script src="bloat.js"></script>
     <script src="pwa.js" defer></script>

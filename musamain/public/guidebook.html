@@ -14,24 +14,33 @@
     <meta name="description" content="Musalingo — free, open source language learning. Cheaper than chai.">
     <style>
         :root {
+            color-scheme: dark;
             --bg: #131f24;
             --card: #1c2a30;
+            --card-2: #223238;
             --text: #f1f7fb;
+            --text-strong: #ffffff;
             --muted: #8a9aa6;
             --accent: #EC96C7;
             --accent-dark: #C46AA1;
             --blue: #1cb0f6;
             --border: #2f3e46;
             --bubble: #2b3a42;
+            --shadow: rgba(0, 0, 0, .28);
+            --gold: #ffc800;
         }
 
         body.light-mode {
+            color-scheme: light;
             --bg: #f7f8fc;
             --card: #ffffff;
+            --card-2: #f3f6fb;
             --text: #1f2937;
+            --text-strong: #111827;
             --muted: #6b7280;
             --border: #e5e7eb;
             --bubble: #eef2f7;
+            --shadow: rgba(15, 23, 42, .08);
         }
 
         * {
@@ -44,12 +53,13 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            padding: 24px 16px 60px;
+            padding: 24px 16px 80px;
             transition: background 0.2s ease, color 0.2s ease;
+            -webkit-font-smoothing: antialiased;
         }
 
         .wrap {
-            max-width: 720px;
+            max-width: 760px;
             margin: 0 auto;
         }
 
@@ -74,21 +84,24 @@
             display: flex;
             align-items: center;
             gap: 18px;
-            padding: 16px 8px 24px;
+            padding: 18px 8px 26px;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
 
         .hero-art {
             font-size: 4.2rem;
             line-height: 1;
             user-select: none;
+            filter: drop-shadow(0 6px 12px var(--shadow));
         }
 
         .hero-text h1 {
             margin: 0 0 6px;
-            font-size: 1.45rem;
+            font-size: 1.5rem;
             font-weight: 800;
+            color: var(--text-strong);
+            letter-spacing: -.02em;
         }
 
         .hero-text p {
@@ -98,17 +111,77 @@
             font-size: 0.95rem;
         }
 
+        /* ===== CTA BUTTONS ===== */
+        .cta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 0 18px;
+            border-radius: 13px;
+            border: 0;
+            background: var(--accent);
+            box-shadow: 0 4px 0 var(--accent-dark);
+            color: #fff;
+            font-weight: 800;
+            font-size: 0.88rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.08s ease, filter 0.15s ease, box-shadow 0.08s ease;
+        }
+
+        .cta:hover {
+            filter: brightness(1.06);
+            transform: translateY(-1px);
+        }
+
+        .cta:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 var(--accent-dark);
+        }
+
+        .cta.secondary {
+            background: var(--card);
+            color: var(--text);
+            box-shadow: 0 4px 0 var(--border);
+            border: 2px solid var(--border);
+        }
+
+        .cta.secondary:active {
+            box-shadow: 0 1px 0 var(--border);
+        }
+
         /* ===== SECTION LABEL ===== */
         .section-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             color: var(--accent);
             font-weight: 800;
             font-size: 0.82rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            margin-bottom: 14px;
+            margin: 0 0 14px;
         }
 
-        /* ===== PHRASE LIST ===== */
+        .section-label .count {
+            color: var(--muted);
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            text-transform: none;
+        }
+
+        /* ===== PHRASE / WORD LIST ===== */
         .phrase-list {
             display: flex;
             flex-direction: column;
@@ -124,12 +197,13 @@
             border: 2px solid var(--border);
             border-radius: 16px;
             cursor: pointer;
-            transition: border-color 0.15s ease, transform 0.1s ease;
+            transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
         }
 
         .phrase:hover {
             border-color: var(--accent);
             transform: translateY(-1px);
+            box-shadow: 0 6px 16px var(--shadow);
         }
 
         .speaker-btn {
@@ -140,14 +214,15 @@
             background: var(--bubble);
             border: none;
             color: var(--accent);
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             cursor: pointer;
             display: grid;
             place-items: center;
+            transition: background 0.15s ease, transform 0.08s ease;
         }
 
         .speaker-btn:hover {
-            background: color-mix(in srgb, var(--accent) 15%, var(--bubble));
+            background: color-mix(in srgb, var(--accent) 18%, var(--bubble));
         }
 
         .speaker-btn:active {
@@ -159,16 +234,78 @@
             min-width: 0;
         }
 
-        .phrase-jp {
-            font-size: 1.15rem;
+        .phrase-target {
+            font-size: 1.12rem;
             font-weight: 800;
             margin-bottom: 4px;
+            color: var(--text-strong);
+            word-break: break-word;
         }
 
         .phrase-en {
             color: var(--muted);
             font-weight: 600;
             font-size: 0.9rem;
+        }
+
+        .word-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: var(--card-2);
+            color: var(--muted);
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .badge.mastered {
+            background: color-mix(in srgb, var(--gold) 18%, var(--card-2));
+            color: var(--gold);
+        }
+
+        .badge.learning {
+            background: color-mix(in srgb, var(--blue) 16%, var(--card-2));
+            color: var(--blue);
+        }
+
+        .badge.starter {
+            background: var(--card-2);
+            color: var(--muted);
+        }
+
+        .badge.stat {
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        /* ===== EMPTY / HINT ===== */
+        .hint {
+            padding: 22px;
+            border-radius: 16px;
+            border: 2px dashed var(--border);
+            background: var(--card);
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .hint strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 4px;
         }
 
         /* ===== TIP BLOCK ===== */
@@ -181,11 +318,39 @@
             color: var(--muted);
             font-weight: 600;
             font-size: 0.92rem;
-            line-height: 1.5;
+            line-height: 1.55;
         }
 
         .tip-block strong {
             color: var(--text);
+        }
+
+        /* ===== FOOTER CTA ===== */
+        .footer-cta {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 18px;
+            background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 18%, var(--card)), var(--card) 70%);
+            border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-cta-text strong {
+            display: block;
+            color: var(--text-strong);
+            font-size: 1.02rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .footer-cta-text span {
+            color: var(--muted);
+            font-size: 0.86rem;
+            font-weight: 600;
         }
 
         @media (max-width: 620px) {
@@ -194,11 +359,20 @@
             }
 
             .hero-text h1 {
-                font-size: 1.2rem;
+                font-size: 1.25rem;
             }
 
-            .phrase-jp {
-                font-size: 1.05rem;
+            .phrase-target {
+                font-size: 1.04rem;
+            }
+
+            .footer-cta {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .footer-cta .cta {
+                justify-content: center;
             }
         }
     </style>
@@ -216,13 +390,34 @@
             <div class="hero-text">
                 <h1 id="guideTitle">Unit 3 Guidebook</h1>
                 <p id="guideIntro">Explore grammar tips and key phrases for this unit</p>
+                <div class="cta-row">
+                    <a class="cta" id="practiceCta" href="practice.html">⚡ Practice these words</a>
+                    <button class="cta secondary" id="speakAllBtn" type="button">🔊 Play all</button>
+                </div>
             </div>
         </div>
 
-        <div class="section-label" id="phrasesLabel">KEY PHRASES</div>
+        <div class="section-label">
+            <span id="phrasesLabel">KEY PHRASES</span>
+            <span class="count" id="phrasesCount"></span>
+        </div>
         <div class="phrase-list" id="phraseList"></div>
 
+        <div class="section-label" style="margin-top: 32px;">
+            <span>FROM YOUR LESSONS</span>
+            <span class="count" id="wordsCount"></span>
+        </div>
+        <div class="phrase-list" id="wordList"></div>
+
         <div class="tip-block" id="tipBlock" hidden></div>
+
+        <div class="footer-cta" id="footerCta" hidden>
+            <div class="footer-cta-text">
+                <strong id="footerCtaTitle">Ready to make these stick?</strong>
+                <span id="footerCtaCopy">Review them as flashcards or a quick quiz in Practice.</span>
+            </div>
+            <a class="cta" id="footerPracticeCta" href="practice.html">Open Practice →</a>
+        </div>
     </div>
 
     <!-- sounds.js must load BEFORE the inline script that uses SFX -->
@@ -230,15 +425,48 @@
 
     <script>
         // ============================================================
-        //  Musalingo — guidebook page
-        //  Works for all courses. Reads theme + accent from settings.
-        //  Speech via sounds.js (SFX.pronounce)
+        //  Musalingo — guidebook page (rewritten)
+        //  - Curated unit phrases (from GUIDES) + all lesson words
+        //  - Reads theme + accent from settings (supports dark & light)
+        //  - Read-only on MusalingoPracticeData (never writes)
+        //  - Speech via sounds.js (SFX.pronounce) with browser fallback
         // ============================================================
 
-        // ---------- 1. SETTINGS ----------
-        const settings = JSON.parse(localStorage.getItem('MusalingoSettings') || '{}');
+        // ---------- 0. SAFE PARSE ----------
+        function safeParse(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : fallback;
+            } catch (err) {
+                console.warn(`[guidebook] Corrupted localStorage for ${key}; using defaults.`, err);
+                return fallback;
+            }
+        }
 
+        function finiteInt(value, fallback) {
+            const n = Number(value);
+            return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : fallback;
+        }
+
+        function esc(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        // ---------- 1. SETTINGS (theme + accent) ----------
+        const settings = safeParse('MusalingoSettings', {});
+
+        // FIX: honor both 'dark' and 'light'. Previously only 'light' was handled,
+        // which meant the page was dark-by-default even when a user picked 'dark'
+        // and never flipped to light on 'light' + system preference.
         if (settings.theme === 'light') {
+            document.body.classList.add('light-mode');
+        } else if (settings.theme === 'dark') {
+            document.body.classList.remove('light-mode');
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
             document.body.classList.add('light-mode');
         }
 
@@ -248,15 +476,15 @@
         }
 
         function darken(hex, amount) {
-            const c = hex.replace('#', '');
+            const c = String(hex).replace('#', '');
+            if (c.length !== 6) return hex;
             const r = parseInt(c.slice(0, 2), 16);
             const g = parseInt(c.slice(2, 4), 16);
             const b = parseInt(c.slice(4, 6), 16);
             const adj = v => Math.max(0, Math.min(255, Math.round(v * (1 - amount))));
-            return '#' +
-                adj(r).toString(16).padStart(2, '0') +
-                adj(g).toString(16).padStart(2, '0') +
-                adj(b).toString(16).padStart(2, '0');
+            return '#' + adj(r).toString(16).padStart(2, '0')
+                + adj(g).toString(16).padStart(2, '0')
+                + adj(b).toString(16).padStart(2, '0');
         }
 
         // ---------- 2. URL PARAMS ----------
@@ -265,6 +493,8 @@
         const sectionNo = params.get('section') || '1';
 
         // ---------- 3. GUIDE DATA ----------
+        // NOTE: fields renamed jp -> target. normalizeGuide() accepts both shapes so
+        // older data (or other pages feeding GUIDE-like objects) keeps working.
         const GUIDES = {
             // ===== JAPANESE =====
             japanese: {
@@ -273,9 +503,9 @@
                     intro: 'Explore grammar tips and key phrases for this unit',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'こんにちは、はなです。', en: "Hello, I'm Hana." },
-                        { jp: 'こんばんは！', en: 'Good evening!' },
-                        { jp: 'なおみさん、またあした。', en: 'See you tomorrow, Naomi.' }
+                        { target: 'こんにちは、はなです。', en: "Hello, I'm Hana." },
+                        { target: 'こんばんは！', en: 'Good evening!' },
+                        { target: 'なおみさん、またあした。', en: 'See you tomorrow, Naomi.' }
                     ],
                     tip: '<strong>Tip:</strong> こんにちは (konnichiwa) is used during the day. Use こんばんは (konbanwa) in the evening.'
                 },
@@ -284,10 +514,10 @@
                     intro: 'Everyday phrases for greetings and goodbyes',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'おはようございます', en: 'Good morning' },
-                        { jp: 'ありがとう', en: 'Thank you' },
-                        { jp: 'さようなら', en: 'Goodbye' },
-                        { jp: 'すみません', en: 'Excuse me' }
+                        { target: 'おはようございます', en: 'Good morning' },
+                        { target: 'ありがとう', en: 'Thank you' },
+                        { target: 'さようなら', en: 'Goodbye' },
+                        { target: 'すみません', en: 'Excuse me' }
                     ],
                     tip: '<strong>Tip:</strong> ありがとう (arigatou) is casual. Add ございます (gozaimasu) to make it formal.'
                 },
@@ -296,9 +526,9 @@
                     intro: 'Polite expressions for daily situations',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'おねがいします', en: 'Please' },
-                        { jp: 'どういたしまして', en: "You're welcome" },
-                        { jp: 'いただきます', en: 'Thanks for the meal (before eating)' }
+                        { target: 'おねがいします', en: 'Please' },
+                        { target: 'どういたしまして', en: "You're welcome" },
+                        { target: 'いただきます', en: 'Thanks for the meal (before eating)' }
                     ],
                     tip: '<strong>Tip:</strong> いただきます is said before eating. ごちそうさま is said after.'
                 }
@@ -311,10 +541,10 @@
                     intro: 'Saludos y presentaciones',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: '¡Hola!', en: 'Hello!' },
-                        { jp: '¿Cómo estás?', en: 'How are you?' },
-                        { jp: 'Mucho gusto', en: 'Nice to meet you' },
-                        { jp: 'Buenos días', en: 'Good morning' }
+                        { target: '¡Hola!', en: 'Hello!' },
+                        { target: '¿Cómo estás?', en: 'How are you?' },
+                        { target: 'Mucho gusto', en: 'Nice to meet you' },
+                        { target: 'Buenos días', en: 'Good morning' }
                     ],
                     tip: '<strong>Tip:</strong> Use "tú" with friends and "usted" in formal situations.'
                 },
@@ -323,9 +553,9 @@
                     intro: 'Frases para el día a día',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: '¿Dónde está?', en: 'Where is it?' },
-                        { jp: 'La cuenta, por favor', en: 'The bill, please' },
-                        { jp: 'Necesito ayuda', en: 'I need help' }
+                        { target: '¿Dónde está?', en: 'Where is it?' },
+                        { target: 'La cuenta, por favor', en: 'The bill, please' },
+                        { target: 'Necesito ayuda', en: 'I need help' }
                     ],
                     tip: '<strong>Tip:</strong> "por favor" is a polite addition to any request.'
                 },
@@ -334,9 +564,9 @@
                     intro: 'Conversación básica',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Lo siento', en: 'I am sorry' },
-                        { jp: 'No entiendo', en: 'I do not understand' },
-                        { jp: '¿Habla inglés?', en: 'Do you speak English?' }
+                        { target: 'Lo siento', en: 'I am sorry' },
+                        { target: 'No entiendo', en: 'I do not understand' },
+                        { target: '¿Habla inglés?', en: 'Do you speak English?' }
                     ],
                     tip: '<strong>Tip:</strong> "Lo siento" is a general apology. Use "perdón" for smaller mistakes.'
                 }
@@ -349,9 +579,9 @@
                     intro: 'Salutations et présentations',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Bonjour !', en: 'Hello!' },
-                        { jp: 'Comment ça va ?', en: 'How are you?' },
-                        { jp: 'Enchanté', en: 'Nice to meet you' }
+                        { target: 'Bonjour !', en: 'Hello!' },
+                        { target: 'Comment ça va ?', en: 'How are you?' },
+                        { target: 'Enchanté', en: 'Nice to meet you' }
                     ],
                     tip: '<strong>Tip:</strong> "Bonjour" works all day. Use "Bonsoir" in the evening.'
                 },
@@ -360,9 +590,9 @@
                     intro: 'Phrases du quotidien',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Merci beaucoup', en: 'Thank you very much' },
-                        { jp: 'S\'il vous plaît', en: 'Please (formal)' },
-                        { jp: 'Au revoir', en: 'Goodbye' }
+                        { target: 'Merci beaucoup', en: 'Thank you very much' },
+                        { target: "S'il vous plaît", en: 'Please (formal)' },
+                        { target: 'Au revoir', en: 'Goodbye' }
                     ],
                     tip: '<strong>Tip:</strong> "S\'il vous plaît" for strangers, "s\'il te plaît" for friends.'
                 },
@@ -371,9 +601,9 @@
                     intro: 'Expressions utiles',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Où est la gare ?', en: 'Where is the station?' },
-                        { jp: 'Je ne comprends pas', en: 'I do not understand' },
-                        { jp: 'Pouvez-vous m\'aider ?', en: 'Can you help me?' }
+                        { target: 'Où est la gare ?', en: 'Where is the station?' },
+                        { target: 'Je ne comprends pas', en: 'I do not understand' },
+                        { target: "Pouvez-vous m'aider ?", en: 'Can you help me?' }
                     ],
                     tip: '<strong>Tip:</strong> In French, "vous" is formal and "tu" is casual.'
                 }
@@ -386,9 +616,9 @@
                     intro: 'Begrüßungen und Vorstellungen',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Hallo!', en: 'Hello!' },
-                        { jp: 'Wie geht es dir?', en: 'How are you?' },
-                        { jp: 'Freut mich', en: 'Nice to meet you' }
+                        { target: 'Hallo!', en: 'Hello!' },
+                        { target: 'Wie geht es dir?', en: 'How are you?' },
+                        { target: 'Freut mich', en: 'Nice to meet you' }
                     ],
                     tip: '<strong>Tip:</strong> "Guten Tag" is formal. "Hallo" works with anyone.'
                 },
@@ -397,9 +627,9 @@
                     intro: 'Alltagsphrasen',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Danke schön', en: 'Thank you very much' },
-                        { jp: 'Bitte', en: 'Please / You\'re welcome' },
-                        { jp: 'Auf Wiedersehen', en: 'Goodbye' }
+                        { target: 'Danke schön', en: 'Thank you very much' },
+                        { target: 'Bitte', en: "Please / You're welcome" },
+                        { target: 'Auf Wiedersehen', en: 'Goodbye' }
                     ],
                     tip: '<strong>Tip:</strong> "Bitte" means both "please" and "you\'re welcome".'
                 },
@@ -408,9 +638,9 @@
                     intro: 'Nützliche Ausdrücke',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Wo ist der Bahnhof?', en: 'Where is the station?' },
-                        { jp: 'Ich verstehe nicht', en: 'I do not understand' },
-                        { jp: 'Können Sie mir helfen?', en: 'Can you help me?' }
+                        { target: 'Wo ist der Bahnhof?', en: 'Where is the station?' },
+                        { target: 'Ich verstehe nicht', en: 'I do not understand' },
+                        { target: 'Können Sie mir helfen?', en: 'Can you help me?' }
                     ],
                     tip: '<strong>Tip:</strong> German nouns are always capitalized.'
                 }
@@ -423,9 +653,9 @@
                     intro: 'अभिवादन और परिचय',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'नमस्ते!', en: 'Hello!' },
-                        { jp: 'आप कैसे हैं?', en: 'How are you?' },
-                        { jp: 'मिलकर खुशी हुई', en: 'Nice to meet you' }
+                        { target: 'नमस्ते!', en: 'Hello!' },
+                        { target: 'आप कैसे हैं?', en: 'How are you?' },
+                        { target: 'मिलकर खुशी हुई', en: 'Nice to meet you' }
                     ],
                     tip: '<strong>Tip:</strong> नमस्ते works for both hello and goodbye.'
                 },
@@ -434,9 +664,9 @@
                     intro: 'रोज़मर्रा के वाक्य',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'धन्यवाद', en: 'Thank you' },
-                        { jp: 'कृपया', en: 'Please' },
-                        { jp: 'फिर मिलेंगे', en: 'See you again' }
+                        { target: 'धन्यवाद', en: 'Thank you' },
+                        { target: 'कृपया', en: 'Please' },
+                        { target: 'फिर मिलेंगे', en: 'See you again' }
                     ],
                     tip: '<strong>Tip:</strong> Use "आप" for respect, "तुम" for close friends.'
                 },
@@ -445,9 +675,9 @@
                     intro: 'उपयोगी वाक्यांश',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'स्टेशन कहाँ है?', en: 'Where is the station?' },
-                        { jp: 'मुझे समझ नहीं आया', en: 'I did not understand' },
-                        { jp: 'मेरी मदद करें', en: 'Please help me' }
+                        { target: 'स्टेशन कहाँ है?', en: 'Where is the station?' },
+                        { target: 'मुझे समझ नहीं आया', en: 'I did not understand' },
+                        { target: 'मेरी मदद करें', en: 'Please help me' }
                     ],
                     tip: '<strong>Tip:</strong> Hindi word order is Subject-Object-Verb.'
                 }
@@ -460,9 +690,9 @@
                     intro: 'Saluti e presentazioni',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Ciao!', en: 'Hello!' },
-                        { jp: 'Come stai?', en: 'How are you?' },
-                        { jp: 'Piacere', en: 'Nice to meet you' }
+                        { target: 'Ciao!', en: 'Hello!' },
+                        { target: 'Come stai?', en: 'How are you?' },
+                        { target: 'Piacere', en: 'Nice to meet you' }
                     ],
                     tip: '<strong>Tip:</strong> "Ciao" is casual. Use "Buongiorno" formally.'
                 },
@@ -471,9 +701,9 @@
                     intro: 'Frasi quotidiane',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Grazie mille', en: 'Thanks a lot' },
-                        { jp: 'Per favore', en: 'Please' },
-                        { jp: 'Arrivederci', en: 'Goodbye' }
+                        { target: 'Grazie mille', en: 'Thanks a lot' },
+                        { target: 'Per favore', en: 'Please' },
+                        { target: 'Arrivederci', en: 'Goodbye' }
                     ],
                     tip: '<strong>Tip:</strong> "Grazie" alone is fine; add "mille" for extra thanks.'
                 },
@@ -482,9 +712,9 @@
                     intro: 'Espressioni utili',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Dov\'è la stazione?', en: 'Where is the station?' },
-                        { jp: 'Non capisco', en: 'I do not understand' },
-                        { jp: 'Puoi aiutarmi?', en: 'Can you help me?' }
+                        { target: "Dov'è la stazione?", en: 'Where is the station?' },
+                        { target: 'Non capisco', en: 'I do not understand' },
+                        { target: 'Puoi aiutarmi?', en: 'Can you help me?' }
                     ],
                     tip: '<strong>Tip:</strong> "Lei" is formal, "tu" is informal.'
                 }
@@ -497,9 +727,9 @@
                     intro: 'التحيات والتعريفات',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'مرحبا!', en: 'Hello!' },
-                        { jp: 'كيف حالك؟', en: 'How are you?' },
-                        { jp: 'تشرفت بلقائك', en: 'Nice to meet you' }
+                        { target: 'مرحبا!', en: 'Hello!' },
+                        { target: 'كيف حالك؟', en: 'How are you?' },
+                        { target: 'تشرفت بلقائك', en: 'Nice to meet you' }
                     ],
                     tip: '<strong>Tip:</strong> Arabic reads right to left.'
                 },
@@ -508,9 +738,9 @@
                     intro: 'عبارات يومية',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'شكرا جزيلا', en: 'Thank you very much' },
-                        { jp: 'من فضلك', en: 'Please' },
-                        { jp: 'إلى اللقاء', en: 'Goodbye' }
+                        { target: 'شكرا جزيلا', en: 'Thank you very much' },
+                        { target: 'من فضلك', en: 'Please' },
+                        { target: 'إلى اللقاء', en: 'Goodbye' }
                     ],
                     tip: '<strong>Tip:</strong> "شكرا" (shukran) is universal for thanks.'
                 },
@@ -519,9 +749,9 @@
                     intro: 'عبارات مفيدة',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'أين المحطة؟', en: 'Where is the station?' },
-                        { jp: 'لا أفهم', en: 'I do not understand' },
-                        { jp: 'هل يمكنك مساعدتي؟', en: 'Can you help me?' }
+                        { target: 'أين المحطة؟', en: 'Where is the station?' },
+                        { target: 'لا أفهم', en: 'I do not understand' },
+                        { target: 'هل يمكنك مساعدتي؟', en: 'Can you help me?' }
                     ],
                     tip: '<strong>Tip:</strong> Arabic verbs change based on who is speaking.'
                 }
@@ -534,9 +764,9 @@
                     intro: 'Greetings and introductions',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Hello!', en: '¡Hola!' },
-                        { jp: 'How are you?', en: '¿Cómo estás?' },
-                        { jp: 'Nice to meet you', en: 'Mucho gusto' }
+                        { target: 'Hello!', en: '¡Hola!' },
+                        { target: 'How are you?', en: '¿Cómo estás?' },
+                        { target: 'Nice to meet you', en: 'Mucho gusto' }
                     ],
                     tip: '<strong>Tip:</strong> English word order is Subject-Verb-Object.'
                 },
@@ -545,9 +775,9 @@
                     intro: 'Everyday phrases',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Thank you very much', en: 'Muchas gracias' },
-                        { jp: 'Please', en: 'Por favor' },
-                        { jp: 'Goodbye', en: 'Adiós' }
+                        { target: 'Thank you very much', en: 'Muchas gracias' },
+                        { target: 'Please', en: 'Por favor' },
+                        { target: 'Goodbye', en: 'Adiós' }
                     ],
                     tip: '<strong>Tip:</strong> "Please" and "thank you" make requests polite.'
                 },
@@ -556,9 +786,9 @@
                     intro: 'Useful expressions',
                     art: '🧑‍🎨',
                     phrases: [
-                        { jp: 'Where is the station?', en: '¿Dónde está la estación?' },
-                        { jp: 'I do not understand', en: 'No entiendo' },
-                        { jp: 'Can you help me?', en: '¿Puedes ayudarme?' }
+                        { target: 'Where is the station?', en: '¿Dónde está la estación?' },
+                        { target: 'I do not understand', en: 'No entiendo' },
+                        { target: 'Can you help me?', en: '¿Puedes ayudarme?' }
                     ],
                     tip: '<strong>Tip:</strong> Use "could" instead of "can" for polite requests.'
                 }
@@ -571,10 +801,10 @@
                     intro: 'Piece movement and board basics',
                     art: '♟',
                     phrases: [
-                        { jp: 'Pawn', en: 'Moves forward 1 (or 2 from start). Captures diagonally.' },
-                        { jp: 'Knight', en: 'Moves in an L-shape: 2 + 1.' },
-                        { jp: 'Bishop', en: 'Moves diagonally, any distance.' },
-                        { jp: 'Rook', en: 'Moves in straight lines: ranks and files.' }
+                        { target: 'Pawn', en: 'Moves forward 1 (or 2 from start). Captures diagonally.' },
+                        { target: 'Knight', en: 'Moves in an L-shape: 2 + 1.' },
+                        { target: 'Bishop', en: 'Moves diagonally, any distance.' },
+                        { target: 'Rook', en: 'Moves in straight lines: ranks and files.' }
                     ],
                     tip: '<strong>Tip:</strong> Control the center four squares (d4, e4, d5, e5) early.'
                 },
@@ -583,10 +813,10 @@
                     intro: 'Captures and tactics',
                     art: '♞',
                     phrases: [
-                        { jp: 'Capture', en: 'Move onto an enemy piece\'s square to take it.' },
-                        { jp: 'Fork', en: 'Attack two pieces at once with one piece.' },
-                        { jp: 'Pin', en: 'Attack a piece so moving it exposes a bigger piece.' },
-                        { jp: 'Skewer', en: 'Attack a valuable piece so it must move, exposing a lesser one.' }
+                        { target: 'Capture', en: "Move onto an enemy piece's square to take it." },
+                        { target: 'Fork', en: 'Attack two pieces at once with one piece.' },
+                        { target: 'Pin', en: 'Attack a piece so moving it exposes a bigger piece.' },
+                        { target: 'Skewer', en: 'Attack a valuable piece so it must move, exposing a lesser one.' }
                     ],
                     tip: '<strong>Tip:</strong> Before every move, ask: "Is my piece safe there?"'
                 },
@@ -595,10 +825,10 @@
                     intro: 'Skewers, pins, and escaping them',
                     art: '🧔',
                     phrases: [
-                        { jp: 'Skewer', en: 'Attack the king first, then capture the piece behind.' },
-                        { jp: 'Absolute pin', en: 'Pinned piece cannot move — king is behind it.' },
-                        { jp: 'Relative pin', en: 'Pinned piece can move, but at a cost.' },
-                        { jp: 'Escape a pin', en: 'Move the king, block the line, or capture the attacker.' }
+                        { target: 'Skewer', en: 'Attack the king first, then capture the piece behind.' },
+                        { target: 'Absolute pin', en: 'Pinned piece cannot move — king is behind it.' },
+                        { target: 'Relative pin', en: 'Pinned piece can move, but at a cost.' },
+                        { target: 'Escape a pin', en: 'Move the king, block the line, or capture the attacker.' }
                     ],
                     tip: '<strong>Tip:</strong> Look for pins along the same rank, file, or diagonal.'
                 },
@@ -607,10 +837,10 @@
                     intro: 'Endgames and checkmate patterns',
                     art: '♔',
                     phrases: [
-                        { jp: 'Checkmate', en: 'King is in check and cannot escape.' },
-                        { jp: 'Stalemate', en: 'Player has no legal moves but is not in check — draw.' },
-                        { jp: 'Promotion', en: 'Pawn reaches the last rank and becomes a queen.' },
-                        { jp: 'King + pawn', en: 'Key endgame. Push the pawn, escort with the king.' }
+                        { target: 'Checkmate', en: 'King is in check and cannot escape.' },
+                        { target: 'Stalemate', en: 'Player has no legal moves but is not in check — draw.' },
+                        { target: 'Promotion', en: 'Pawn reaches the last rank and becomes a queen.' },
+                        { target: 'King + pawn', en: 'Key endgame. Push the pawn, escort with the king.' }
                     ],
                     tip: '<strong>Tip:</strong> In king + pawn endgames, the king must lead the pawn.'
                 }
@@ -623,9 +853,9 @@
                     intro: 'Addition basics',
                     art: '➕',
                     phrases: [
-                        { jp: '2 + 3 = 5', en: 'Two plus three equals five.' },
-                        { jp: '4 + 4 = 8', en: 'Four plus four equals eight.' },
-                        { jp: '10 + 5 = 15', en: 'Ten plus five equals fifteen.' }
+                        { target: '2 + 3 = 5', en: 'Two plus three equals five.' },
+                        { target: '4 + 4 = 8', en: 'Four plus four equals eight.' },
+                        { target: '10 + 5 = 15', en: 'Ten plus five equals fifteen.' }
                     ],
                     tip: '<strong>Tip:</strong> Start with the bigger number and count up.'
                 },
@@ -634,9 +864,9 @@
                     intro: 'Multiplication tables',
                     art: '✖️',
                     phrases: [
-                        { jp: '3 × 4 = 12', en: 'Three times four equals twelve.' },
-                        { jp: '5 × 6 = 30', en: 'Five times six equals thirty.' },
-                        { jp: '7 × 8 = 56', en: 'Seven times eight equals fifty-six.' }
+                        { target: '3 × 4 = 12', en: 'Three times four equals twelve.' },
+                        { target: '5 × 6 = 30', en: 'Five times six equals thirty.' },
+                        { target: '7 × 8 = 56', en: 'Seven times eight equals fifty-six.' }
                     ],
                     tip: '<strong>Tip:</strong> Learn 2×, 5×, 10× first — they are the easiest patterns.'
                 },
@@ -645,9 +875,9 @@
                     intro: 'Division and fractions',
                     art: '➗',
                     phrases: [
-                        { jp: '12 ÷ 4 = 3', en: 'Twelve divided by four equals three.' },
-                        { jp: '1/2 = 0.5', en: 'One half equals zero point five.' },
-                        { jp: '3/4 = 0.75', en: 'Three quarters equals zero point seven five.' }
+                        { target: '12 ÷ 4 = 3', en: 'Twelve divided by four equals three.' },
+                        { target: '1/2 = 0.5', en: 'One half equals zero point five.' },
+                        { target: '3/4 = 0.75', en: 'Three quarters equals zero point seven five.' }
                     ],
                     tip: '<strong>Tip:</strong> Division is the opposite of multiplication.'
                 }
@@ -660,9 +890,9 @@
                     intro: 'Rhythm and beat',
                     art: '🎵',
                     phrases: [
-                        { jp: 'Do', en: 'First note of the scale' },
-                        { jp: 'Re', en: 'Second note' },
-                        { jp: 'Mi', en: 'Third note' }
+                        { target: 'Do', en: 'First note of the scale' },
+                        { target: 'Re', en: 'Second note' },
+                        { target: 'Mi', en: 'Third note' }
                     ],
                     tip: '<strong>Tip:</strong> Clap on each beat to feel the rhythm.'
                 },
@@ -671,9 +901,9 @@
                     intro: 'Continuing the scale',
                     art: '🎶',
                     phrases: [
-                        { jp: 'Fa', en: 'Fourth note' },
-                        { jp: 'Sol', en: 'Fifth note' },
-                        { jp: 'La', en: 'Sixth note' }
+                        { target: 'Fa', en: 'Fourth note' },
+                        { target: 'Sol', en: 'Fifth note' },
+                        { target: 'La', en: 'Sixth note' }
                     ],
                     tip: '<strong>Tip:</strong> The 5th note (Sol) is the strongest after Do.'
                 },
@@ -682,13 +912,29 @@
                     intro: 'Completing the scale',
                     art: '🎼',
                     phrases: [
-                        { jp: 'Ti', en: 'Seventh note' },
-                        { jp: 'Do (high)', en: 'Octave — start of the next scale' }
+                        { target: 'Ti', en: 'Seventh note' },
+                        { target: 'Do (high)', en: 'Octave — start of the next scale' }
                     ],
                     tip: '<strong>Tip:</strong> Ti creates tension that resolves to Do.'
                 }
             }
         };
+
+        // Accept both the new {target} shape and the old {jp} shape.
+        function normalizeGuide(g) {
+            if (!g || typeof g !== 'object') return null;
+            const phrases = Array.isArray(g.phrases) ? g.phrases.map(p => ({
+                target: String(p?.target ?? p?.jp ?? ''),
+                en: String(p?.en ?? '')
+            })).filter(p => p.target) : [];
+            return {
+                title: String(g.title || ''),
+                intro: String(g.intro || ''),
+                art: String(g.art || '🧑‍🎨'),
+                phrases,
+                tip: typeof g.tip === 'string' ? g.tip : ''
+            };
+        }
 
         function defaultGuide() {
             return {
@@ -701,9 +947,137 @@
         }
 
         const courseGuides = GUIDES[courseId] || {};
-        const guide = courseGuides[sectionNo] || defaultGuide();
+        const guide = normalizeGuide(courseGuides[sectionNo]) || defaultGuide();
 
-        // ---------- 4. RENDER ----------
+        // ---------- 4. LESSON WORDS (read-only) ----------
+        const LANGUAGE_CODES = {
+            English: 'en-US', Spanish: 'es-ES', French: 'fr-FR', German: 'de-DE',
+            Italian: 'it-IT', Japanese: 'ja-JP', Hindi: 'hi-IN', Arabic: 'ar-SA',
+            Korean: 'ko-KR', Telugu: 'te-IN'
+        };
+
+        const COURSE_ID_TO_LANG = {
+            japanese: 'Japanese', spanish: 'Spanish', french: 'French', german: 'German',
+            italian: 'Italian', hindi: 'Hindi', arabic: 'Arabic', english: 'English',
+            korean: 'Korean', telugu: 'Telugu', chinese: 'Chinese', portuguese: 'Portuguese',
+            russian: 'Russian', turkish: 'Turkish',
+            chess: 'English', math: 'English', music: 'English'
+        };
+
+        const COURSE_ID_TO_DISPLAY = {
+            japanese: 'Japanese', spanish: 'Spanish', french: 'French', german: 'German',
+            italian: 'Italian', hindi: 'Hindi', arabic: 'Arabic', english: 'English',
+            korean: 'Korean', telugu: 'Telugu',
+            chess: 'Chess', math: 'Math', music: 'Music'
+        };
+
+        const targetLanguage = COURSE_ID_TO_LANG[courseId] || 'English';
+        const courseType = ['chess', 'math', 'music'].includes(courseId) ? courseId : 'language';
+
+        // Resolve the learner's own language for localized meanings.
+        function resolveLanguage(name) {
+            const raw = String(name || '').trim();
+            const table = [
+                [/hindi|हिंदी|हिन्दी/i, 'Hindi'], [/telugu|తెలుగు/i, 'Telugu'], [/korean|한국어/i, 'Korean'],
+                [/japanese|日本語|nihongo/i, 'Japanese'], [/arabic|العربية/i, 'Arabic'], [/spanish|español|espanol/i, 'Spanish'],
+                [/french|français|francais/i, 'French'], [/german|deutsch/i, 'German'], [/italian|italiano/i, 'Italian'],
+                [/english/i, 'English']
+            ];
+            for (const [pattern, language] of table) if (pattern.test(raw)) return language;
+            return raw || 'English';
+        }
+
+        const profile = safeParse('MusalingoProfile', {});
+        const activeCourse = (() => {
+            const courses = Array.isArray(profile.courses) ? profile.courses.filter(c => c && typeof c === 'object') : [];
+            if (!courses.length) return null;
+            if (profile.activeCourseId) {
+                const match = courses.find(c => c.id === profile.activeCourseId);
+                if (match) return match;
+            }
+            return courses[0];
+        })();
+        const audienceLanguage = resolveLanguage(activeCourse?.speakerLanguage || 'English');
+
+        function localizeMeaning(meaning) {
+            const text = String(meaning ?? '').trim();
+            const dictionary = window.MusalingoAudience?.translations?.[audienceLanguage];
+            return dictionary?.[text.toLowerCase()] || text;
+        }
+
+        function isMastered(word) { return (Number(word.box) || 1) >= 4; }
+
+        function getLessonWords() {
+            const practice = safeParse('MusalingoPracticeData', {});
+            const words = Array.isArray(practice.words) ? practice.words : [];
+            return words
+                .filter(w => w && typeof w === 'object'
+                    && w.courseId === courseId
+                    && typeof w.word === 'string' && w.word
+                    && typeof w.meaning === 'string' && w.meaning
+                    && !w.starter)
+                // If a word carries a unit/section, prefer those that match this page.
+                // Words without unit metadata are shown for all sections (graceful fallback).
+                .filter(w => {
+                    const u = w.unit ?? w.section;
+                    if (u == null) return true;
+                    return String(u) === String(sectionNo);
+                })
+                .sort((a, b) => (Number(a.box) || 1) - (Number(b.box) || 1)
+                    || (a.lastPracticed || 0) - (b.lastPracticed || 0));
+        }
+
+        function getStarterWords() {
+            if (courseType !== 'language') return [];
+            const map = window.MusalingoQuestions?.englishTranslations?.[targetLanguage];
+            if (!map || typeof map !== 'object') return [];
+            return Object.entries(map).map(([word, meaning]) => ({
+                key: `${courseId}|${word}`,
+                courseId,
+                word,
+                meaning,
+                pronunciation: '',
+                seen: 0,
+                correct: 0,
+                wrong: 0,
+                box: 1,
+                starter: true
+            }));
+        }
+
+        function getBankWords() {
+            const mine = getLessonWords();
+            const known = new Set(mine.map(w => w.key));
+            const allPractice = (safeParse('MusalingoPracticeData', {}).words || []);
+            const progressed = new Map(
+                allPractice.filter(w => w && w.courseId === courseId).map(w => [w.key, w])
+            );
+            const starters = getStarterWords()
+                .filter(w => !known.has(w.key))
+                .map(w => progressed.get(w.key) || w);
+            return [...mine, ...starters];
+        }
+
+        function speak(text, language, rate = 0.9) {
+            const value = String(text || '').trim();
+            if (!value) return;
+            try {
+                if (window.SFX && typeof window.SFX.pronounce === 'function') {
+                    window.SFX.pronounce(value, { lang: language, rate });
+                    return;
+                }
+            } catch (err) { /* fall through */ }
+            try {
+                if (!('speechSynthesis' in window)) return;
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(value);
+                u.lang = LANGUAGE_CODES[language] || 'en-US';
+                u.rate = rate;
+                window.speechSynthesis.speak(u);
+            } catch (err) { /* no voice */ }
+        }
+
+        // ---------- 5. RENDER ----------
         document.getElementById('guideTitle').textContent = guide.title;
         document.getElementById('guideIntro').textContent = guide.intro;
         document.getElementById('heroArt').textContent = guide.art || '🧑‍🎨';
@@ -711,61 +1085,123 @@
         document.getElementById('backLink').href =
             `sections.html?courseId=${encodeURIComponent(courseId)}`;
 
-        const list = document.getElementById('phraseList');
+        // Practice CTA — pass course + section so practice can land on the right course.
+        const practiceUrl = `practice.html?courseId=${encodeURIComponent(courseId)}&section=${encodeURIComponent(sectionNo)}`;
+        document.getElementById('practiceCta').href = practiceUrl;
+        document.getElementById('footerPracticeCta').href = practiceUrl;
+
+        // --- Curated phrases ---
+        const phraseList = document.getElementById('phraseList');
+        const phrasesCount = document.getElementById('phrasesCount');
         if (!guide.phrases.length) {
-            list.innerHTML = `<p style="color:var(--muted);">No phrases for this unit yet.</p>`;
+            phraseList.innerHTML = `<div class="hint"><strong>No key phrases yet</strong>This unit doesn't have curated phrases. Check the words below from your lessons.</div>`;
+            phrasesCount.textContent = '';
         } else {
-            list.innerHTML = guide.phrases.map((p, i) => `
+            phrasesCount.textContent = `${guide.phrases.length} phrase${guide.phrases.length === 1 ? '' : 's'}`;
+            phraseList.innerHTML = guide.phrases.map((p, i) => `
                 <div class="phrase" data-idx="${i}">
                     <button class="speaker-btn" data-idx="${i}" aria-label="Play audio">🔊</button>
                     <div class="phrase-text">
-                        <div class="phrase-jp">${p.jp}</div>
-                        <div class="phrase-en">${p.en}</div>
+                        <div class="phrase-target">${esc(p.target)}</div>
+                        <div class="phrase-en">${esc(p.en)}</div>
                     </div>
                 </div>
             `).join('');
         }
 
+        // --- Lesson words ---
+        const wordList = document.getElementById('wordList');
+        const wordsCount = document.getElementById('wordsCount');
+        const bank = getBankWords();
+        if (!bank.length) {
+            wordList.innerHTML = `<div class="hint"><strong>No words from your lessons yet</strong>Finish a lesson and every new word will show up here with its translation.</div>`;
+            wordsCount.textContent = '';
+        } else {
+            const mineCount = bank.filter(w => !w.starter).length;
+            const mastered = bank.filter(isMastered).length;
+            wordsCount.textContent = `${bank.length} word${bank.length === 1 ? '' : 's'} · ${mineCount} from your lessons · ${mastered} mastered`;
+            wordList.innerHTML = bank.map((w, i) => {
+                const meaning = localizeMeaning(w.meaning);
+                const masteredBadge = isMastered(w) ? '<span class="badge mastered">★ Mastered</span>' : '<span class="badge learning">Learning</span>';
+                const starterBadge = w.starter ? '<span class="badge starter">Starter</span>' : '';
+                const stats = (!w.starter && (w.correct || w.wrong))
+                    ? `<span class="badge stat">✓${finiteInt(w.correct, 0)} ✗${finiteInt(w.wrong, 0)}</span>`
+                    : '';
+                return `
+                    <div class="phrase" data-word-idx="${i}">
+                        <button class="speaker-btn" data-word-idx="${i}" aria-label="Listen to ${esc(w.word)}">🔊</button>
+                        <div class="phrase-text">
+                            <div class="phrase-target">${esc(w.word)}${w.pronunciation ? ` <span style="color:var(--muted);font-weight:600;font-size:.8rem;">${esc(w.pronunciation)}</span>` : ''}</div>
+                            <div class="phrase-en">${esc(meaning)}</div>
+                            <div class="word-meta">${masteredBadge}${starterBadge}${stats}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- Tip ---
         if (guide.tip) {
             const tipBlock = document.getElementById('tipBlock');
             tipBlock.innerHTML = guide.tip;
             tipBlock.hidden = false;
         }
 
-        // ---------- 5. TTS via sounds.js ----------
-        // Map course ids to display names for SFX.pronounce.
-        const COURSE_ID_TO_LANG = {
-            japanese: 'Japanese',
-            spanish: 'Spanish',
-            french: 'French',
-            german: 'German',
-            italian: 'Italian',
-            hindi: 'Hindi',
-            arabic: 'Arabic',
-            english: 'English',
-            korean: 'Korean',
-            telugu: 'Telugu',
-            chinese: 'Chinese',
-            portuguese: 'Portuguese',
-            russian: 'Russian',
-            turkish: 'Turkish',
-            chess: 'English',
-            math: 'English',
-            music: 'English'
-        };
+        // --- Footer CTA ---
+        if (bank.length || guide.phrases.length) {
+            const footer = document.getElementById('footerCta');
+            footer.hidden = false;
+            document.getElementById('footerCtaTitle').textContent =
+                courseType === 'language' ? `Ready to make these ${bank.length} words stick?` : 'Ready to practice?';
+            document.getElementById('footerCtaCopy').textContent =
+                courseType === 'language'
+                    ? 'Review them as flashcards or a quick quiz in Practice.'
+                    : `Open Practice for ${COURSE_ID_TO_DISPLAY[courseId] || 'this course'}.`;
+        }
 
-        document.getElementById('phraseList').addEventListener('click', (e) => {
+        // ---------- 6. EVENT HANDLERS ----------
+        // Curated phrases: tap anywhere on row or the speaker button.
+        phraseList.addEventListener('click', (e) => {
             const btn = e.target.closest('.speaker-btn');
             const row = e.target.closest('.phrase');
             if (!btn && !row) return;
-
             const idx = Number((btn || row).dataset.idx);
             const phrase = guide.phrases[idx];
             if (!phrase) return;
-
-            const spokenLang = COURSE_ID_TO_LANG[courseId] || 'English';
-            SFX.pronounce(phrase.jp, { lang: spokenLang, rate: 0.85 });
+            speak(phrase.target, targetLanguage, 0.85);
         });
+
+        // Lesson words: same interaction pattern.
+        wordList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.speaker-btn');
+            const row = e.target.closest('.phrase');
+            if (!btn && !row) return;
+            const idx = Number((btn || row).dataset.wordIdx);
+            const word = bank[idx];
+            if (!word) return;
+            speak(word.word, targetLanguage, 0.85);
+        });
+
+        // "Play all" — queue curated phrases, then fall back to first 5 words.
+        const speakAllBtn = document.getElementById('speakAllBtn');
+        if (speakAllBtn) {
+            speakAllBtn.addEventListener('click', () => {
+                const items = guide.phrases.length
+                    ? guide.phrases.map(p => p.target)
+                    : bank.slice(0, 5).map(w => w.word);
+                if (!items.length) return;
+                let i = 0;
+                const next = () => {
+                    if (i >= items.length) return;
+                    const text = items[i++];
+                    speak(text, targetLanguage, 0.85);
+                    // Rough pacing: ~350ms per word + 800ms buffer. Good enough for
+                    // SFX.pronounce; if SFX exposes an onend hook, swap this out.
+                    setTimeout(next, 350 * Math.max(1, String(text).split(/\s+/).length) + 800);
+                };
+                next();
+            });
+        }
     </script>
 
     <script src="theme.js"></script>

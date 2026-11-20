@@ -1,5 +1,5 @@
 ﻿/* ============================================================
-   Musalingo — Service Worker (v38)
+   Musalingo — Service Worker (v39)
    - Caches the app shell for offline use
    - Network-first for HTML (with 5s timeout)
    - Cache-first for static assets
@@ -7,7 +7,7 @@
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v38';  // Update this to force a new cache
+const CACHE_VERSION = 'musalingo-v39';  // Update this to force a new cache
 
 const APP_SHELL = [
     '/',

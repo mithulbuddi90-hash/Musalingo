@@ -16,670 +16,581 @@
 
     <style>
         :root {
-            --text: #1f2937;
-            --muted: #6b7280;
-            --accent: #EC96C7;
-            --accent-dark: #a83272;
-            --blue: #2b70c9;
+            --text: #3c3c3c;
+            --text-light: #afafaf;
+            --muted: #afafaf;
+            --accent: #58cc02;
+            --accent-dark: #46a302;
+            --accent-shadow: #58a700;
+            --blue: #1cb0f6;
+            --blue-dark: #1899d6;
+            --red: #ff4b4b;
+            --red-dark: #ea2b2b;
             --card: #ffffff;
-            --bg: #f7f8fc;
-            --border: #e5e7eb;
+            --bg: #ffffff;
+            --border: #e5e5e5;
+            --duo-border: 2px solid #e5e5e5;
             --light: #ebecd0;
             --dark: #739552;
         }
 
         body.dark-mode {
-            --text: #e5e7eb;
-            --muted: #aeb9ca;
-            --accent-dark: #f4a1cd;
-            --card: #1f2937;
-            --bg: #111827;
-            --border: #374151;
+            --text: #f1f7fb;
+            --text-light: #8a9aa6;
+            --muted: #8a9aa6;
+            --card: #1c2a30;
+            --bg: #131f24;
+            --border: #2f3e46;
+            --duo-border: 2px solid #37464f;
         }
 
         * {
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+            font-family: "din-round", "Segoe UI", Arial, sans-serif;
+            background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            padding: 20px;
-        }
-
-        body.dark-mode {
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-        }
-
-        body.dark-mode .card {
-            background: #273449;
-            border-color: #374151;
-        }
-
-        body.dark-mode .answer-btn {
-            background: #1f2937;
-            border-color: #4b5563;
-            color: var(--text);
-        }
-
-        body.dark-mode .audio-btn {
-            background: #1f2937;
-            border-color: #6b7280;
-            color: var(--text);
-        }
-
-        body.dark-mode .answer-btn.correct,
-        body.dark-mode .completion-panel {
-            background: #4b2941;
-            border-color: #713f5f;
-            color: #fff;
-        }
-
-        body.dark-mode .answer-btn.wrong {
-            background: #45242b;
-            border-color: #7f1d1d;
-            color: #fff;
-        }
-
-        body.dark-mode .spell-input,
-        body.dark-mode .translate-input {
-            background: #1f2937;
-            border-color: #6b7280;
-            color: var(--text);
-        }
-
-        body.dark-mode .spell-input::placeholder,
-        body.dark-mode .translate-input::placeholder {
-            color: #aeb9ca;
-            opacity: 1;
-        }
-
-        body.dark-mode .match-item {
-            background: #1f2937;
-            border-color: #6b7280;
-            color: var(--text);
-        }
-
-        body.dark-mode .match-item.selected {
-            background: #1e3a5f;
-            border-color: #60a5fa;
-        }
-
-        body.dark-mode .match-item.matched {
-            background: #14532d;
-            border-color: #22c55e;
-            color: #dcfce7;
-        }
-
-        body.dark-mode .arrange-target {
-            background: #1e3a5f;
-            border-color: #6b7280;
-        }
-
-        body.dark-mode .arrange-pool {
-            background: #1f2937;
-            border-color: #6b7280;
-        }
-
-        body.dark-mode .arrange-word {
-            background: #273449;
-            border-color: #6b7280;
-            color: var(--text);
-        }
-
-        body.dark-mode .arrange-word.in-target {
-            background: #4b2941;
-            border-color: #d477ae;
-        }
-
-        body.dark-mode #graphSvg {
-            background: #1f2937;
-        }
-
-        body.dark-mode .message {
-            color: #f4a1cd;
-        }
-
-        .page {
-            min-height: calc(100vh - 40px);
-            display: grid;
-            place-items: center;
-        }
-
-        .shell {
-            width: min(760px, 100%);
-            background: var(--card);
-            border-radius: 28px;
-            padding: 28px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
-        }
-
-        .top-row {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
         }
 
-        .lesson-progress {
-            margin: 0 0 18px;
-        }
-
-        .lesson-progress-meta {
+        /* ===== TOP BAR ===== */
+        .top-bar {
+            width: min(800px, 100%);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 7px;
-            color: var(--muted);
-            font-size: 0.82rem;
-            font-weight: 700;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
         }
 
-        .lesson-progress-count {
+        .close-btn {
+            font-size: 1.8rem;
+            color: var(--text-light);
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
             color: var(--text);
-            font-variant-numeric: tabular-nums;
         }
 
         .lesson-progress-track {
-            height: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border);
+            flex: 1;
+            height: 16px;
+            background: var(--border);
             border-radius: 999px;
-            background: #e5e7eb;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
         }
 
         .lesson-progress-fill {
-            width: 0;
+            width: 0%;
             height: 100%;
             border-radius: inherit;
-            background: linear-gradient(90deg, #7ed957, #58cc02);
-            box-shadow: 0 1px 2px rgba(42, 133, 0, 0.22);
-            transition: width 0.35s ease;
+            background: var(--accent);
+            transition: width 0.3s ease;
+            position: relative;
         }
 
-        body.dark-mode .lesson-progress-track {
-            background: #374151;
+        .lesson-progress-fill::after {
+            content: "";
+            position: absolute;
+            top: 4px;
+            left: 8px;
+            right: 8px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 999px;
         }
 
         .heart-gauge {
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            gap: 6px;
-            flex: 0 0 auto;
-            color: var(--muted);
-            font-weight: 800;
-        }
-
-        .heart-gauge .icon {
+            gap: 4px;
+            color: var(--red);
+            font-weight: 900;
             font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
-        .heart-gauge-count {
-            font-size: 1rem;
+        /* ===== MAIN SHELL ===== */
+        .shell {
+            width: min(800px, 100%);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 20px;
+        }
+
+        /* ===== QUESTION AREA ===== */
+        .question-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-top: 10px;
         }
 
         .title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin: 0 0 8px 0;
+            color: var(--text);
         }
 
         .subtitle {
-            color: var(--muted);
-            margin: 6px 0 0;
+            color: var(--text-light);
+            margin: 0 0 24px 0;
+            font-size: 1rem;
+            font-weight: 700;
         }
 
-        .card {
-            background: #f9fcff;
-            border: 1px solid #e2ebff;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-
-        .card h3 {
-            margin: 0 0 8px;
-            font-size: 1.1rem;
-        }
-
-        .prompt-heading {
+        /* ===== DUOLINGO PROMPT LAYOUT ===== */
+        .prompt-container {
             display: flex;
-            align-items: center;
-            margin-bottom: 8px;
+            align-items: flex-end;
+            /* Aligns bubble to bottom of mascot */
+            gap: 16px;
+            margin-bottom: 24px;
+            cursor: pointer;
+            position: relative;
         }
 
-        .question-row {
+        /* Blue backdrop character area */
+        .mascot-wrap {
+            width: 140px;
+            height: 140px;
+            flex-shrink: 0;
+            position: relative;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            align-items: flex-end;
+            justify-content: center;
+            animation: float 3s ease-in-out infinite;
         }
 
+        .mascot-wrap::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            background: #1cb0f6;
+            /* Duolingo Blue */
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .mascot-wrap img {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        .mascot-emoji {
+            position: relative;
+            z-index: 1;
+            font-size: 5rem;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            background: var(--card);
+            border: var(--duo-border);
+            border-bottom-width: 4px;
+            border-radius: 16px;
+            padding: 16px 20px;
+            position: relative;
+            flex: 1;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        /* The proper triangular tail pointing left */
+        .speech-bubble::before {
+            content: "";
+            position: absolute;
+            left: -10px;
+            bottom: 20px;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-right: 12px solid var(--border);
+            /* tail color */
+        }
+
+        .speech-bubble::after {
+            content: "";
+            position: absolute;
+            left: -7px;
+            bottom: 22px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 10px solid var(--card);
+            /* inner tail color */
+        }
+
+        /* Audio Controls */
         .audio-controls {
             display: flex;
-            flex: 0 0 auto;
-            gap: 6px;
+            gap: 8px;
+            margin-top: 12px;
+            margin-left: 156px;
         }
 
         .audio-btn {
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 5px 8px;
-            background: #fff;
-            color: var(--text);
+            background: var(--bg);
+            border: var(--duo-border);
+            border-bottom-width: 4px;
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-weight: 800;
+            color: var(--blue);
             cursor: pointer;
-            font-size: 0.75rem;
+            font-size: 0.9rem;
+            transition: all 0.1s ease;
+        }
+
+        .audio-btn:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+        }
+
+        /* Meaning Reveal */
+        .meaning-reveal {
+            background: var(--bg);
+            border: var(--duo-border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            display: none;
+            margin-left: 156px;
+        }
+
+        .meaning-reveal[hidden] {
+            display: none;
+        }
+
+        .meaning-reveal:not([hidden]) {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tap-hint {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            text-align: right;
+            margin-top: 8px;
             font-weight: 700;
+            margin-left: 156px;
         }
 
-        .audio-btn:hover {
-            border-color: var(--blue);
+        /* ===== OPTIONS GRID ===== */
+        .options-area {
+            margin-top: auto;
+            padding-bottom: 24px;
         }
 
-        .card p {
-            margin: 0 0 14px;
-            color: var(--muted);
-        }
-
-        .heart-gate {
-            display: grid;
-            gap: 12px;
-        }
-
-        .heart-gate p {
-            margin: 0;
-            color: var(--muted);
-            font-weight: 700;
-        }
-
-        .heart-gate [hidden] {
-            display: none !important;
-        }
-
-        #promptText {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .blank {
-            display: inline-block;
-            min-width: 60px;
-            border-bottom: 2px solid var(--accent);
-            text-align: center;
-            color: var(--accent-dark);
-            font-weight: 700;
-        }
-
-        /* ---------- Answer buttons ---------- */
         .answer-grid {
             display: grid;
-            gap: 10px;
+            gap: 12px;
             grid-template-columns: 1fr 1fr;
         }
 
         .answer-btn {
-            border: 1px solid #d1d5db;
-            background: #fff;
-            border-radius: 12px;
-            padding: 12px 14px;
+            background: var(--card);
+            border: var(--duo-border);
+            border-bottom-width: 4px;
+            border-radius: 16px;
+            padding: 16px;
             cursor: pointer;
-            text-align: left;
-            font-weight: 600;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.1rem;
             color: var(--text);
+            transition: all 0.1s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
         }
 
-        .answer-choice {
-            display: block;
-        }
-
-        .answer-pronunciation {
-            display: block;
-            margin-top: 4px;
-            color: var(--muted);
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .answer-btn.correct {
-            background: #fdf2f8;
-            border-color: #f7bfdc;
-        }
-
-        .answer-btn.wrong {
-            background: #fff1f2;
-            border-color: #fecdd3;
-        }
-
-        .answer-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.8;
+        .answer-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
         }
 
         .answer-btn.selected {
             border-color: var(--blue);
-            box-shadow: 0 0 0 2px rgba(43, 112, 201, 0.2);
+            background: rgba(28, 176, 246, 0.1);
+            color: var(--blue);
         }
 
-        /* ---------- Match pairs ---------- */
-        .match-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+        .answer-btn.correct {
+            border-color: var(--accent);
+            background: rgba(88, 204, 2, 0.1);
+            color: var(--accent);
         }
 
-        .match-col {
+        .answer-btn.wrong {
+            border-color: var(--red);
+            background: rgba(255, 75, 75, 0.1);
+            color: var(--red);
+        }
+
+        .answer-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        /* ===== BOTTOM BAR ===== */
+        .bottom-bar {
+            border-top: var(--duo-border);
+            padding: 16px 20px;
+            margin-top: 16px;
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .match-item {
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 2px solid #d1d5db;
-            background: #fff;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .match-item.selected {
-            border-color: var(--blue);
-            background: #eff6ff;
-        }
-
-        .match-item.matched {
-            border-color: #22c55e;
-            background: #dcfce7;
-            opacity: 0.7;
-            cursor: default;
-        }
-
-        .match-item.shake {
-            animation: shake 0.4s;
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-6px);
-            }
-
-            75% {
-                transform: translateX(6px);
-            }
-        }
-
-        /* ---------- Arrange ---------- */
-        .arrange-target,
-        .arrange-pool {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            min-height: 48px;
-            padding: 10px;
-            border: 2px dashed #d1d5db;
-            border-radius: 12px;
-            margin-bottom: 12px;
-        }
-
-        .arrange-target {
-            background: #f0f9ff;
-        }
-
-        .arrange-pool {
-            background: #fafafa;
-        }
-
-        .arrange-word {
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: 1px solid #d1d5db;
-            background: #fff;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .arrange-word.in-target {
-            background: #fdf2f8;
-            border-color: #f7bfdc;
-        }
-
-        /* ---------- Slider ---------- */
-        .slider-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            padding: 20px 8px;
-        }
-
-        .slider-wrap input[type=range] {
-            width: 100%;
-            accent-color: var(--accent);
-            height: 8px;
-        }
-
-        .slider-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            text-align: center;
-            color: var(--accent-dark);
-        }
-
-        /* ---------- Graph ---------- */
-        .graph-wrap {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 12px;
-            padding: 12px;
-        }
-
-        #graphSvg {
-            background: #fafafa;
-            border-radius: 12px;
-            cursor: crosshair;
-            max-width: 100%;
-        }
-
-        /* ---------- Spell ---------- */
-        .spell-input {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 1.1rem;
-            border: 2px solid #d1d5db;
-            border-radius: 12px;
-            outline: none;
-            background: #fff;
-            color: var(--text);
-        }
-
-        #translateInput {
-            min-height: 64px;
-            font-size: 1.15rem;
-            padding: 16px 18px;
-        }
-
-        .spell-input:focus {
-            border-color: var(--blue);
-        }
-
-        /* ---------- Speak ---------- */
-        .speak-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        /* ---------- Misc ---------- */
-        .message {
-            margin-top: 10px;
-            font-weight: 600;
-            color: var(--accent-dark);
-        }
-
-        .actions {
-            display: flex;
             justify-content: space-between;
-            align-items: center;
+            gap: 16px;
+            background: var(--bg);
+            width: 100%;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .status-text {
+            color: var(--accent);
+            font-weight: 900;
+            font-size: 1.2rem;
+            flex: 1;
+        }
+
+        .status-text.wrong-text {
+            color: var(--red);
+        }
+
+        .status-text.neutral-text {
+            color: var(--text-light);
+        }
+
+        .action-buttons {
+            display: flex;
             gap: 12px;
-            margin-top: 14px;
         }
 
         .btn {
-            display: inline-block;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: var(--accent);
-            color: white;
-            text-decoration: none;
-            font-weight: 700;
-            box-shadow: 0 6px 0 var(--accent-shadow, var(--accent-dark));
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 32px;
+            border-radius: 16px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             border: none;
             cursor: pointer;
+            text-decoration: none;
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 0 var(--accent-shadow);
+            background: var(--accent);
+            color: #fff;
+            min-width: 140px;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 transparent;
+        }
+
+        .btn:disabled {
+            background: var(--border);
+            color: var(--text-light);
+            box-shadow: none;
+            cursor: not-allowed;
         }
 
         .btn.secondary {
-            background: var(--blue);
-            box-shadow: 0 6px 0 #205ea5;
+            background: transparent;
+            color: var(--text-light);
+            box-shadow: none;
+            border: 2px solid var(--border);
         }
 
+        .btn.secondary:active {
+            background: var(--border);
+            transform: none;
+        }
+
+        /* ===== COMPLETION PANEL ===== */
         .completion-panel {
-            background: #fdf2f8;
-            border: 1px solid #f7bfdc;
-            border-radius: 20px;
-            padding: 20px;
+            background: var(--card);
+            border: var(--duo-border);
+            border-radius: 24px;
+            padding: 32px;
             text-align: center;
-        }
-
-        .completion-panel[hidden] {
-            display: none;
+            margin-top: 32px;
+            box-shadow: 0 4px 0 var(--border);
         }
 
         .completion-panel h2 {
-            margin: 0 0 14px;
+            font-size: 2rem;
+            color: var(--accent);
+            margin-top: 0;
         }
 
         .completion-stats {
             display: flex;
             justify-content: center;
-            gap: 28px;
-            margin-bottom: 20px;
-        }
-
-        .completion-stat strong,
-        .completion-stat span {
-            display: block;
+            gap: 40px;
+            margin: 24px 0;
         }
 
         .completion-stat strong {
-            font-size: 1.5rem;
+            display: block;
+            font-size: 2rem;
+            color: var(--text);
         }
 
         .completion-stat span {
-            color: var(--muted);
+            display: block;
             font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        body.practice-mode {
-            background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+        .chess-activity {
+            margin: 20px 0;
+            margin-left: 156px;
         }
 
-        body.dark-mode.practice-mode {
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-        }
-
-        body.practice-mode .shell {
-            border: 2px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-            border-top-width: 6px;
-        }
-
-        body.practice-mode .completion-panel {
-            border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-        }
-
-        /* ── MOBILE: match-pairs stays side-by-side, answer buttons stack ── */
         @media (max-width: 700px) {
-            body {
-                padding: 14px;
-            }
-
-            .page {
-                min-height: auto;
+            .top-bar {
+                padding: 12px;
             }
 
             .shell {
-                padding: 18px 16px;
-                border-radius: 18px;
-            }
-
-            .top-row,
-            .actions {
-                flex-direction: column;
-                align-items: flex-start;
+                padding: 0 12px;
             }
 
             .answer-grid {
                 grid-template-columns: 1fr;
             }
 
-            .match-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-
-            .match-item {
-                padding: 10px;
-                font-size: 0.92rem;
-                min-height: 48px;
-                display: flex;
+            .prompt-container {
+                flex-direction: column;
                 align-items: center;
-                justify-content: center;
-                text-align: center;
-                word-break: break-word;
+                gap: 0;
             }
 
-            .match-col {
-                gap: 6px;
+            .mascot-wrap {
+                width: 120px;
+                height: 120px;
+                margin-bottom: -20px;
+                z-index: 2;
             }
 
-            .question-row {
-                align-items: flex-start;
-                flex-wrap: wrap;
+            .mascot-wrap::before {
+                width: 100px;
+                height: 100px;
+            }
+
+            /* Fix tail for mobile (pointing up) */
+            .speech-bubble::before {
+                left: 50%;
+                bottom: auto;
+                top: -10px;
+                transform: translateX(-50%);
+                border-left: 10px solid transparent;
+                border-right: 10px solid transparent;
+                border-bottom: 12px solid var(--border);
+                border-top: 0;
+            }
+
+            .speech-bubble::after {
+                left: 50%;
+                bottom: auto;
+                top: -7px;
+                transform: translateX(-50%);
+                border-left: 8px solid transparent;
+                border-right: 8px solid transparent;
+                border-bottom: 10px solid var(--card);
+                border-top: 0;
+            }
+
+            .audio-controls,
+            .meaning-reveal,
+            .tap-hint,
+            .chess-activity {
+                margin-left: 0;
+            }
+
+            .bottom-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .action-buttons {
+                justify-content: flex-end;
             }
 
             .btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-
-        /* ── VERY SMALL PHONES: compact match-pairs ── */
-        @media (max-width: 380px) {
-            .match-grid {
-                gap: 6px;
-            }
-
-            .match-item {
-                padding: 8px 6px;
-                font-size: 0.82rem;
-                border-radius: 10px;
-                min-height: 44px;
-            }
-
-            .match-col {
-                gap: 5px;
+                flex: 1;
+                padding: 14px 16px;
             }
         }
     </style>
@@ -687,64 +598,82 @@
 </head>
 
 <body>
-    <div class="page">
-        <div class="shell">
-            <div class="top-row">
-                <div>
-                    <h1 class="title" id="lessonTitle">Lesson</h1>
-                    <p class="subtitle" id="lessonSubtitle">Loading lesson…</p>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <a class="close-btn" id="exitBtn" href="dashboard.html" aria-label="Exit lesson">✕</a>
+        <div class="lesson-progress-track">
+            <div class="lesson-progress-fill" id="lessonProgressFill"></div>
+        </div>
+        <div class="heart-gauge" id="heartGauge" role="status" aria-label="Hearts">
+            <span class="icon" aria-hidden="true">❤️</span>
+            <span class="heart-gauge-count" id="heartGaugeCount"></span>
+        </div>
+    </div>
+
+    <div class="shell">
+        <div class="question-area">
+            <h1 class="title" id="lessonTitle">Lesson</h1>
+            <p class="subtitle" id="lessonSubtitle">Loading lesson…</p>
+
+            <!-- DUOLINGO PROMPT: CHARACTER + SPEECH BUBBLE -->
+            <div class="prompt-container" id="promptContainer" role="button" tabindex="0" aria-expanded="false">
+                <div class="mascot-wrap" id="mascotWrap">
+                    <img src="/characters/human.png" alt="Character" id="mascotImg"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="mascot-emoji" id="mascotEmoji" style="display:none;">🧑‍🎨</span>
                 </div>
-                <div class="heart-gauge" id="heartGauge" role="status" aria-label="Hearts">
-                    <span class="icon" aria-hidden="true">❤️</span>
-                    <span class="heart-gauge-count" id="heartGaugeCount"></span>
+                <div class="speech-bubble" id="promptText">
+                    Loading…
                 </div>
             </div>
-            <div class="lesson-progress">
-                <div class="lesson-progress-meta">
-                    <span id="lessonProgressLabel">Lesson progress</span>
-                    <span class="lesson-progress-count" id="lessonProgressCount">0 / 0</span>
+
+            <div class="audio-controls" id="audioControls" aria-label="Question audio controls">
+                <button class="audio-btn" id="normalVoiceBtn" type="button" title="Play at normal speed">🔊
+                    Normal</button>
+                <button class="audio-btn" id="slowVoiceBtn" type="button" title="Play slowly">🐢 Slow</button>
+            </div>
+
+            <div class="tap-hint" id="meaningHint">Tap the question to reveal its meaning</div>
+            <div class="meaning-reveal" id="meaningReveal" hidden></div>
+
+            <div class="chess-activity" id="chessActivity" hidden></div>
+        </div>
+
+        <div class="options-area">
+            <div class="answer-grid" id="options"></div>
+        </div>
+
+        <div class="completion-panel" id="completionPanel" hidden>
+            <h2 id="completionHeading">Lesson complete!</h2>
+            <div class="completion-stats">
+                <div class="completion-stat">
+                    <strong id="completionAccuracy">0%</strong>
+                    <span id="accuracyLabel">Accuracy</span>
                 </div>
-                <div class="lesson-progress-track" id="lessonProgressTrack" role="progressbar"
-                    aria-label="Lesson progress" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
-                    <div class="lesson-progress-fill" id="lessonProgressFill"></div>
+                <div class="completion-stat">
+                    <strong id="completionXp">+20</strong>
+                    <span id="xpEarnedLabel">XP earned</span>
                 </div>
             </div>
-            <div class="card">
-                <h3 class="prompt-heading" id="promptHeading">Practice prompt</h3>
-                <div class="question-row">
-                    <p id="promptText">Loading…</p>
-                    <div class="audio-controls" id="audioControls" aria-label="Question audio controls">
-                        <button class="audio-btn" id="normalVoiceBtn" type="button"
-                            title="Play at normal speed">Normal</button>
-                        <button class="audio-btn" id="slowVoiceBtn" type="button" title="Play slowly">Slow</button>
-                    </div>
-                </div>
-                <div class="chess-activity" id="chessActivity" hidden></div>
-                <div class="answer-grid" id="options"></div>
-                <div class="message" id="feedback"></div>
-            </div>
-            <div class="completion-panel" id="completionPanel" hidden>
-                <h2 id="completionHeading">Lesson complete!</h2>
-                <div class="completion-stats">
-                    <div class="completion-stat"><strong id="completionAccuracy">0%</strong><span
-                            id="accuracyLabel">Accuracy</span></div>
-                    <div class="completion-stat"><strong id="completionXp">+20</strong><span id="xpEarnedLabel">XP
-                            earned</span></div>
-                </div>
-                <a class="btn" id="backDashboardLink" href="dashboard.html">Back to dashboard</a>
-            </div>
-            <div class="actions">
-                <div id="statusText">Complete the lesson to earn rewards.</div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <a class="btn secondary" id="exitBtn" href="dashboard.html">Exit</a>
-                    <button class="btn secondary" id="hintBtn" style="display:none;">Hint</button>
-                    <button class="btn" id="checkBtn" style="display:none;">Check</button>
-                    <button class="btn secondary" id="nextBtn" style="display:none;">Next</button>
-                    <button class="btn" id="finishBtn" disabled>Finish lesson</button>
-                </div>
+            <a class="btn" id="backDashboardLink" href="dashboard.html">Continue</a>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="status-text" id="statusText">Complete the lesson to earn rewards.</div>
+            <div class="action-buttons" style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn secondary" id="hintBtn" style="display:none;">Hint</button>
+                <button class="btn" id="checkBtn" style="display:none;">Check</button>
+                <button class="btn" id="nextBtn" style="display:none;">Next</button>
+                <button class="btn" id="finishBtn" disabled>Finish</button>
             </div>
         </div>
     </div>
+
+    <!-- Hidden nodes required by lesson.js -->
+    <div id="feedback" class="message" style="display:none;"></div>
+    <div id="promptHeading" style="display:none;"></div>
+    <div class="lesson-progress-count" id="lessonProgressCount" style="display:none;"></div>
+    <div id="lessonProgressTrack" role="progressbar" style="display:none;"></div>
 
     <script src="sounds.js"></script>
     <script src="chessboard.js"></script>
