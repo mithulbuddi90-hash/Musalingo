@@ -5,6 +5,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import nodemailer from 'nodemailer';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
+import emailjs from '@emailjs/nodejs';
 
 dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '.env') });
 
@@ -130,6 +133,7 @@ app.use('/api/chat', rateLimit({ windowMs: 60 * 1000, max: 20, name: 'chat' }));
 app.use('/api/generate-questions', rateLimit({ windowMs: 60 * 1000, max: 30, name: 'gen' }));
 app.use('/api/send-form', rateLimit({ windowMs: 10 * 60 * 1000, max: 5, name: 'form' }));
 app.use('/api/tts', rateLimit({ windowMs: 60 * 1000, max: 120, name: 'tts' }));
+app.use('/api/welcome', rateLimit({ windowMs: 10 * 60 * 1000, max: 10, name: 'welcome' }));
 
 // ============================================================
 //  HEALTH / SELF-PING
@@ -144,6 +148,7 @@ app.get('/api/health', (req, res) => {
         geminiKeys: GEMINI_KEYS.length,
         models: GEMINI_MODELS,
         emailConfigured: Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS),
+        emailjsConfigured: Boolean(process.env.EMAILJS_SERVICE_ID && process.env.EMAILJS_TEMPLATE_ID && process.env.EMAILJS_PUBLIC_KEY && process.env.EMAILJS_PRIVATE_KEY),
         firebaseConfigured: Boolean(firebaseAdminApp),
         tts: 'enabled',
         timestamp: new Date().toISOString()
@@ -1483,6 +1488,71 @@ app.post('/api/send-form', async (req, res) => {
     } catch (error) {
         console.error('[Email] Failed to send:', error);
         res.status(500).json({ error: 'Failed to send email' });
+    }
+});
+
+// ============================================================
+//  ROUTE — Welcome email (sent once, on a user's first login)
+// ============================================================
+// The browser calls this right after Firebase login, sending the user's
+// Firebase ID token. We verify the token, then use a Firestore document
+// (welcomeEmails/{uid}) as an atomic "already sent" flag so each user gets
+// exactly one welcome email, even if this is called many times.
+app.post('/api/welcome', async (req, res) => {
+    const {
+        EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID,
+        EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY, APP_URL
+    } = process.env;
+
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY || !EMAILJS_PRIVATE_KEY) {
+        return res.status(503).json({ error: 'EmailJS not configured on server' });
+    }
+    if (!firebaseAdminApp) {
+        return res.status(503).json({ error: 'Firebase Admin not configured on server' });
+    }
+
+    const header = String(req.headers.authorization || '');
+    const idToken = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+    if (!idToken) return res.status(401).json({ error: 'Missing token' });
+
+    let decoded;
+    try {
+        decoded = await getAuth(firebaseAdminApp).verifyIdToken(idToken);
+    } catch {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    const email = decoded.email;
+    if (!email) return res.status(400).json({ error: 'This account has no email address' });
+    const name = String(decoded.name || email.split('@')[0]).slice(0, 100);
+
+    const flagRef = getFirestore(firebaseAdminApp).collection('welcomeEmails').doc(decoded.uid);
+
+    // create() fails if the document already exists → guarantees only one send per user
+    try {
+        await flagRef.create({ email, createdAt: new Date() });
+    } catch (e) {
+        if (e.code === 6 || /already exists/i.test(e.message || '')) {
+            return res.json({ success: true, sent: false, reason: 'already-sent' });
+        }
+        console.error('[Welcome] Firestore error:', e.message);
+        return res.status(500).json({ error: 'Could not check welcome status' });
+    }
+
+    try {
+        await emailjs.send(
+            EMAILJS_SERVICE_ID,
+            EMAILJS_TEMPLATE_ID,
+            { to_name: name, email, app_url: APP_URL || '' },
+            { publicKey: EMAILJS_PUBLIC_KEY, privateKey: EMAILJS_PRIVATE_KEY }
+        );
+        console.log(`[Welcome] Sent to ${email}`);
+        return res.json({ success: true, sent: true });
+    } catch (err) {
+        // Remove the flag so the next login can retry
+        await flagRef.delete().catch(() => { });
+        console.error('[Welcome] EmailJS failed:', err?.text || err?.message || err);
+        return res.status(502).json({ error: 'Failed to send welcome email' });
     }
 });
 
