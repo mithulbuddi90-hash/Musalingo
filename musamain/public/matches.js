@@ -19,6 +19,21 @@ try {
 } catch (err) {
     console.error('[matches] firebase.js failed to load; friend games unavailable:', err);
 }
+// === CRITICAL FIX: Define openChessCoach immediately so it's never undefined ===
+window.openChessCoach = () => {
+    const panel = document.getElementById('coachPanel');
+    if (!panel) {
+        console.warn('[matches] coach panel missing');
+        // Fallback: try to find any chat-related element
+        const fallback = document.querySelector('.coach-panel, #chat');
+        if (fallback) fallback.scrollIntoView();
+        return;
+    }
+    panel.hidden = false;
+    document.body.classList.add('coach-open');
+    const input = document.getElementById('coachInput');
+    if (input) input.focus();
+};
 
 // Destructure with no-op fallbacks so nothing below throws if FB is null
 const {
@@ -61,6 +76,17 @@ window.MF = {
     createFriendChessGame, acceptFriendChessGame, abortFriendChessGame, pushChessMove,
     finishChessGame, offerChessDraw, clearChessDrawOffer, listenToChessGame,
     listenToMyChessInvites, loadFriendsProfiles, loadLocalProfile, loadFriendProfile
+};
+
+// Early stub — real one is attached at the bottom after chessCoach exists.
+// This prevents "openChessCoach is not defined" if a later error stops the module.
+window.openChessCoach = () => {
+    const panel = document.getElementById('coachPanel');
+    if (!panel) { console.warn('[matches] coach panel missing'); return; }
+    panel.hidden = false;
+    document.body.classList.add('coach-open');
+    const input = document.getElementById('coachInput');
+    if (input) input.focus();
 };
 
 /* ============ SMALL HELPERS ============ */
@@ -1915,6 +1941,8 @@ function showLiveResult(remote) {
 /* ============ BOOT ============ */
 document.addEventListener('DOMContentLoaded', () => {
     positionHistory = [positionKey(boardState, turn, castlingRights, enPassant)];
+    const orbWrap = document.getElementById('coachOrbWrap');
+    if (orbWrap) orbWrap.hidden = false;
     renderBoard();
     setTimeout(() => window.fitBoards?.(), 300);
     setTimeout(() => window.fitBoards?.(), 800);
@@ -1941,24 +1969,31 @@ const chessCoach = (window.MusalingoCoach && typeof window.MusalingoCoach.create
         targetLanguage: 'English',
         audienceLanguage: 'English',
         els: {
-            chat: document.getElementById('chat'),
-            input: null,                // matches.html owns Enter/submit via window.askCoach shim
-            send: null,                 // inline onclick="askCoach()" handles the send button
-            mic: document.getElementById('voiceBtn'),
-            orb: document.getElementById('orb'),
-            orbIcon: document.getElementById('orbIcon'),
-            orbLabel: document.getElementById('orbLabel'),
-            status: document.getElementById('voiceStatus'),
-            chips: null,
-            close: null,
-            voiceToggle: null,
-            speakSelect: null,
-            panel: null                 // chat panel is always visible; no open/close
+            chat: document.getElementById('coachChat'),
+            input: document.getElementById('coachInput'),
+            send: document.getElementById('coachSend'),
+            mic: document.getElementById('coachMic'),
+            orb: document.getElementById('coachOrb'),
+            orbIcon: document.getElementById('coachOrbIcon'),
+            orbLabel: document.getElementById('coachOrbLabel'),
+            status: document.getElementById('coachStatus'),
+            chips: document.getElementById('coachChips'),
+            close: document.getElementById('coachClose'),
+            voiceToggle: document.getElementById('coachVoiceToggle'),
+            speakSelect: document.getElementById('coachSpeakLang'),
+            panel: document.getElementById('coachPanel')
         }
     })
     : { ask: () => console.warn('[matches] coach unavailable'), open: () => { }, close: () => { }, clear: () => { }, init: () => { }, buildPrompt: () => '', state: { history: [] } };
 
-chessCoach.init(null, []);          // no greeting — startAICoachGame owns the welcome
+chessCoach.init(
+    "Hi! Ask me anything about chess — openings, tactics, or endgames.",
+    [
+        { label: '♟️ Explain a fork', text: 'Explain what a fork is in chess.' },
+        { label: '♘ Opening tips', text: 'What are the most important opening principles?' },
+        { label: '♔ Endgame basics', text: 'Explain king and pawn endgames simply.' }
+    ]
+);
 
 /* window.askCoach — shim inline onclick / Enter back to the shared coach.
    Preserves the two old shortcuts: greeting reply and best-move recommendation. */
@@ -2000,6 +2035,8 @@ window.askCoach = () => {
     // Everything else → shared coach.js (hardened prompt, retry, metadata)
     chessCoach.ask(q);
 };
+
+window.openChessCoach = () => chessCoach.open({ listen: false });
 
 /* ============ GLOBAL HANDLERS FOR INLINE onclick ============ */
 window.start1v1 = start1v1;

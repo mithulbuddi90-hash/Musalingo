@@ -233,9 +233,9 @@
             font-weight: 700;
             color: var(--text);
             min-height: 90px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            display: block;
+            align-content: center;
+            line-height: 1.4;
             margin-bottom: 10px;
         }
 
@@ -338,7 +338,7 @@
 
         /* ===== OPTIONS GRID ===== */
         .options-area {
-            margin-top: auto;
+            margin-top: 8px;
             padding-bottom: 24px;
         }
 
@@ -593,6 +593,584 @@
                 padding: 14px 16px;
             }
         }
+
+        /* ============================================================
+           QUESTION TYPES — styling for everything lesson.js renders
+           (match pairs, typing, arrange, speaking, graphs, heart gate…)
+           ============================================================ */
+        :root {
+            --soft: #f7f7f7;
+            --accent-soft: rgba(88, 204, 2, 0.12);
+            --blue-soft: rgba(28, 176, 246, 0.1);
+            --red-soft: rgba(255, 75, 75, 0.1);
+        }
+
+        body.dark-mode {
+            --soft: #1a2a31;
+        }
+
+        /* the answer grid is two columns for choice buttons; everything else spans the full row */
+        .answer-grid>.spell-input,
+        .answer-grid>.match-grid,
+        .answer-grid>.arrange-target,
+        .answer-grid>.arrange-pool,
+        .answer-grid>.speak-wrap,
+        .answer-grid>.slider-wrap,
+        .answer-grid>.graph-wrap,
+        .answer-grid>.heart-gate,
+        .answer-grid>.char-row,
+        .answer-grid>.message {
+            grid-column: 1 / -1;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-7px);
+            }
+
+            40% {
+                transform: translateX(7px);
+            }
+
+            60% {
+                transform: translateX(-5px);
+            }
+
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .options-area {
+            margin-top: 8px;
+        }
+
+        .message {
+            margin: 12px 0 0;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: var(--soft);
+            color: var(--text-light);
+            font-size: 0.95rem;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .message:empty {
+            display: none;
+        }
+
+        /* prompt text pieces */
+        .blank {
+            display: inline-block;
+            min-width: 84px;
+            margin: 0 4px;
+            border-bottom: 4px solid var(--blue);
+            color: transparent;
+            vertical-align: -3px;
+            user-select: none;
+        }
+
+        .translation,
+        .pronunciation,
+        .speech-bubble small {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        .answer-choice {
+            font-weight: 800;
+        }
+
+        .answer-pronunciation {
+            margin-top: 2px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        /* ---------- MATCH PAIRS ---------- */
+        .match-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 20px;
+        }
+
+        .match-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .match-item {
+            min-height: 64px;
+            padding: 12px 14px;
+            border: var(--duo-border);
+            border-bottom-width: 4px;
+            border-radius: 16px;
+            background: var(--card);
+            color: var(--text);
+            font: inherit;
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1.25;
+            text-align: center;
+            overflow-wrap: anywhere;
+            cursor: pointer;
+            transition: transform 0.08s ease, border-color 0.12s ease, background 0.12s ease, opacity 0.2s ease;
+        }
+
+        .match-item:hover:not(:disabled) {
+            background: var(--soft);
+        }
+
+        .match-item:active:not(:disabled) {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        .match-item.selected {
+            border-color: var(--blue);
+            background: var(--blue-soft);
+            color: var(--blue);
+        }
+
+        .match-item.matched,
+        .match-item.matched:disabled {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .match-item.shake {
+            border-color: var(--red);
+            background: var(--red-soft);
+            color: var(--red);
+            animation: shake 0.4s ease;
+        }
+
+        #matchMsg {
+            margin-top: 18px;
+        }
+
+        /* ---------- TYPING (spell + translate) ---------- */
+        .spell-input {
+            display: block;
+            width: 100%;
+            padding: 16px 18px;
+            border: var(--duo-border);
+            border-bottom-width: 4px;
+            border-radius: 16px;
+            background: var(--card);
+            color: var(--text);
+            font: inherit;
+            font-size: 1.3rem;
+            font-weight: 700;
+            outline: none;
+            transition: border-color 0.12s ease, background 0.12s ease;
+        }
+
+        .spell-input::placeholder {
+            color: var(--text-light);
+            font-weight: 700;
+        }
+
+        .spell-input:focus {
+            border-color: var(--blue);
+            background: var(--blue-soft);
+        }
+
+        .spell-input.correct,
+        .spell-input.correct:disabled {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+        }
+
+        .spell-input.wrong,
+        .spell-input.wrong:disabled {
+            border-color: var(--red);
+            background: var(--red-soft);
+            color: var(--red);
+            animation: shake 0.4s ease;
+        }
+
+        .spell-input:disabled {
+            opacity: 1;
+            cursor: not-allowed;
+        }
+
+        .char-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .char-btn {
+            min-width: 44px;
+            height: 44px;
+            padding: 0 12px;
+            border: var(--duo-border);
+            border-bottom-width: 4px;
+            border-radius: 12px;
+            background: var(--card);
+            color: var(--text);
+            font: inherit;
+            font-size: 1.15rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .char-btn:active:not(:disabled) {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        .char-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ---------- ARRANGE ---------- */
+        .arrange-target {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8px;
+            min-height: 84px;
+            padding: 12px;
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            transition: border-color 0.12s ease, background 0.12s ease;
+        }
+
+        .arrange-target:empty::before {
+            content: "Tap the words below to build the sentence";
+            align-self: center;
+            width: 100%;
+            color: var(--text-light);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .arrange-target.correct {
+            border-style: solid;
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .arrange-target.wrong {
+            border-style: solid;
+            border-color: var(--red);
+            background: var(--red-soft);
+            animation: shake 0.4s ease;
+        }
+
+        .arrange-pool {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .arrange-word {
+            padding: 10px 16px;
+            border: var(--duo-border);
+            border-bottom-width: 4px;
+            border-radius: 14px;
+            background: var(--card);
+            color: var(--text);
+            font: inherit;
+            font-size: 1.05rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.08s ease;
+        }
+
+        .arrange-word:active:not(:disabled) {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        .arrange-word.in-target {
+            border-color: var(--blue);
+        }
+
+        .arrange-target.correct .arrange-word {
+            border-color: var(--accent);
+            color: var(--accent-dark);
+        }
+
+        .arrange-target.wrong .arrange-word {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .arrange-word:disabled {
+            cursor: default;
+        }
+
+        /* ---------- SPEAKING ---------- */
+        .speak-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 8px 0;
+        }
+
+        .speak-wrap .btn {
+            min-width: 260px;
+        }
+
+        .speak-wrap .message {
+            width: 100%;
+            margin: 0;
+        }
+
+        /* ---------- SLIDER + GRAPH ---------- */
+        .slider-wrap,
+        .graph-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 8px 0;
+        }
+
+        .slider-wrap input[type="range"] {
+            width: 100%;
+            height: 28px;
+            accent-color: var(--blue);
+        }
+
+        .slider-value {
+            font-size: 1.7rem;
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        .graph-wrap svg {
+            max-width: 100%;
+            height: auto;
+            border: var(--duo-border);
+            border-radius: 16px;
+            background: var(--card);
+            cursor: crosshair;
+        }
+
+        /* ---------- HEART GATE ---------- */
+        .heart-gate {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .heart-gate .btn {
+            width: 100%;
+        }
+
+        .heart-gate p {
+            margin: 4px 0;
+            text-align: center;
+            font-weight: 800;
+            color: var(--text-light);
+        }
+
+        .board-progress {
+            margin: 8px 0 0;
+            color: var(--text-light);
+            font-weight: 800;
+            text-align: center;
+        }
+
+        /* ---------- PROGRESS BAR ---------- */
+        .lesson-progress-fill {
+            transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        body.practice-mode .lesson-progress-fill {
+            background: var(--blue);
+        }
+
+        /* ---------- BOTTOM BAR: correct / wrong states ---------- */
+        .bottom-bar {
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .bottom-bar[data-state="correct"] {
+            border-top-color: transparent;
+            background: #d7ffb8;
+        }
+
+        .bottom-bar[data-state="wrong"] {
+            border-top-color: transparent;
+            background: #ffdfe0;
+        }
+
+        body.dark-mode .bottom-bar[data-state="correct"] {
+            background: rgba(88, 204, 2, 0.16);
+        }
+
+        body.dark-mode .bottom-bar[data-state="wrong"] {
+            background: rgba(255, 75, 75, 0.16);
+        }
+
+        .bottom-bar[data-state="correct"] .status-text {
+            color: var(--accent-dark);
+        }
+
+        .bottom-bar[data-state="wrong"] .status-text {
+            color: var(--red);
+        }
+
+        .bottom-bar[data-state="wrong"] #nextBtn,
+        .bottom-bar[data-state="wrong"] #finishBtn:not(:disabled) {
+            background: var(--red);
+            box-shadow: 0 4px 0 var(--red-dark);
+        }
+
+        .btn:focus-visible,
+        .answer-btn:focus-visible,
+        .match-item:focus-visible,
+        .arrange-word:focus-visible,
+        .char-btn:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        /* ---------- COMBO + CONFETTI ---------- */
+        .combo-toast {
+            position: fixed;
+            top: 74px;
+            left: 50%;
+            z-index: 60;
+            padding: 8px 20px;
+            border-radius: 999px;
+            background: #ff9600;
+            box-shadow: 0 4px 0 #cc7a00;
+            color: #fff;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            transform: translateX(-50%);
+            pointer-events: none;
+            animation: comboPop 1.7s ease forwards;
+        }
+
+        .combo-toast[hidden] {
+            display: none;
+        }
+
+        @keyframes comboPop {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -14px) scale(0.8);
+            }
+
+            12% {
+                opacity: 1;
+                transform: translate(-50%, 0) scale(1.08);
+            }
+
+            20%,
+            80% {
+                opacity: 1;
+                transform: translate(-50%, 0) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -8px) scale(0.96);
+            }
+        }
+
+        .confetti-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            top: -20px;
+            width: 10px;
+            height: 16px;
+            border-radius: 2px;
+            opacity: 0;
+            animation: confettiFall var(--dur, 2.6s) ease-in var(--delay, 0s) forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg);
+            }
+
+            100% {
+                opacity: 0.9;
+                transform: translateY(110vh) translateX(var(--drift, 0px)) rotate(var(--spin, 540deg));
+            }
+        }
+
+        .completion-panel:not([hidden]) {
+            animation: slideDown 0.35s ease;
+        }
+
+        @media (max-width: 700px) {
+            .match-grid {
+                gap: 12px;
+            }
+
+            .match-item {
+                min-height: 58px;
+                font-size: 1rem;
+            }
+
+            .spell-input {
+                font-size: 1.15rem;
+            }
+
+            .bottom-bar {
+                position: sticky;
+                bottom: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .match-item.shake,
+            .spell-input.wrong,
+            .arrange-target.wrong,
+            .mascot-wrap,
+            .combo-toast {
+                animation: none;
+            }
+
+            .confetti-layer {
+                display: none;
+            }
+
+            .lesson-progress-fill {
+                transition: none;
+            }
+        }
     </style>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -641,6 +1219,7 @@
 
         <div class="options-area">
             <div class="answer-grid" id="options"></div>
+            <div id="feedback" class="message" role="status" aria-live="polite"></div>
         </div>
 
         <div class="completion-panel" id="completionPanel" hidden>
@@ -658,7 +1237,7 @@
             <a class="btn" id="backDashboardLink" href="dashboard.html">Continue</a>
         </div>
 
-        <div class="bottom-bar">
+        <div class="bottom-bar" id="bottomBar">
             <div class="status-text" id="statusText">Complete the lesson to earn rewards.</div>
             <div class="action-buttons" style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button class="btn secondary" id="hintBtn" style="display:none;">Hint</button>
@@ -670,10 +1249,12 @@
     </div>
 
     <!-- Hidden nodes required by lesson.js -->
-    <div id="feedback" class="message" style="display:none;"></div>
     <div id="promptHeading" style="display:none;"></div>
     <div class="lesson-progress-count" id="lessonProgressCount" style="display:none;"></div>
     <div id="lessonProgressTrack" role="progressbar" style="display:none;"></div>
+
+    <div class="combo-toast" id="comboToast" role="status" aria-live="polite" hidden></div>
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
 
     <script src="sounds.js"></script>
     <script src="chessboard.js"></script>
