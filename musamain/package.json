@@ -10,6 +10,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.22.3",
     "firebase-admin": "^14.5.0",
-    "nodemailer": "^10.3.1"
+    "nodemailer": "^10.3.1",
+    "@emailjs/nodejs": "^5.0.1"
   }
 }
