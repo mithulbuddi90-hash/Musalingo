@@ -1024,12 +1024,14 @@ if (!course || !lesson) {
                 const native = q.type === 'spell' ? q.phrase : q.type === 'listen' ? (q.answer || q.phrase) : q.answer;
                 const accepts = hasNonLatinText(native);
                 const candidates = [native];
-                if (accepts || q.type === 'translate-type') candidates.push(q.pronunciation);
+                if (accepts || q.type === 'translate-type' || q.type === 'translate') candidates.push(q.pronunciation);
+                // Also accept any items in q.acceptedAnswers
+                if (Array.isArray(q.acceptedAnswers)) candidates.push(...q.acceptedAnswers);
                 return candidates.some((candidate) => {
                     if (!candidate) return false;
                     const expected = normalizeAnswerText(candidate);
                     return expected === actual
-                        || (q.type === 'translate-type'
+                        || ((q.type === 'translate-type' || q.type === 'translate')
                             && actual.length <= 200
                             && expected.length <= 200
                             && similarity(actual, expected) >= 0.7);
@@ -1055,6 +1057,7 @@ if (!course || !lesson) {
                     case 'spell':
                     case 'speak':
                     case 'translate-type':
+                    case 'translate':
                         return q.answer != null || q.phrase != null;
                     default:
                         return q.answer != null;
@@ -1149,9 +1152,17 @@ if (!course || !lesson) {
                 }
 
                 const choices = shuffle([answer, ...distractors]);
-                options.innerHTML = choices.map(c => {
-                    const romanization = q.pronunciationMap?.[c] || (c === q.answer ? q.pronunciation : '');
-                    const romanizationLabel = hasNonLatinText(c) && romanization
+                // All-or-none: only show pronunciation labels if EVERY choice has one
+                const pronunciationMap = q.pronunciationMap || {};
+                const choicesWithPronunciation = choices.map(c => ({
+                    text: c,
+                    romanization: pronunciationMap[c] || (c === q.answer ? (q.pronunciation || '') : '')
+                }));
+                const allHavePronunciation = choicesWithPronunciation.every(
+                    item => hasNonLatinText(item.text) && item.romanization
+                );
+                options.innerHTML = choicesWithPronunciation.map(({ text: c, romanization }) => {
+                    const romanizationLabel = allHavePronunciation
                         ? `<span class="answer-pronunciation">${escapeHtml(romanization)}</span>`
                         : '';
                     return `<button class="answer-btn" data-answer="${escapeHtml(c)}" data-speech-language="${escapeHtml(targetLanguage)}"><span class="answer-choice">${escapeHtml(c)}</span>${romanizationLabel}</button>`;
@@ -1288,6 +1299,244 @@ if (!course || !lesson) {
                 });
                 input.focus();
                 window.setTimeout(() => pronounceText(q.english, 0.9, 'English'), 200);
+            }
+
+            // ═══════════════════════════════════════════════════════════
+            //  TRANSLATE RENDERER  (word-bank tiles + keyboard toggle)
+            //  Implements Parts 1, 3, 8 of the translate spec.
+            // ═══════════════════════════════════════════════════════════
+            function joinForLanguage(tokens, lang) {
+                return /Japanese|Chinese|Korean/i.test(String(lang)) ? tokens.join('') : tokens.join(' ');
+            }
+
+            function normalizeTranslateText(v) {
+                return String(v ?? '').normalize('NFKC').trim()
+                    .toLocaleLowerCase()
+                    // normalize full-width to half-width
+                    .replace(/[\uFF01-\uFF5E]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+                    .replace(/\s+/g, ' ');
+            }
+
+            function translateTileMatches(tile, token) {
+                // For Japanese (non-Latin) exact match; English case-insensitive
+                if (hasNonLatinText(tile)) return tile === token;
+                return tile.toLocaleLowerCase() === token.toLocaleLowerCase();
+            }
+
+            function renderTranslate(q) {
+                const targetLanguage = normalizeLanguageName(practice.language || course.name || 'English');
+
+                // direction: jp_to_en → prompt is Japanese phrase, answer is English
+                //            en_to_jp → prompt is English phrase, answer is Japanese
+                const direction = q.direction || 'jp_to_en';
+                const isJpToEn = direction !== 'en_to_jp';
+                const answerLanguage = isJpToEn ? 'English' : targetLanguage;
+
+                // Build prompt
+                const sourceText = q.prompt || q.phrase || q.english || '';
+                const sourceRomanization = (!isJpToEn && q.pronunciation) ? q.pronunciation : '';
+                const promptLabel = isJpToEn
+                    ? (lessonText('translateAudience', { language: 'English' }))
+                    : (lessonText('translateTarget', { language: getAudienceLanguageName(targetLanguage) }));
+
+                promptText.innerHTML = `${escapeHtml(promptLabel)} <strong>${escapeHtml(sourceText)}</strong>`
+                    + (sourceRomanization ? `<br><small class="pronunciation">(${escapeHtml(sourceRomanization)})</small>` : '');
+
+                questionPhrase = sourceText;
+                questionSpeechLanguage = isJpToEn ? targetLanguage : 'English';
+
+                // State
+                const hasWordBank = Array.isArray(q.wordBank) && q.wordBank.length > 0;
+
+                // Retrieve preferred mode (localStorage), override if no word bank
+                let activeMode;
+                try {
+                    const saved = localStorage.getItem('MusalingoTranslateInputMode');
+                    activeMode = hasWordBank ? (saved || 'bank') : 'keyboard';
+                } catch { activeMode = hasWordBank ? 'bank' : 'keyboard'; }
+                if (!hasWordBank) activeMode = 'keyboard';
+
+                // Placed tiles (word-bank mode)
+                let placedTiles = [];
+                // Shuffled pool (remaining)
+                let poolTiles = hasWordBank ? shuffle([...q.wordBank]) : [];
+
+                // ── Build HTML skeleton ──────────────────────────────────
+                const toggleHTML = hasWordBank
+                    ? `<div class="translate-mode-toggle" role="tablist" aria-label="Input mode">
+                        <button class="translate-mode-option${activeMode === 'bank' ? ' active' : ''}" data-mode="bank" role="tab" aria-selected="${activeMode === 'bank'}" type="button">🔤 Word bank</button>
+                        <button class="translate-mode-option${activeMode === 'keyboard' ? ' active' : ''}" data-mode="keyboard" role="tab" aria-selected="${activeMode === 'keyboard'}" type="button">⌨️ Keyboard</button>
+                       </div>`
+                    : '';
+
+                options.innerHTML = `
+                    ${toggleHTML}
+                    <div class="translate-bank-surface" id="translateBankSurface"${activeMode === 'keyboard' ? ' style="display:none"' : ''}>
+                        <div class="translate-answer-tray" id="translateAnswerTray">${placedTiles.length === 0 ? '' : ''}</div>
+                        <div class="translate-word-pool" id="translateWordPool"></div>
+                    </div>
+                    <div class="translate-keyboard-surface" id="translateKeyboardSurface"${activeMode === 'bank' ? ' style="display:none"' : ''}>
+                        <input id="translateKbInput"
+                            class="translate-keyboard-input${/Japanese|Chinese|Korean/i.test(answerLanguage) ? ' ja' : ''}"
+                            type="text"
+                            lang="${/Japanese/i.test(answerLanguage) ? 'ja' : /Chinese/i.test(answerLanguage) ? 'zh' : /Korean/i.test(answerLanguage) ? 'ko' : 'en'}"
+                            ${/Japanese|Chinese|Korean/i.test(answerLanguage) ? '' : 'autocapitalize="off"'}
+                            autocomplete="off"
+                            spellcheck="false"
+                            enterkeyhint="done"
+                            inputmode="text"
+                            maxlength="300"
+                            placeholder="${escapeHtml('Type your answer…')}" />
+                    </div>
+                    <div class="translate-toast" id="translateToast" hidden></div>
+                `;
+
+                const bankSurface = document.getElementById('translateBankSurface');
+                const keyboardSurface = document.getElementById('translateKeyboardSurface');
+                const answerTray = document.getElementById('translateAnswerTray');
+                const wordPool = document.getElementById('translateWordPool');
+                const kbInput = document.getElementById('translateKbInput');
+                const toast = document.getElementById('translateToast');
+
+                // ── Render pool tiles ────────────────────────────────────
+                function renderPool() {
+                    wordPool.innerHTML = '';
+                    poolTiles.forEach((tile, idx) => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'translate-tile';
+                        btn.textContent = tile;
+                        btn.dataset.idx = idx;
+                        btn.addEventListener('click', () => onPoolTileClick(idx));
+                        wordPool.appendChild(btn);
+                    });
+                }
+
+                function renderTray() {
+                    answerTray.innerHTML = '';
+                    if (placedTiles.length === 0) {
+                        answerTray.setAttribute('data-empty', '');
+                    } else {
+                        answerTray.removeAttribute('data-empty');
+                        placedTiles.forEach((tile, idx) => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'translate-tile in-tray';
+                            btn.textContent = tile;
+                            btn.addEventListener('click', () => onTrayTileClick(idx));
+                            answerTray.appendChild(btn);
+                        });
+                    }
+                    updateCheckState();
+                }
+
+                function onPoolTileClick(idx) {
+                    const tile = poolTiles.splice(idx, 1)[0];
+                    placedTiles.push(tile);
+                    renderPool();
+                    renderTray();
+                }
+
+                function onTrayTileClick(idx) {
+                    const tile = placedTiles.splice(idx, 1)[0];
+                    poolTiles.push(tile);
+                    renderPool();
+                    renderTray();
+                }
+
+                function updateCheckState() {
+                    if (activeMode === 'bank') {
+                        selectedAnswer = placedTiles.length > 0
+                            ? joinForLanguage(placedTiles, answerLanguage)
+                            : null;
+                    } else {
+                        selectedAnswer = kbInput ? kbInput.value.trim() || null : null;
+                    }
+                    checkBtn.style.display = selectedAnswer ? 'inline-block' : 'none';
+                }
+
+                // ── Mode toggle logic ────────────────────────────────────
+                if (hasWordBank) {
+                    options.querySelectorAll('.translate-mode-option').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const newMode = btn.dataset.mode;
+                            if (newMode === activeMode) return;
+
+                            if (activeMode === 'bank' && newMode === 'keyboard') {
+                                // bank → keyboard: join placed tiles into input
+                                const joined = joinForLanguage(placedTiles, answerLanguage);
+                                kbInput.value = joined;
+                            } else if (activeMode === 'keyboard' && newMode === 'bank') {
+                                // keyboard → bank: attempt to auto-tile typed text
+                                const typed = normalizeTranslateText(kbInput.value);
+                                const tokens = typed.split(/\s+/).filter(Boolean);
+                                const tempPool = [...q.wordBank];
+                                const newPlaced = [];
+                                let hadDrops = false;
+
+                                for (const tok of tokens) {
+                                    const idx = tempPool.findIndex(t => translateTileMatches(t, tok));
+                                    if (idx === -1) { hadDrops = true; continue; }
+                                    newPlaced.push(tempPool.splice(idx, 1)[0]);
+                                }
+                                placedTiles = newPlaced;
+                                poolTiles = shuffle(tempPool);
+
+                                if (hadDrops) showToast('Some typed words weren\'t available as tiles and were dropped.');
+                            }
+
+                            activeMode = newMode;
+                            try { localStorage.setItem('MusalingoTranslateInputMode', newMode); } catch { /* ignore */ }
+
+                            // Update toggle UI
+                            options.querySelectorAll('.translate-mode-option').forEach(o => {
+                                const isActive = o.dataset.mode === newMode;
+                                o.classList.toggle('active', isActive);
+                                o.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                            });
+
+                            bankSurface.style.display = newMode === 'bank' ? '' : 'none';
+                            keyboardSurface.style.display = newMode === 'keyboard' ? '' : 'none';
+
+                            if (newMode === 'bank') {
+                                renderPool();
+                                renderTray();
+                            } else {
+                                kbInput.focus();
+                                updateCheckState();
+                            }
+                        });
+                    });
+                }
+
+                // ── Keyboard input wiring ───────────────────────────────
+                kbInput.addEventListener('input', () => updateCheckState());
+                kbInput.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (selectedAnswer) checkBtn.click();
+                    }
+                });
+
+                // ── Toast helper ─────────────────────────────────────────
+                function showToast(msg) {
+                    toast.textContent = msg;
+                    toast.hidden = false;
+                    clearTimeout(toast._timer);
+                    toast._timer = setTimeout(() => { toast.hidden = true; }, 3000);
+                }
+
+                // ── Initial render ───────────────────────────────────────
+                if (hasWordBank) {
+                    renderPool();
+                    renderTray();
+                } else {
+                    kbInput.focus();
+                    updateCheckState();
+                }
+
+                // Pronounce the source phrase
+                window.setTimeout(() => pronounceText(sourceText, 0.85, isJpToEn ? targetLanguage : 'English'), 300);
             }
 
             // ---------- MATCH PAIRS (BUG FIX: 1 heart per question, skip free) ----------
@@ -1898,6 +2147,7 @@ if (!course || !lesson) {
                     case 'listen': return renderListen(q);
                     case 'speak': return renderSpeak(q);
                     case 'spell': return renderSpell(q);
+                    case 'translate': return renderTranslate(q);
                     case 'translate-type': return renderTranslateType(q);
                     case 'match-pairs': return renderMatchPairs(q);
                     case 'slider': return renderSlider(q);
@@ -1961,7 +2211,7 @@ if (!course || !lesson) {
                 if (selectedAnswer === null) { feedback.textContent = lessonText('chooseAnswer'); feedback.style.color = '#b91c1c'; return; }
 
                 let isCorrect = false;
-                if (q.type === 'spell' || q.type === 'listen' || q.type === 'translate-type') isCorrect = matchesQuestionAnswer(q, selectedAnswer);
+                if (q.type === 'spell' || q.type === 'listen' || q.type === 'translate-type' || q.type === 'translate') isCorrect = matchesQuestionAnswer(q, selectedAnswer);
                 else if (q.type === 'slider' || q.type === 'graph') isCorrect = Math.abs(Number(selectedAnswer) - Number(q.answer)) < 0.001;
                 else isCorrect = selectedAnswer === q.answer;
 

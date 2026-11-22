@@ -810,6 +810,17 @@ function languagePrompt(language, topic, count, noNonsense = false, reason = 'cu
     else if (goal === 'vocabulary') typeFocus = 'Favor "multiple-choice" and "match-pairs" questions to build vocabulary.';
     else if (goal === 'confidence') typeFocus = 'Favor "speak" and "spell" questions to build confidence.';
 
+    const isJapanese = /japanese|nihongo|日本語/i.test(rawLanguage);
+
+    const translateSchema = isJapanese
+        ? `9. {"type":"translate","direction":"jp_to_en","prompt":"<Japanese sentence, 3-8 words>","answer":"<correct English translation>","acceptedAnswers":["<answer>","<common variant 1>","<common variant 2>"],"wordBank":["<English word>","<English word>","<English word>","<distractor word>","<distractor word>"],"hint":null,"difficulty":1}
+10. {"type":"translate","direction":"en_to_jp","prompt":"<English sentence, 3-8 words>","answer":"<correct Japanese sentence>","acceptedAnswers":["<answer>","<kana-only variant>","<without-trailing-punctuation variant>"],"wordBank":["<Japanese word>","<Japanese word>","<Japanese word>","<distractor>","<distractor>"],"hint":null,"difficulty":1}`
+        : `9. {"type":"translate","direction":"en_to_target","prompt":"<English sentence, 3-8 words>","answer":"<correct ${language} translation>","acceptedAnswers":["<answer>","<variant 1>"],"wordBank":["<${language} word>","<${language} word>","<${language} word>","<distractor>","<distractor>"],"hint":null,"difficulty":1}`;
+
+    const translateRule = isJapanese
+        ? `- For translate questions: produce BOTH directions (jp_to_en and en_to_jp) in roughly equal numbers. wordBank must contain every word needed to build answer PLUS 1-2 distractors. For en_to_jp, wordBank is MANDATORY (learners cannot type kanji). For jp_to_en, wordBank is required for sentences ≤ 8 words. acceptedAnswers must include punctuation and contraction variants.`
+        : `- For translate questions: wordBank must contain every word needed to build answer PLUS 1-2 distractors. acceptedAnswers must include punctuation and accent variants.`;
+
     return `Generate exactly ${count} beginner ${language} exercises about "${topicFocus}".
 Return ONLY a JSON array, no markdown. MIX these types (roughly 2 each):
 
@@ -821,6 +832,7 @@ Return ONLY a JSON array, no markdown. MIX these types (roughly 2 each):
 6. {"type":"match-pairs","pairs":[{"left":"<${language} word>","right":"<${language} word>","pronunciation":"<English pronunciation>"},{"left":"<w>","right":"<w>","pronunciation":"<English pronunciation>"},{"left":"<w>","right":"<w>","pronunciation":"<English pronunciation>"},{"left":"<w>","right":"<w>","pronunciation":"<English pronunciation>"}],"hint":"<short hint in ${language}>"}
 7. {"type":"fill-blank","sentence":"<${language} sentence with exactly one ___ where a word is missing>","answer":"<the missing word>","distractors":["<wrong>","<wrong>","<wrong>"],"translation":"<English translation of the full sentence>","hint":"<short hint in ${language}>"}
 8. {"type":"translate-type","english":"<short English sentence, 3-8 words>","answer":"<correct target-language sentence>","pronunciation":"<English pronunciation of the answer>","hint":"<short hint in target language>"}
+${translateSchema}
 
 Rules:
 - ${scriptRule}
@@ -830,6 +842,7 @@ Rules:
 - For multiple-choice and listen, translationMap must give a natural English meaning for the answer and every distractor. Keep answer and distractors in ${language}; do not put English words in those fields.
 - For fill-blank: distractors must be grammatically incorrect in the sentence context — wrong person, tense, or conjugation — not synonyms.
 - For translate-type: the English sentence must be natural and simple. The answer must be the correct, complete target-language translation. Pronunciation is the English phonetic reading of the answer.
+${translateRule}
 - keep phrases short
 - main word/phrase must stay in native script, pronunciation shown in English
 - hint max 15 words, never gives the answer directly`;
@@ -941,6 +954,22 @@ function generateFallbackQuestions(language, topic, count) {
         return result;
     }
 
+    
+
+    // NEW: Japanese translate fallbacks — work offline when Gemini is unavailable.
+    const translateFallbacks = {
+        Japanese: [
+            { type: 'translate', direction: 'jp_to_en', prompt: 'こんにちは、はなです。', answer: "Hello, I'm Hana.", acceptedAnswers: ["Hello, I'm Hana.", 'Hello, I am Hana.', "Hi, I'm Hana.", 'Hello, I am Hana'], wordBank: ['Hello', "I'm", 'Hana', 'Hi', 'am', 'you', 'is', 'goodbye'], hint: null, difficulty: 1 },
+            { type: 'translate', direction: 'en_to_jp', prompt: 'Thank you very much.', answer: 'ありがとうございます。', acceptedAnswers: ['ありがとうございます。', 'ありがとうございます', 'ありがとうございます!'], wordBank: ['ありがとう', 'ございます', 'です', 'こんにちは', 'さようなら', 'おはよう'], hint: null, difficulty: 1 },
+            { type: 'translate', direction: 'jp_to_en', prompt: 'おはようございます。', answer: 'Good morning.', acceptedAnswers: ['Good morning.', 'Good morning', 'Morning.'], wordBank: ['Good', 'morning', 'evening', 'night', 'hello'], hint: null, difficulty: 1 },
+            { type: 'translate', direction: 'en_to_jp', prompt: 'I am a student.', answer: '私は学生です。', acceptedAnswers: ['私は学生です。', 'わたしはがくせいです。', '私は学生です', 'わたしは学生です'], wordBank: ['私', 'は', '学生', 'です', '先生', 'あなた'], hint: null, difficulty: 1 },
+            { type: 'translate', direction: 'jp_to_en', prompt: '水をください。', answer: 'Water, please.', acceptedAnswers: ['Water, please.', 'Water please', 'Some water, please.'], wordBank: ['Water', 'please', 'Some', 'tea', 'coffee', 'thanks'], hint: null, difficulty: 1 },
+            { type: 'translate', direction: 'en_to_jp', prompt: 'Good evening.', answer: 'こんばんは。', acceptedAnswers: ['こんばんは。', 'こんばんは', 'こんばんわ'], wordBank: ['こんばんは', 'こんにちは', 'おはよう', 'さようなら', 'ありがとう'], hint: null, difficulty: 1 },
+            { type: 'translate', direction: 'jp_to_en', prompt: '友達と学校に行きます。', answer: 'I go to school with a friend.', acceptedAnswers: ['I go to school with a friend.', 'I go to school with my friend.', "I'm going to school with a friend."], wordBank: ['I', 'go', 'to', 'school', 'with', 'a', 'friend', 'the', 'my', 'home'], hint: null, difficulty: 1 },
+            { type: 'translate', direction: 'en_to_jp', prompt: 'See you tomorrow.', answer: 'また明日。', acceptedAnswers: ['また明日。', 'また明日', 'またあした。', 'またあした'], wordBank: ['また', '明日', '今日', '昨日', 'おやすみ', 'さようなら'], hint: null, difficulty: 1 }
+        ]
+    };
+
     const result = [];
     const languageSets = {
         Japanese: [['こんにちは', 'こんにちは', ['ありがとう', '学校', '猫'], 'konnichiwa'], ['ありがとう', 'ありがとう', ['水', '友達', '本'], 'arigatou'], ['学校', '学校', ['食べ物', '家', '朝'], 'gakkou'], ['友達', '友達', ['車', '音楽', '夜'], 'tomodachi'], ['本', '本', ['水', '雨', '元気'], 'hon']],
@@ -960,7 +989,17 @@ function generateFallbackQuestions(language, topic, count) {
     const selectedSet = languageSets[vocabLanguage];
     const translationMap = englishTranslations[vocabLanguage];
 
+    // NEW: inject translate fallbacks for Japanese before word-pair questions.
+    const fallbackTranslates = translateFallbacks[language] || [];
+    if (fallbackTranslates.length) {
+        const translateCount = Math.min(fallbackTranslates.length, Math.ceil(count / 3));
+        for (let t = 0; t < translateCount; t++) {
+            result.push({ ...fallbackTranslates[t] });
+        }
+    }
+
     for (let i = 0; i < count; i++) {
+        if (result.length >= count) break;
         const pair = selectedSet[i % selectedSet.length];
         const [phrase, answer, distractors, pronunciation] = pair;
         const type = i % 5;
@@ -1027,6 +1066,45 @@ function sanitizeQuestionForLanguage(question, language) {
             }
             question.translationMap = merged;
         }
+    }
+
+    // New: sanitize translate wordBank so tiles match the expected language.
+    if (question.type === 'translate') {
+        const isJapaneseSource = question.direction === 'jp_to_en';
+        const isJapaneseAnswer = question.direction === 'en_to_jp';
+        const shouldBeJapanese = isJapaneseSource || isJapaneseAnswer;
+        const targetIsJapanese = isJapaneseAnswer;   // answer language
+
+        if (Array.isArray(question.wordBank)) {
+            // Filter tiles so the wordBank language matches the ANSWER language.
+            // For jp_to_en → answer is English → wordBank should be English.
+            // For en_to_jp → answer is Japanese → wordBank should be Japanese.
+            question.wordBank = question.wordBank
+                .map(w => typeof w === 'string' ? w.trim() : '')
+                .filter(w => w.length > 0)
+                .filter(w => targetIsJapanese ? hasNonLatinText(w) : !hasNonLatinText(w));
+
+            // Backfill with native words if the bank got emptied by the filter.
+            if (question.wordBank.length < 3 && nativeWords.length) {
+                const needed = 3 - question.wordBank.length;
+                const pool = nativeWords.filter(w => !question.wordBank.includes(w));
+                for (let i = 0; i < needed && pool.length; i++) {
+                    question.wordBank.push(pool.shift());
+                }
+            }
+        }
+
+        // Ensure acceptedAnswers always contains the canonical answer.
+        if (typeof question.answer === 'string' && question.answer.trim()) {
+            if (!Array.isArray(question.acceptedAnswers)) question.acceptedAnswers = [];
+            const trimmedAnswer = question.answer.trim();
+            if (!question.acceptedAnswers.some(a => typeof a === 'string' && a.trim() === trimmedAnswer)) {
+                question.acceptedAnswers.unshift(trimmedAnswer);
+            }
+        }
+
+        // Normalize hint to null (translate never shows pronunciation).
+        question.hint = null;
     }
 
     return question;
@@ -1250,6 +1328,19 @@ function validateQuestion(q, language) {
             && q.english.trim().length > 0
             && typeof q.answer === 'string'
             && q.answer.trim().length > 0;
+        case 'translate': {
+            if (typeof q.prompt !== 'string' || !q.prompt.trim()) return false;
+            if (typeof q.answer !== 'string' || !q.answer.trim()) return false;
+            if (q.direction !== 'jp_to_en' && q.direction !== 'en_to_jp' && q.direction !== 'en_to_target') return false;
+            if (!Array.isArray(q.acceptedAnswers) || q.acceptedAnswers.length < 1) return false;
+            if (!q.acceptedAnswers.every(a => typeof a === 'string' && a.trim().length > 0)) return false;
+            if (!q.acceptedAnswers.includes(q.answer.trim())) return false;
+            if (q.wordBank !== null && q.wordBank !== undefined) {
+                if (!Array.isArray(q.wordBank) || q.wordBank.length < 3) return false;
+                if (!q.wordBank.every(w => typeof w === 'string' && w.trim().length > 0)) return false;
+            }
+            return true;
+        }
         case 'move-sequence':
         case 'mate-in-2':
         case 'mate-in-3':

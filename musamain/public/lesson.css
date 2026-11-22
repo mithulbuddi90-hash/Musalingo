@@ -1,0 +1,338 @@
+/*
+ * lesson.css — Musalingo
+ * Supplemental styles for the translate question renderer.
+ * Link this AFTER styles.css in lesson.html.
+ *
+ * Parts implemented:
+ *   Part 3  — answer tray + word-bank pool tiles
+ *   Part 7  — base translate wrapper
+ *   Part 8  — mode toggle (word bank ↔ keyboard), keyboard input, toast
+ */
+
+/* ════════════════════════════════════════════════════════════
+   GRID SPAN — translate surfaces fill the full answer-grid row
+   ════════════════════════════════════════════════════════════ */
+.answer-grid > .translate-mode-toggle,
+.answer-grid > .translate-bank-surface,
+.answer-grid > .translate-keyboard-surface,
+.answer-grid > .translate-toast {
+    grid-column: 1 / -1;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODE TOGGLE  (segmented control)
+   ════════════════════════════════════════════════════════════ */
+.translate-mode-toggle {
+    display: inline-flex;
+    align-self: flex-start;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    background: var(--bg);
+}
+
+.translate-mode-option {
+    padding: 8px 18px;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--text-light);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+    white-space: nowrap;
+}
+
+.translate-mode-option + .translate-mode-option {
+    border-left: 2px solid var(--border);
+}
+
+.translate-mode-option:hover:not(.active) {
+    background: var(--soft, #f7f7f7);
+    color: var(--text);
+}
+
+.translate-mode-option.active {
+    background: var(--blue);
+    color: #fff;
+}
+
+.translate-mode-option:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: -2px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANSWER TRAY  (placed tiles build the sentence here)
+   ════════════════════════════════════════════════════════════ */
+.translate-answer-tray {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 8px;
+    min-height: 72px;
+    padding: 12px 14px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    background: var(--bg);
+    transition: border-color 0.15s ease, background 0.15s ease;
+    margin-bottom: 16px;
+}
+
+.translate-answer-tray[data-empty]::before {
+    content: "Tap the words below to build your answer";
+    display: block;
+    width: 100%;
+    text-align: center;
+    color: var(--text-light);
+    font-weight: 700;
+    font-size: 0.9rem;
+    align-self: center;
+    padding: 8px 0;
+}
+
+.translate-answer-tray.correct {
+    border-style: solid;
+    border-color: var(--accent);
+    background: var(--accent-soft, rgba(88, 204, 2, 0.1));
+}
+
+.translate-answer-tray.wrong {
+    border-style: solid;
+    border-color: var(--red);
+    background: var(--red-soft, rgba(255, 75, 75, 0.1));
+    animation: shake 0.4s ease;
+}
+
+/* ════════════════════════════════════════════════════════════
+   WORD POOL  (the shuffled tile bank at the bottom)
+   ════════════════════════════════════════════════════════════ */
+.translate-word-pool {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 4px 0 8px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TILES  (shared by both tray and pool)
+   ════════════════════════════════════════════════════════════ */
+.translate-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border: 2px solid var(--border);
+    border-bottom-width: 4px;
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.08s ease, border-color 0.1s ease, background 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.translate-tile:active:not(:disabled) {
+    transform: translateY(3px);
+    border-bottom-width: 2px;
+}
+
+/* Pool tile hover */
+.translate-word-pool .translate-tile:hover:not(:disabled) {
+    border-color: var(--blue);
+    background: var(--blue-soft, rgba(28, 176, 246, 0.1));
+    color: var(--blue);
+}
+
+/* Placed (in-tray) tile appearance */
+.translate-tile.in-tray {
+    border-color: var(--blue);
+    background: var(--blue-soft, rgba(28, 176, 246, 0.1));
+    color: var(--blue);
+}
+
+.translate-tile.in-tray:hover:not(:disabled) {
+    border-color: var(--red);
+    background: var(--red-soft, rgba(255, 75, 75, 0.08));
+    color: var(--red);
+}
+
+/* Correct state: all tiles in tray go green */
+.translate-answer-tray.correct .translate-tile {
+    border-color: var(--accent);
+    background: var(--accent-soft, rgba(88, 204, 2, 0.1));
+    color: var(--accent-dark);
+    cursor: default;
+}
+
+/* Wrong state: all tiles in tray go red */
+.translate-answer-tray.wrong .translate-tile {
+    border-color: var(--red);
+    background: var(--red-soft, rgba(255, 75, 75, 0.1));
+    color: var(--red);
+    cursor: default;
+}
+
+.translate-tile:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+.translate-tile:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   KEYBOARD SURFACE  (the typed-answer input)
+   ════════════════════════════════════════════════════════════ */
+.translate-keyboard-surface {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.translate-keyboard-input {
+    display: block;
+    width: 100%;
+    padding: 16px 18px;
+    border: 2px solid var(--border);
+    border-bottom-width: 4px;
+    border-radius: 16px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.3rem;
+    font-weight: 700;
+    outline: none;
+    transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+/* Japanese / CJK variant — slightly larger for dense scripts */
+.translate-keyboard-input.ja {
+    font-size: 1.4rem;
+    letter-spacing: 0.05em;
+}
+
+.translate-keyboard-input::placeholder {
+    color: var(--text-light);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.translate-keyboard-input:focus {
+    border-color: var(--blue);
+    background: var(--blue-soft, rgba(28, 176, 246, 0.08));
+}
+
+.translate-keyboard-input.correct,
+.translate-keyboard-input.correct:disabled {
+    border-color: var(--accent);
+    background: var(--accent-soft, rgba(88, 204, 2, 0.1));
+    color: var(--accent-dark);
+}
+
+.translate-keyboard-input.wrong,
+.translate-keyboard-input.wrong:disabled {
+    border-color: var(--red);
+    background: var(--red-soft, rgba(255, 75, 75, 0.1));
+    color: var(--red);
+    animation: shake 0.4s ease;
+}
+
+.translate-keyboard-input:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOAST  (one-time "some words dropped" notification)
+   ════════════════════════════════════════════════════════════ */
+.translate-toast {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: var(--soft, #f7f7f7);
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    animation: slideDown 0.2s ease;
+    margin-top: 8px;
+}
+
+.translate-toast[hidden] {
+    display: none;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE overrides
+   ════════════════════════════════════════════════════════════ */
+body.dark-mode .translate-answer-tray {
+    background: var(--bg);
+}
+
+body.dark-mode .translate-tile {
+    background: var(--card);
+}
+
+body.dark-mode .translate-keyboard-input {
+    background: var(--card);
+}
+
+body.dark-mode .translate-mode-toggle {
+    background: var(--card);
+}
+
+body.dark-mode .translate-toast {
+    background: var(--card);
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+    .translate-tile {
+        font-size: 0.98rem;
+        padding: 9px 13px;
+    }
+
+    .translate-keyboard-input {
+        font-size: 1.15rem;
+    }
+
+    .translate-keyboard-input.ja {
+        font-size: 1.25rem;
+    }
+
+    .translate-mode-option {
+        font-size: 0.82rem;
+        padding: 7px 14px;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+    .translate-answer-tray.wrong,
+    .translate-keyboard-input.wrong,
+    .translate-toast {
+        animation: none;
+    }
+
+    .translate-tile {
+        transition: none;
+    }
+}
