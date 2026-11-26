@@ -856,7 +856,7 @@
     };
 
     // ═══════════════════════════════════════════════════════════════════
-    //  CHESS & MUSIC SAMPLES  (unchanged)
+    //  CHESS & MUSIC SAMPLES
     // ═══════════════════════════════════════════════════════════════════
 
     const CHESS_SAMPLES = {
@@ -887,6 +887,79 @@
             { fen: '7k/8/8/8/8/8/4P3/4K3 w - - 0 1', from: 'e2', answer: 'e4', prompt: 'The pawn is highlighted. Push it toward the promotion square.', hint: 'Push the pawn and escort it with the king.' },
             { fen: '7k/8/8/8/8/8/8/3QK3 w - - 0 1', from: 'd1', answer: 'd8', prompt: 'The queen is highlighted. Tap the square that delivers checkmate.', hint: 'Look for a queen move that traps the king.' },
             { fen: '7k/8/8/8/8/8/3R4/7K w - - 0 1', from: 'd2', answer: 'd8', prompt: 'The rook is highlighted. Tap the square that delivers checkmate.', hint: 'Rooks can mate along the back rank.' }
+        ],
+
+        fork: [
+            { fen: '7k/8/8/8/8/5N2/8/6K1 w - - 0 1', from: 'f3', answer: 'g5', legalMoves: ['d2', 'd4', 'e1', 'e5', 'g1', 'g5', 'h2', 'h4'], prompt: 'The knight is highlighted. Find the fork that attacks king and rook.', hint: 'A fork attacks two pieces at once.' },
+            { fen: '6k1/8/8/8/8/8/5N2/r5K1 w - - 0 1', from: 'f2', answer: 'e4', legalMoves: ['d1', 'd3', 'e4', 'g4', 'h1', 'h3'], prompt: 'The knight is highlighted. Fork the king and rook.', hint: 'Move the knight to attack both pieces simultaneously.' },
+            { fen: '6k1/8/8/3p4/8/4N3/8/6K1 w - - 0 1', from: 'e3', answer: 'f5', legalMoves: ['c2', 'c4', 'd1', 'd5', 'f1', 'f5', 'g2', 'g4'], prompt: 'The knight is highlighted. Fork king and pawn.', hint: 'Knights are the best forking pieces.' },
+            { fen: '8/6k1/8/8/8/8/5N2/r5K1 w - - 0 1', from: 'f2', answer: 'd3', legalMoves: ['d1', 'd3', 'e4', 'g4', 'h1', 'h3'], prompt: 'The knight is highlighted. Find the best fork.', hint: 'Attack two targets with one move.' },
+            { fen: '8/8/6k1/8/4N3/8/8/r5K1 w - - 0 1', from: 'e4', answer: 'f6', legalMoves: ['c3', 'c5', 'd2', 'd6', 'f2', 'f6', 'g3', 'g5'], prompt: 'The knight is highlighted. Fork king and rook.', hint: 'Look for a square that attacks both pieces.' },
+            { fen: '8/8/8/3k4/8/2N5/8/6K1 w - - 0 1', from: 'c3', answer: 'e4', legalMoves: ['a2', 'a4', 'b1', 'b5', 'd1', 'd5', 'e2', 'e4'], prompt: 'The knight is highlighted. Find the royal fork.', hint: 'A royal fork attacks king and queen.' }
+        ],
+
+        pin: [
+            { fen: '6k1/8/8/1b6/8/8/8/R3K3 w - - 0 1', from: 'a1', answer: 'a5', legalMoves: ['a2', 'a3', 'a4', 'a5', 'b1', 'c1', 'd1'], prompt: 'The rook is highlighted. Pin the bishop to the king.', hint: 'A pin stops a piece from moving without exposing the king.' },
+            { fen: '6k1/8/8/8/8/5n2/8/4RK2 w - - 0 1', from: 'e1', answer: 'e3', legalMoves: ['e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8'], prompt: 'The rook is highlighted. Pin the knight to the king.', hint: 'The pinned piece is between the rook and the king.' },
+            { fen: '6k1/3r4/8/8/8/8/3B4/3K4 w - - 0 1', from: 'd2', answer: 'd7', legalMoves: ['a5', 'b4', 'c1', 'c3', 'e1', 'e3', 'f4', 'g5', 'h6', 'b4', 'e3', 'f4', 'g5', 'h6', 'c3', 'e1', 'd7'], prompt: 'The bishop is highlighted. Pin the rook to the king.', hint: 'Bishops pin along diagonals.' },
+            { fen: '6k1/8/8/8/3n4/8/8/3RK3 w - - 0 1', from: 'd1', answer: 'd4', legalMoves: ['a1', 'b1', 'c1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e1'], prompt: 'The rook is highlighted. Pin the knight.', hint: 'The knight cannot move without exposing the king.' },
+            { fen: '7k/8/8/5b2/8/8/8/4RK2 w - - 0 1', from: 'e1', answer: 'e5', legalMoves: ['e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8'], prompt: 'The rook is highlighted. Pin the bishop.', hint: 'Look for the piece between the rook line and the king.' },
+            { fen: '6k1/8/4n3/8/8/8/8/4RK2 w - - 0 1', from: 'e1', answer: 'e6', legalMoves: ['e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8'], prompt: 'The rook is highlighted. Pin the knight to the king.', hint: 'A pinned piece is paralysed.' }
+        ],
+
+        sacrifice: [
+            { fen: '6k1/5ppp/8/8/8/8/8/3QK3 w - - 0 1', from: 'd1', answer: 'h5', legalMoves: ['a1', 'a4', 'b3', 'c1', 'c2', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e2', 'f3', 'g4', 'h5'], prompt: 'The queen is highlighted. Sacrifice to open the king.', hint: 'Sometimes giving up material wins the game.' },
+            { fen: '5rk1/5ppp/8/8/8/8/8/3RK3 w - - 0 1', from: 'd1', answer: 'd8', legalMoves: ['a1', 'b1', 'c1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'], prompt: 'The rook is highlighted. Sacrifice on the back rank.', hint: 'A rook sacrifice can open lines for a decisive attack.' },
+            { fen: '6k1/6pp/8/8/4B3/8/8/4K3 w - - 0 1', from: 'e4', answer: 'h7', legalMoves: ['a8', 'b1', 'b7', 'c2', 'c6', 'd3', 'd5', 'f3', 'f5', 'g2', 'g6', 'h7'], prompt: 'The bishop is highlighted. Sacrifice on h7 to expose the king.', hint: 'The classic bishop sacrifice on h7.' },
+            { fen: '6k1/5ppp/8/3N4/8/8/8/4K3 w - - 0 1', from: 'd5', answer: 'f6', legalMoves: ['b4', 'b6', 'c3', 'c7', 'e3', 'e7', 'f4', 'f6'], prompt: 'The knight is highlighted. Sacrifice to destroy the pawn cover.', hint: 'Destroying pawn cover exposes the king.' },
+            { fen: '6k1/6pp/5p2/8/4B3/8/8/4K3 w - - 0 1', from: 'e4', answer: 'f5', legalMoves: ['a8', 'b1', 'b7', 'c2', 'c6', 'd3', 'd5', 'f3', 'f5', 'g2', 'g6', 'h7'], prompt: 'The bishop is highlighted. Find the best sacrifice.', hint: 'Give up the piece for a decisive attack.' },
+            { fen: '5k2/5ppp/8/8/8/8/8/3QK3 w - - 0 1', from: 'd1', answer: 'd8', legalMoves: ['a1', 'a4', 'b3', 'c1', 'c2', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e2', 'f3', 'g4', 'h5'], prompt: 'The queen is highlighted. Find the winning sacrifice.', hint: 'Sometimes the most powerful move is giving up the queen.' }
+        ],
+
+        skewer: [
+            { fen: '7k/8/8/8/8/8/8/R3K3 w - - 0 1', from: 'a1', answer: 'h1', legalMoves: ['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1'], prompt: 'The rook is highlighted. Skewer the king.', hint: 'A skewer attacks a valuable piece forcing it to move.' },
+            { fen: '7k/8/8/8/8/8/8/4KB2 w - - 0 1', from: 'f1', answer: 'c4', legalMoves: ['a6', 'b5', 'c4', 'd3', 'e2', 'g2', 'h3'], prompt: 'The bishop is highlighted. Find the skewer.', hint: 'The king must move, losing the piece behind it.' },
+            { fen: 'r6k/8/8/8/8/8/8/4KR2 w - - 0 1', from: 'f1', answer: 'f8', legalMoves: ['a1', 'b1', 'c1', 'd1', 'e1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8'], prompt: 'The rook is highlighted. Skewer the king to win the rook.', hint: 'Force the king to move and capture what is behind it.' },
+            { fen: '7k/8/8/5r2/8/8/8/4KB2 w - - 0 1', from: 'f1', answer: 'b5', legalMoves: ['a6', 'b5', 'c4', 'd3', 'e2', 'g2', 'h3'], prompt: 'The bishop is highlighted. Skewer the rook.', hint: 'Attack the king forcing it to expose the rook.' },
+            { fen: 'r6k/8/8/8/8/8/8/R3K3 w - - 0 1', from: 'a1', answer: 'a8', legalMoves: ['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'b1', 'c1', 'd1'], prompt: 'The rook is highlighted. Find the skewer.', hint: 'Push through the king to win the rook behind it.' },
+            { fen: '7k/8/8/8/8/5r2/8/4KB2 w - - 0 1', from: 'f1', answer: 'c4', legalMoves: ['a6', 'b5', 'c4', 'd3', 'e2', 'g2', 'h3'], prompt: 'The bishop is highlighted. Skewer the king to win the rook.', hint: 'A skewer is like a pin in reverse.' }
+        ],
+
+        'discovered attack': [
+            { fen: '6k1/8/8/3b4/8/8/3B4/3RK3 w - - 0 1', from: 'd2', answer: 'e3', legalMoves: ['a5', 'b4', 'c1', 'c3', 'e1', 'e3', 'f4', 'g5', 'h6'], prompt: 'The bishop is highlighted. Move it to unleash a discovered attack.', hint: 'Moving the bishop reveals a rook attack.' },
+            { fen: '7k/8/8/8/3B4/8/8/3RK3 w - - 0 1', from: 'd4', answer: 'g7', legalMoves: ['a1', 'a7', 'b2', 'b6', 'c3', 'c5', 'e3', 'e5', 'f2', 'f6', 'g1', 'g7', 'h8'], prompt: 'The bishop is highlighted. Discover an attack with a check.', hint: 'Move to give check and reveal the rook.' },
+            { fen: '7k/8/4r3/8/8/4N3/8/4RK2 w - - 0 1', from: 'e3', answer: 'f5', legalMoves: ['c2', 'c4', 'd1', 'd5', 'f1', 'f5', 'g2', 'g4'], prompt: 'The knight is highlighted. Move to unleash a discovered rook attack.', hint: 'The rook behind the knight becomes active after the knight moves.' },
+            { fen: '6k1/8/8/8/3N4/8/8/3BK3 w - - 0 1', from: 'd4', answer: 'f5', legalMoves: ['b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5'], prompt: 'The knight is highlighted. Move to reveal the bishop attack.', hint: 'A discovered attack can win material even without a check.' },
+            { fen: '7k/8/8/8/8/5N2/8/3BK3 w - - 0 1', from: 'f3', answer: 'g5', legalMoves: ['d2', 'd4', 'e1', 'e5', 'g1', 'g5', 'h2', 'h4'], prompt: 'The knight is highlighted. Find the discovered attack.', hint: 'Move the knight to reveal the bishop and attack the king.' },
+            { fen: '6k1/3r4/8/8/3N4/8/8/3RK3 w - - 0 1', from: 'd4', answer: 'e6', legalMoves: ['b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5'], prompt: 'The knight is highlighted. Discover the rook attack on the rook.', hint: 'The knight move opens the rook line.' }
+        ],
+
+        battery: [
+            { fen: '7k/8/8/8/8/8/3RR3/3K4 w - - 0 1', from: 'd2', answer: 'd8', legalMoves: ['a2', 'b2', 'c2', 'd1', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'], prompt: 'The rook is highlighted. Use the battery to deliver checkmate.', hint: 'Two rooks on the same file form a battery.' },
+            { fen: '7k/8/8/8/8/3Q4/3R4/3K4 w - - 0 1', from: 'd3', answer: 'd8', legalMoves: ['a3', 'b3', 'c3', 'c4', 'd4', 'd5', 'd6', 'd7', 'd8', 'e3', 'e4', 'f5', 'g6', 'h7'], prompt: 'The queen is highlighted. Fire the queen-rook battery.', hint: 'The queen and rook are aligned on the d-file.' },
+            { fen: '7k/8/8/8/2B5/3Q4/8/3K4 w - - 0 1', from: 'd3', answer: 'h7', legalMoves: ['a3', 'b3', 'c3', 'c4', 'd4', 'd5', 'd6', 'd7', 'd8', 'e3', 'e4', 'f5', 'g6', 'h7'], prompt: 'The queen is highlighted. Find the battery checkmate.', hint: 'The queen and bishop form a diagonal battery.' },
+            { fen: '7k/8/8/8/8/8/3QR3/3K4 w - - 0 1', from: 'd2', answer: 'd8', legalMoves: ['a2', 'b2', 'c2', 'd1', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e2'], prompt: 'The queen is highlighted. Use the battery to checkmate.', hint: 'Queen and rook batteries are devastating.' },
+            { fen: '7k/8/8/3Q4/3R4/8/8/3K4 w - - 0 1', from: 'd5', answer: 'd8', legalMoves: ['a2', 'a5', 'a8', 'b3', 'b5', 'b7', 'c4', 'c5', 'c6', 'd1', 'd2', 'd3', 'd4', 'd6', 'd7', 'd8', 'e4', 'e5', 'e6', 'f3', 'f5', 'f7', 'g2', 'g5', 'h1', 'h5'], prompt: 'The queen is highlighted. Deliver checkmate using the battery.', hint: 'March the queen forward on the file.' }
+        ],
+
+        deflection: [
+            { fen: '6k1/6Q1/8/8/8/8/8/4K3 w - - 0 1', from: 'g7', answer: 'g6', legalMoves: ['a1', 'a7', 'b2', 'b7', 'c3', 'c7', 'd4', 'd7', 'e5', 'e7', 'f6', 'f7', 'f8', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g8', 'h6', 'h7', 'h8'], prompt: 'The queen is highlighted. Deflect the king and deliver checkmate.', hint: 'Force the defending piece away from its duty.' },
+            { fen: '7k/5Rpp/8/8/8/8/8/4K3 w - - 0 1', from: 'f7', answer: 'h7', legalMoves: ['a7', 'b7', 'c7', 'd7', 'e7', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f8', 'g7', 'h7'], prompt: 'The rook is highlighted. Deflect the pawn and checkmate.', hint: 'Capture the pawn to remove the king\'s cover.' },
+            { fen: '5rk1/6pp/8/8/8/8/8/3QK3 w - - 0 1', from: 'd1', answer: 'f1', legalMoves: ['a1', 'a4', 'b1', 'b3', 'c1', 'c2', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e1', 'e2', 'f1', 'f3', 'g4', 'h5'], prompt: 'The queen is highlighted. Deflect the rook.', hint: 'Draw the rook away from the defence.' },
+            { fen: '6k1/5ppp/8/8/5Q2/8/8/4K3 w - - 0 1', from: 'f4', answer: 'f7', legalMoves: ['a4', 'b4', 'c1', 'c4', 'd2', 'd4', 'd6', 'e3', 'e4', 'e5', 'f1', 'f2', 'f3', 'f5', 'f6', 'f7', 'f8', 'g3', 'g4', 'g5', 'h2', 'h4', 'h6'], prompt: 'The queen is highlighted. Deflect the pawn cover.', hint: 'Remove the pawn to expose the king.' }
+        ],
+
+        attraction: [
+            { fen: '6k1/8/8/8/8/8/6Q1/4K3 w - - 0 1', from: 'g2', answer: 'g7', legalMoves: ['a2', 'a8', 'b2', 'b7', 'c2', 'c6', 'd2', 'd5', 'e2', 'e4', 'f1', 'f2', 'f3', 'g1', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'h1', 'h2', 'h3'], prompt: 'The queen is highlighted. Attract the king to a mating square.', hint: 'Lure the king to a square where it can be mated.' },
+            { fen: '7k/8/6Q1/8/8/8/8/4K3 w - - 0 1', from: 'g6', answer: 'g8', legalMoves: ['a6', 'a12', 'b1', 'b6', 'c2', 'c6', 'd3', 'd6', 'e4', 'e6', 'f5', 'f6', 'f7', 'g1', 'g2', 'g3', 'g4', 'g5', 'g7', 'g8', 'h5', 'h6', 'h7'], prompt: 'The queen is highlighted. Attract the king to g8.', hint: 'Force the king onto a square where you can mate it.' },
+            { fen: '7k/5R2/8/8/8/8/8/4K3 w - - 0 1', from: 'f7', answer: 'h7', legalMoves: ['a7', 'b7', 'c7', 'd7', 'e7', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f8', 'g7', 'h7'], prompt: 'The rook is highlighted. Attract the king then deliver checkmate.', hint: 'Sacrifice the rook to bring the king into a mating net.' },
+            { fen: '7k/8/5Q2/8/8/8/8/4K3 w - - 0 1', from: 'f6', answer: 'h6', legalMoves: ['a1', 'a6', 'b2', 'b6', 'c3', 'c6', 'd4', 'd6', 'e5', 'e6', 'e7', 'f1', 'f2', 'f3', 'f4', 'f5', 'f7', 'f8', 'g5', 'g6', 'g7', 'h4', 'h6', 'h8'], prompt: 'The queen is highlighted. Lure the king into the corner.', hint: 'Attraction forces the king where you want it.' }
+        ],
+
+        interference: [
+            { fen: '3r3k/8/3Q4/8/8/8/8/3RK3 w - - 0 1', from: 'd6', answer: 'd8', legalMoves: ['a3', 'a6', 'b4', 'b6', 'c5', 'c6', 'c7', 'd1', 'd2', 'd3', 'd4', 'd5', 'd7', 'd8', 'e5', 'e6', 'e7', 'f4', 'f6', 'f8', 'g3', 'g6', 'h2', 'h6'], prompt: 'The queen is highlighted. Interfere on the back rank.', hint: 'Cut off the rook\'s defence.' },
+            { fen: '7k/3r4/8/3N4/8/8/8/3RK3 w - - 0 1', from: 'd5', answer: 'f6', legalMoves: ['b4', 'b6', 'c3', 'c7', 'e3', 'e7', 'f4', 'f6'], prompt: 'The knight is highlighted. Interfere with the rook\'s defence.', hint: 'Block the defending piece\'s line.' },
+            { fen: '7k/8/3r4/8/8/3Q4/8/3RK3 w - - 0 1', from: 'd3', answer: 'd6', legalMoves: ['a3', 'a6', 'b1', 'b3', 'b5', 'c2', 'c3', 'c4', 'd1', 'd2', 'd4', 'd5', 'd6', 'd7', 'd8', 'e2', 'e3', 'e4', 'f1', 'f3', 'f5', 'g3', 'g6', 'h3', 'h7'], prompt: 'The queen is highlighted. Interfere on the d-file.', hint: 'Place a piece between the defender and what it defends.' }
         ]
     };
 
@@ -918,10 +991,35 @@
         return kingSquares;
     }
 
+    const TOPIC_TO_POOL = {
+        fork: 'fork', forks: 'fork', 'royal fork': 'fork',
+        pin: 'pin', pins: 'pin', 'absolute pin': 'pin', 'relative pin': 'pin',
+        'exploiting pin': 'pin', 'complex pin': 'pin', 'cross pin': 'pin', 'piling up': 'pin',
+        sacrifice: 'sacrifice', sacrifices: 'sacrifice', 'planning sacrifice': 'sacrifice', 'clearance sacrifice': 'sacrifice',
+        skewer: 'skewer', skewers: 'skewer', 'smothered': 'checkmate',
+        'discovered attack': 'discovered attack', 'discovered check': 'discovered attack',
+        'double attack': 'discovered attack', 'double check': 'discovered attack',
+        'discovered and double': 'discovered attack',
+        battery: 'battery', batteries: 'battery',
+        deflection: 'deflection', deflect: 'deflection',
+        attraction: 'attraction', attract: 'attraction',
+        interference: 'interference', interfere: 'interference', intermezzo: 'interference',
+        'back rank': 'checkmate', 'mating net': 'checkmate', 'mate in 2': 'checkmate',
+        'mate in 3': 'checkmate', 'long checkmate': 'checkmate', 'longer checkmate': 'checkmate',
+        zugzwang: 'endgame', opposition: 'endgame', 'passed pawn': 'endgame',
+        'pawn promotion': 'endgame', 'pawn race': 'endgame', 'pawn endgame': 'endgame',
+        'rook endgame': 'endgame', 'bishop endgame': 'endgame', 'knight endgame': 'endgame',
+    };
+
     function generateChessFallbackQuestions(count, topic, unitIndex) {
         const topicLower = String(topic || '').toLowerCase();
-        const pool = Object.keys(CHESS_SAMPLES).find((key) => topicLower.includes(key));
-        const samples = CHESS_SAMPLES[pool || 'piece movement'];
+        const resolvedPool = (() => {
+            for (const [keyword, pool] of Object.entries(TOPIC_TO_POOL)) {
+                if (topicLower.includes(keyword)) return pool;
+            }
+            return Object.keys(CHESS_SAMPLES).find((key) => topicLower.includes(key)) || 'piece movement';
+        })();
+        const samples = CHESS_SAMPLES[resolvedPool] || CHESS_SAMPLES['piece movement'];
         const lessonNumber = Number(String(topic || '').match(/(\d+)\s*$/)?.[1]) || 0;
         const isCaptureLesson = /capturing and attacking/i.test(topicLower);
         const starTargetLesson = isCaptureLesson && lessonNumber > 0 && lessonNumber <= 3;

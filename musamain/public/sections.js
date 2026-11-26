@@ -1,15 +1,17 @@
 /* ============================================================
-   Musalingo — sections.js
-   Reads the same profile data + curriculum as course.js.
-   Syncs status:
+   Musalingo — sections.js  (Duolingo-style section list)
+   Reads the same profile data + curriculum as dashboard.js.
 
-     - Section N is UNLOCKED if:
-         • it is the one the user came from (?section=N), OR
-         • every section before it is fully complete
-
-     - Section N is COMPLETED when all its lessons are done
+     - A section is COMPLETED when all its lessons are done
+     - A section is UNLOCKED only when every section before it is completed
      - The first unlocked, incomplete section is ACTIVE
      - Everything else is LOCKED
+
+   Buttons:
+     - Start / Continue  -> dashboard.html?section=N   (the learning path)
+     - Review            -> dashboard.html?section=N
+     - Jump (locked)     -> lesson.html test (combine=1) covering the
+                            section before it. Passing it is what skips ahead.
    ============================================================ */
 
 (() => {
@@ -67,14 +69,13 @@
 
     // ---------- URL PARAMS ----------
     const params = new URLSearchParams(window.location.search);
-    const courseId = params.get('courseId') || 'japanese';
-    const focusedSectionNo = Number(params.get('section')) || null;
+    const courseId = params.get('courseId') || profile.activeCourseId || profile.selectedCourse || 'japanese';
 
     // ---------- PAGE ELEMENTS ----------
     const listEl = document.getElementById('sectionList');
     const backLink = document.getElementById('backLink');
     if (!listEl) return;
-    if (backLink) backLink.href = `course.html?courseId=${encodeURIComponent(courseId)}`;
+    if (backLink) backLink.href = `dashboard.html?courseId=${encodeURIComponent(courseId)}`;
     const showMessage = (html) => { listEl.innerHTML = `<p style="color:var(--muted);">${html}</p>`; };
 
     // ---------- CURRICULUM ----------
@@ -112,57 +113,80 @@
         const progress = total > 0 ? Math.round((done / total) * 100) : 0;
         const hasProgress = done > 0;
         const isComplete = total > 0 && done === total;
-
-        const firstLesson = inSection[0];
-        const nextLesson = inSection.find(l => !l.completed) || firstLesson;
-
-        return { total, done, progress, hasProgress, isComplete, firstLesson, nextLesson };
+        return { total, done, progress, hasProgress, isComplete };
     }
 
-    // ---------- UNLOCK RULES ----------
-    function isSectionUnlocked(idx) {
-        if (focusedSectionNo !== null && (focusedSectionNo - 1) === idx) return true;
+    // Sections with no lessons are skipped (the dashboard skips them too), so they can never
+    // block the sections after them. Links always use the real section index + 1.
+    const entries = sectionMeta
+        .map((meta, idx) => ({ meta, idx, sectionNo: idx + 1, stats: getSectionStats(idx) }))
+        .filter(e => e.stats.total > 0);
 
-        for (let i = 0; i < idx; i++) {
-            const prev = getSectionStats(i);
-            if (!prev.isComplete) return false;
+    // ---------- UNLOCK RULES (Duolingo): only after every earlier section is complete ----------
+    function isSectionUnlocked(pos) {
+        for (let i = 0; i < pos; i++) {
+            if (!entries[i].stats.isComplete) return false;
         }
         return true;
     }
 
-    // ---------- ACTIVE SECTION ----------
-    function pickActiveSectionIndex() {
-        for (let i = 0; i < sectionMeta.length; i++) {
-            if (!isSectionUnlocked(i)) continue;
-            const stats = getSectionStats(i);
-            if (!stats.isComplete) return i;
+    function pickActivePos() {
+        for (let i = 0; i < entries.length; i++) {
+            if (isSectionUnlocked(i) && !entries[i].stats.isComplete) return i;
         }
         return -1;
     }
 
-    const activeSectionIdx = pickActiveSectionIndex();
+    const activePos = pickActivePos();
+
+    // ---------- JUMP TEST ----------
+    // "Jump here?" = take the final test of the section BEFORE the target (combine=1).
+    // This is the same test the dashboard's "Up next" card uses.
+    function chessLevelOf(lessonId) {
+        return String(lessonId).includes('c1') ? 1 : String(lessonId).includes('c2') ? 2 : 3;
+    }
+
+    function buildJumpUrl(pos) {
+        if (pos <= 0) return null;
+        const prevIdx = entries[pos - 1].idx;
+
+        let prevLessons = [];
+        try {
+            prevLessons = curriculum.buildDisplayLessons?.(courseLessons, courseId, prevIdx)?.lessons || [];
+        } catch { prevLessons = []; }
+        if (!prevLessons.length) prevLessons = courseLessons.filter(l => (l.sectionIndex ?? 0) === prevIdx);
+        prevLessons = prevLessons.filter(l => !l.isJump);
+        if (!prevLessons.length) return null;
+
+        const unitOf = l => l.displayUnitIndex ?? l.unitIndex ?? 0;
+        const lastUnit = Math.max(...prevLessons.map(unitOf));
+        const lastUnitLessons = prevLessons.filter(l => unitOf(l) === lastUnit);
+        const test = [...lastUnitLessons].reverse().find(l => l.isTest) || lastUnitLessons[lastUnitLessons.length - 1];
+        if (!test) return null;
+
+        return `lesson.html?courseId=${encodeURIComponent(courseId)}` +
+            `&lessonId=${encodeURIComponent(test.id)}` +
+            `&section=${prevIdx + 1}` +
+            `&unit=${lastUnit + 1}` +
+            `${courseId === 'chess' ? `&level=${chessLevelOf(test.id)}` : ''}` +
+            `&combine=1`;
+    }
 
     // ---------- RENDER ----------
-    if (!sectionMeta.length) {
+    if (!entries.length) {
         listEl.innerHTML = `<p style="color:var(--muted);">No sections yet for this course.</p>`;
         return;
     }
 
-    listEl.innerHTML = sectionMeta.map((s, idx) => {
-        const stats = getSectionStats(idx);
-        const sectionNo = s.sectionNo || (idx + 1);
+    listEl.innerHTML = entries.map(({ meta: s, sectionNo, stats }, pos) => {
         const label = s.label || `SECTION ${sectionNo}`;
         const cat = s.cat || '🐈';
 
-        const unlocked = isSectionUnlocked(idx);
         const isCompleted = stats.isComplete;
-        const isActive = unlocked && !isCompleted && idx === activeSectionIdx;
-        const isLocked = !unlocked && !isCompleted;
+        const isActive = !isCompleted && pos === activePos;
 
-        const sectionLink = `course.html?courseId=${encodeURIComponent(courseId)}&section=${sectionNo}`;
-        const lessonLink = stats.nextLesson
-            ? `lesson.html?courseId=${encodeURIComponent(courseId)}&lessonId=${encodeURIComponent(stats.nextLesson.id)}&section=${sectionNo}&unit=1`
-            : sectionLink;
+        const sectionLink = `dashboard.html?courseId=${encodeURIComponent(courseId)}&section=${sectionNo}`;
+        const jumpUrl = isCompleted || isActive ? null : buildJumpUrl(pos);
 
         const detailsAttr = ['chess', 'math', 'music'].includes(courseId)
             ? ''
@@ -206,7 +230,7 @@
                                 <span class="trophy-small">🏆</span>
                             </div>
 
-                            <a class="continue-btn" href="${lessonLink}">
+                            <a class="continue-btn" href="${sectionLink}">
                                 ${stats.hasProgress ? 'Continue' : 'Start'}
                             </a>
                         </div>
@@ -237,9 +261,7 @@
                         <h2 class="section-title">Section ${sectionNo}</h2>
                         <div class="units-label">🔒 LOCKED</div>
 
-                        <a class="jump-btn" href="${sectionLink}">
-                            Jump to Section ${sectionNo}
-                        </a>
+                        ${jumpUrl ? `<a class="jump-btn" href="${jumpUrl}">Jump to Section ${sectionNo}</a>` : ''}
                     </div>
 
                     <div class="illustration">
@@ -260,10 +282,13 @@
 
     // ---------- SEE DETAILS → guidebook ----------
     document.querySelectorAll('.section-eyebrow[data-section]').forEach(el => {
-        el.addEventListener('click', () => {
-            const no = el.dataset.section;
+        el.setAttribute('role', 'link');
+        el.tabIndex = 0;
+        const open = () => {
             window.location.href =
-                `guidebook.html?courseId=${encodeURIComponent(courseId)}&section=${no}`;
-        });
+                `guidebook.html?courseId=${encodeURIComponent(courseId)}&section=${el.dataset.section}`;
+        };
+        el.addEventListener('click', open);
+        el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
     });
 })();

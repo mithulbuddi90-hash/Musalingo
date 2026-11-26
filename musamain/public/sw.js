@@ -1,5 +1,5 @@
 ﻿/* ============================================================
-   Musalingo — Service Worker (v41)
+   Musalingo — Service Worker (v42)
    - Caches the app shell for offline use
    - Network-first for HTML (with 5s timeout)
    - Cache-first for static assets
@@ -7,7 +7,7 @@
    - Falls back to /offline.html when a page isn't cached
    ============================================================ */
 
-const CACHE_VERSION = 'musalingo-v41';  // Update this to force a new cache
+const CACHE_VERSION = 'musalingo-v42';  // Update this to force a new cache
 
 const APP_SHELL = [
     '/',
@@ -15,8 +15,9 @@ const APP_SHELL = [
     '/started.html',
     '/signin.html',
     '/dashboard.html',
+    '/dashboard.css',
+    '/dashboard.js',
     '/catalog.html',
-    '/course.html',
     '/sections.html',
     '/lesson.html',
     '/guidebook.html',
@@ -28,19 +29,24 @@ const APP_SHELL = [
     '/friends.html',
     '/offline.html',
     '/matches.html',
+    '/matches.css',
     '/privacy-policy.html',
     '/terms-of-service.html',
-    '/course.js',
     '/audience.js',
     '/course-curriculum.js',
     '/sections.js',
     '/lesson.js',              // ← REMOVED ?v=26
     '/lesson.css',
     '/coach.js',
+    '/quest.css',
+    '/streak.js',
+    '/streak.css',
     '/questions.js',
     '/matches.js',             // ← REMOVED ?v=23
     '/sounds.js',
     '/theme.js',
+    '/friends.js',
+    '/friends.css',
     '/styles.css',
     '/bloat.js',
     '/firebase.js',

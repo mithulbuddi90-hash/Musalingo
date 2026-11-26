@@ -1954,13 +1954,8 @@ if (!course || !lesson) {
                             bf.style.color = '#b45309';
                             return;
                         }
-                        // 2. Find-move lesson: MUST land on the specific target square
-                        if (qType === 'find-move' && sq !== q.answer) {
-                            playSound('click');
-                            bf.textContent = 'That is a legal move, but not the correct one. Try another square.';
-                            bf.style.color = '#b45309';
-                            return;
-                        }
+                        // 2. Find-move lesson: LENIENT (any legal move is correct)
+                        // We removed the strict `sq !== q.answer` check here.
                         // 3. Mate-in-one: MUST be checkmate
                         if (qType === 'mate-in-one') {
                             const test = new Chess(chess.fen());
@@ -2036,7 +2031,8 @@ if (!course || !lesson) {
 
                     const isCorrect = (() => {
                         if (q.type === 'capture') return captureSquares.has(to);
-                        if (q.type === 'find-move') return legalFirstMoves.has(to);
+                        // LENIENT: For find-move, any legal move is correct
+                        if (q.type === 'find-move') return true;
                         if (q.type === 'mate-in-one') {
                             try {
                                 const test = new Chess(chess.fen());
@@ -2336,7 +2332,7 @@ if (!course || !lesson) {
                         const totalSections = Array.isArray(sectionsForCourse) ? sectionsForCourse.length : (curriculum.courses?.[course.id]?.totalSections || 7);
 
                         if (allDone && isLastOfSection && sectionNo < totalSections) {
-                            const nextSectionUrl = `course.html?courseId=${encodeURIComponent(course.id)}&section=${sectionNo + 1}`;
+                            const nextSectionUrl = `dashboard.html?courseId=${encodeURIComponent(course.id)}&section=${sectionNo + 1}`;
                             advanceTimer = window.setTimeout(() => {
                                 if (document.visibilityState === 'visible') window.location.href = nextSectionUrl;
                             }, 1200);

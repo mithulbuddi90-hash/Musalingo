@@ -1,0 +1,463 @@
+/* ============================================================
+   Musalingo — quest.css
+   New Duolingo look for quest.html. Tokens from styles.css.
+   ============================================================ */
+
+.quest-page {
+    min-height: 100vh;
+    padding: 24px;
+    background: linear-gradient(135deg, #fdf2f8 0%, #f4f8ff 100%);
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+}
+
+body.dark-mode .quest-page {
+    background: var(--bg);
+}
+
+.quest-shell {
+    width: min(780px, 100%);
+    margin: 0 auto;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    padding: 26px;
+    box-shadow: 0 16px 40px var(--shadow);
+}
+
+/* ===== HERO ===== */
+.quest-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.quest-eyebrow {
+    display: inline-block;
+    margin-bottom: 6px;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-dark);
+}
+
+.quest-hero h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 3vw, 2.1rem);
+    color: var(--text);
+}
+
+.quest-hero p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-weight: 600;
+    max-width: 42ch;
+}
+
+.quest-character {
+    position: relative;
+    flex-shrink: 0;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.quest-character-img,
+.quest-character-fallback {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(236, 150, 199, 0.35));
+    animation: quest-bob 3.5s ease-in-out infinite;
+}
+
+.quest-character-fallback {
+    display: grid;
+    place-items: center;
+    font-size: 64px;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--accent) 15%, var(--panel));
+}
+
+.quest-speech {
+    position: absolute;
+    top: -6px;
+    right: 0;
+    max-width: 180px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 800;
+    box-shadow: 0 4px 0 var(--border);
+    transform: translateY(-100%);
+}
+
+.quest-speech::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 22px;
+    width: 12px;
+    height: 12px;
+    background: var(--panel);
+    border-right: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    transform: rotate(45deg);
+}
+
+@keyframes quest-bob {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+/* ===== PROGRESS ROW ===== */
+.quest-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 18px;
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    background: var(--panel-2);
+    margin-bottom: 22px;
+}
+
+.quest-ring {
+    position: relative;
+    width: 92px;
+    height: 92px;
+    flex: 0 0 92px;
+}
+
+.quest-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ring-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 10;
+}
+
+.ring-fill {
+    fill: none;
+    stroke: var(--green);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 326.7;
+    stroke-dashoffset: calc(326.7 - (326.7 * var(--pct, 0) / 100));
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.quest-ring-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.quest-ring-label strong {
+    font-size: 1.15rem;
+    color: var(--text);
+}
+
+.quest-ring-label span {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.quest-progress-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.quest-progress-copy h2 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+}
+
+.quest-progress-copy p {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.quest-progress-bar {
+    height: 12px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+}
+
+.quest-progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--green), var(--green-dark));
+    transition: width 0.5s ease;
+}
+
+/* ===== QUEST LIST ===== */
+.quest-list {
+    display: grid;
+    gap: 14px;
+}
+
+.quest-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 2px solid var(--border);
+    border-radius: 18px;
+    background: var(--panel);
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.quest-card.completed {
+    border-color: var(--green);
+    background: color-mix(in srgb, var(--green) 8%, var(--panel));
+}
+
+.quest-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    place-items: center;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--panel));
+    font-size: 1.6rem;
+}
+
+.quest-card.completed .quest-icon {
+    background: color-mix(in srgb, var(--green) 16%, var(--panel));
+}
+
+.quest-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.quest-copy h2 {
+    margin: 0 0 4px;
+    font-size: 1.02rem;
+    color: var(--text);
+}
+
+.quest-card.completed .quest-copy h2 {
+    color: var(--green-dark);
+}
+
+.quest-copy p {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.quest-mini-bar {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+    position: relative;
+}
+
+.quest-mini-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+    transition: width 0.45s ease;
+}
+
+.quest-card.completed .quest-mini-fill {
+    background: linear-gradient(90deg, var(--green), var(--green-dark));
+}
+
+.quest-mini-label {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.quest-card.completed .quest-mini-label {
+    color: var(--green-dark);
+}
+
+.tick {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    place-items: center;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    color: transparent;
+    font-weight: 900;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.quest-card.completed .tick {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+}
+
+/* ===== REWARDS ===== */
+.reward-panel {
+    margin-top: 22px;
+}
+
+.reward-panel h2 {
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+}
+
+.reward-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.reward-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 2px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+}
+
+.reward-card.mega {
+    border-color: var(--gold);
+    background: color-mix(in srgb, var(--gold) 12%, var(--panel));
+}
+
+.chest-icon {
+    font-size: 2rem;
+}
+
+.reward-card strong {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.reward-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+/* ===== NOTE + BACK ===== */
+.note {
+    margin: 22px 0 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--panel-2);
+    border: 2px solid var(--border);
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.btn-back {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 12px 18px;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    box-shadow: 0 4px 0 var(--accent-dark);
+    transition: transform 0.08s ease, filter 0.15s ease;
+}
+
+.btn-back:hover {
+    filter: brightness(1.05);
+}
+
+.btn-back:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--accent-dark);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+    .quest-page {
+        padding: 14px;
+    }
+
+    .quest-shell {
+        padding: 20px 16px;
+        border-radius: 20px;
+    }
+
+    .quest-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .quest-character {
+        align-self: center;
+        margin-top: 8px;
+    }
+
+    .quest-progress-row {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .quest-ring {
+        margin: 0 auto;
+    }
+
+    .btn-back {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .quest-character-img,
+    .quest-character-fallback {
+        animation: none;
+    }
+
+    .ring-fill,
+    .quest-progress-fill,
+    .quest-mini-fill {
+        transition: none;
+    }
+}
